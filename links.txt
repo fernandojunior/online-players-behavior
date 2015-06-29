@@ -1,0 +1,21 @@
+Mining the Social Web, 2nd Edition
+http://shop.oreilly.com/product/0636920030195.do?cmp=af-strata-books-video-product_cj_0636920030195_7133220
+https://github.com/fernandojunior/Mining-the-Social-Web-2nd-Edition
+
+What are the best Python 2.7 modules for data mining?
+http://www.quora.com/What-are-the-best-Python-2-7-modules-for-data-mining
+
+Best Python modules for data mining
+http://www.kdnuggets.com/2012/11/best-python-modules-for-data-mining.html
+
+A Programmer's Guide to Data Mining
+http://guidetodatamining.com/
+
+Gaming Analytics Summit 2015, San Francisco – Day 2 Highlights
+http://www.kdnuggets.com/2015/05/gaming-analytics-summit-san-francisco-highlights-day2.html#.VVES4duzsWk.linkedin
+
+http://scikit-learn.org/stable/
+
+https://plot.ly/plot
+
+http://www.quora.com/What-are-the-best-Python-2-7-modules-for-data-mining
