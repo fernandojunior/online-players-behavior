@@ -41,11 +41,13 @@ Things to see later:
 * definir um endpoint dinâmico para os arquivos estáticos e desta forma hospedar
 em um CDN ou em serviços externos como Amazon S3, Akamai ou Dropbox
 * ipython
+* http://stackoverflow.com/questions/13058800/using-flask-sqlalchemy-in-blueprint-models-without-reference-to-the-app
 
 ## References
 
 * http://flask-sqlalchemy.pocoo.org/2.0/
 * https://github.com/rayokota/generator-angular-flask
+* https://github.com/mitsuhiko/flask/wiki/Large-app-how-to
 
 ## License
 
