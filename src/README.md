@@ -36,6 +36,11 @@ Things to see later:
 * sqlalchemy-migrate
 * flask-whooshalchemy
 * http://learnpythonthehardway.org/book/ex46.html
+* Geradores de API como o Python­EVE ou o Flask­API
+* Autenticação e autorização com Flask­Login ou Flask­Security
+* definir um endpoint dinâmico para os arquivos estáticos e desta forma hospedar
+em um CDN ou em serviços externos como Amazon S3, Akamai ou Dropbox
+* ipython
 
 ## References
 
