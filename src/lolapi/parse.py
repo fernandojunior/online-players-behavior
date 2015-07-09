@@ -27,10 +27,10 @@ def open_match(path):
     with open(path) as f: # open match
         return json.load(f) # read match
 
-trainingData = open(TRAINING_DIR + 'ranked_matches_2015_ong_features.csv','w+')
+trainingData = open(TRAINING_DIR + 'ranked_matches_2015.csv','w+')
 
 # ONG et al. attributes
-headers = '"Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
+headers = '"matchId","summonerId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
     '"Deaths","GoldEarned","TotalDamageDealt","MagicDamageDealt","PhysicalDamageDealt",' \
     '"TotalDamageDealtToChampions","TotalDamageTaken","MinionsKilled","NeutralMinionsKilled",' \
     '"CrowdControl","WardsPlaced","TowerKills","LargestMultiKill","LargestKillingSpree","LargestCritStrike","TotalHealAmount"'
@@ -57,10 +57,17 @@ for f in os.listdir(DUMP_DIR): # list matches
 
             # row based on ONG et al. attributes
             row = csvrow(
+                # General Info -- not used for clustering
+                data['matchId'],
+                data['participantIdentities'][i]['player']['summonerId'],
+
+                # Booleans attributes -- not need be normalized
                 data['teams'][team_index]['winner'],
                 stats['firstBloodKill'],
                 stats['firstTowerKill'],
                 stats['firstTowerAssist'],
+
+                # numeric attributes
                 stats['kills'],
                 stats['assists'],
                 stats['deaths'],
