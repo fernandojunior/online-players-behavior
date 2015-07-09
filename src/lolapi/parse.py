@@ -27,10 +27,10 @@ def open_match(path):
     with open(path) as f: # open match
         return json.load(f) # read match
 
-trainingData = open(TRAINING_DIR + 'ranked_matches_2015.csv','w+')
+trainingData = open(TRAINING_DIR + 'ranked_matches_2015_ong_features.csv','w+')
 
 # ONG et al. attributes
-headers = '"matchId","summonerId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
+headers = '"matchId","summonerId","championId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
     '"Deaths","GoldEarned","TotalDamageDealt","MagicDamageDealt","PhysicalDamageDealt",' \
     '"TotalDamageDealtToChampions","TotalDamageTaken","MinionsKilled","NeutralMinionsKilled",' \
     '"CrowdControl","WardsPlaced","TowerKills","LargestMultiKill","LargestKillingSpree","LargestCritStrike","TotalHealAmount"'
@@ -60,6 +60,7 @@ for f in os.listdir(DUMP_DIR): # list matches
                 # General Info -- not used for clustering
                 data['matchId'],
                 data['participantIdentities'][i]['player']['summonerId'],
+                participant['championId'],
 
                 # Booleans attributes -- not need be normalized
                 data['teams'][team_index]['winner'],
