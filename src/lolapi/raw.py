@@ -12,12 +12,12 @@ participants: 10
 
 import json
 from riotwatcher import RiotWatcher, BRAZIL, LoLException
-from config import API_KEY, FIRST_MATCH_ID, DUMP_DIR
+from config import API_KEY, FIRST_MATCH_ID, DUMP_DIR, STARTING_MATCH_ID
 
 # lol api wrapper
 w = RiotWatcher(key=API_KEY, default_region=BRAZIL)
 
-starting_match_id = FIRST_MATCH_ID['SEASON2015'] # first match to dump
+starting_match_id = STARTING_MATCH_ID # first match to dump
 n_matches = 10000 # total matches to dump
 
 def isClassicMatch(match):
