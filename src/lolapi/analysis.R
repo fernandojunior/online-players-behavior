@@ -225,6 +225,7 @@ analysis.outliers('[19] LargestKillingSpree', data$LargestKillingSpree)
 analysis.outliers('[20] LargestCritStrike', data$LargestCritStrike)
 analysis.outliers('[21] TotalHealAmount', data$TotalHealAmount)
 
+# removendo participantes com large outliers
 data = data[data$Kill < 35, ]
 data = data[data$Assists < 40, ]
 data = data[data$Deaths < 30, ]
@@ -246,15 +247,6 @@ data = data[data$TotalHealAmount < 40000, ]
 
 analysis.outliers('Todos os atributos (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
 
-
-#Since the data attributes are of different varieties their scales are also different. In order to maintain uniform scalability we scale the columns.
-
-data.categorical = data[,1:3] # apenas atributos categoricos
-data.booleans = data[,4:7] # atributos booleanos
-data.numerical = data[, 8:25] # atributos numericos
-data.numerical.scaled = scale(data.numerical)
-
-
 # Calculating variance and storing at the first index in wss
 
 wss <- (nrow(data.numerical)-1)*sum(apply(data.numerical,2,var))
@@ -274,8 +266,7 @@ clusplot(data.numerical[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, label
 fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
 
 
-# removendo matchids com menos de 10 participantes
-
+# verifica se existe um valor x em uma lista l
 contains = function (x, l) {
 	for (i in l)
 		if (x == i)
@@ -316,36 +307,41 @@ matchs_without_participants = function () {
 
 to_be_removed = matchs_without_participants()
 
+# removendo mathcs que nao tem todos os 10 participantes
 data = data[!(data$matchId %in% to_be_removed), ]
 
+write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
+
+#Since the data attributes are of different varieties their scales are also different. In order to maintain uniform scalability we scale the columns.
+# normalizacao os dados numericos 8:25
 data.normalized = cbind(data[,1:3], data[,4:7], scale(data[,8:25]))
 
+# correlacoes dos atributos
 correlations = cor(data.normalized[,4:25])
-
 correlations.rounded = round(correlations, digits=1)
-
 correlations.mod = sqrt(correlations.rounded * correlations.rounded)
-
 write.csv(correlations.mod, file = "analysis/correlations_filtered_mod.csv", sep =",")
 
+# dados tratados (sem diagonal e header) das correlacoes para o boxplot
 correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv', header=FALSE)
 
+# boxplot das correlacoes
 analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE) # apenas numericos
 
-# reducao atributos
-
+# reducao atributos com base na analise das correlacoes
 data.reduzido = data.normalized[,4:25]
 data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
 
+# clusterizando dados
 ldata = data.reduzido
 
 wss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
 
 max = 50
 
-for(i in 2:max)wss[i]<- sum(fit=kmeans(ldata,centers=i,max)$withinss)
+for(i in 2:max)wss[i]<- sum(fit=kmeans(ldata,centers=i,max, algorithm='Lloyd')$withinss)
 
-plot(1:max,wss,type="b",main="max clusters",xlab="no. of cluster",ylab="with clsuter sum of squares")
+plot(1:max,wss,type="b",main="k clusters",xlab="no. of cluster",ylab="with clsuter sum of squares")
 
 fit <- kmeans(ldata, 11, algorithm='Lloyd')
 
@@ -359,3 +355,41 @@ clusplot(ldata[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, line
 
 fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
 
+
+library("scatterplot3d")
+
+scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 55, color = fit$cluster)
+
+scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
+
+# most cor: goldEarned, totalDamageDealt, minionsKilled
+scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
+
+# dispersao com cluster
+plot(ldata,col=fit$cluster,pch=15)
+
+# dispersao apenas mais correlacionados
+plot(ldata[,c(3,4,9)],col=fit$cluster,pch=15)
+
+# mapeando participantes aos matches
+ldata2 = cbind(data[, c(1,2,3,4)], ldata, cluster)
+
+# dispersao com cluster dos participantes perdedores
+perdedores = ldata2[ldata2$Win == 0,5:(ncol(ldata2))]
+plot(perdedores[,c(3,4,9)],col=perdedores$cluster,pch=15)
+
+# dispersao com cluster dos participantes perdedores
+vencedores = ldata2[ldata2$Win == 1,5:(ncol(ldata2))]
+plot(vencedores[,c(3,4,9)],col=vencedores$cluster,pch=15)
+
+# scatterplot most cor dos perdedores
+scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
+
+# corrigido
+scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
+
+
+scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
+
+# corrigido
+scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
