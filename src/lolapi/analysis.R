@@ -179,81 +179,72 @@ data = read.csv("data/ranked_matches_2015_ong_features.csv")
 #selecting only numerical data and removing ac_id column
 # First check the complete set of components for outliers
 boxplot(data[, 8:25]) # apenas numericos
+boxplot(data[, 4:25]) # apenas numericos
 
 # As we can see from the above plots that avg_sal,unemp_rate and loan amount has some outliers in the data. Let’s analyze all these three individually.
 
-boxplot(data$Kills)
-plot(data$Kills)
+analysis.outliers = function (title, data, scatterplot=TRUE, names=FALSE) {
+	title = paste(title, "Boxplot")
+	filename = paste("analysis/outliers/", title, ".png", sep="")
+	png(file=filename) # abrindo "cursor"
+
+	if (names == TRUE)
+		boxplot(data, main=title, names=c(1:ncol(data)))
+	else
+		boxplot(data, main=title)
+	dev.off() # "fechando" arquivo
+
+	if(scatterplot == TRUE) {
+		title = paste(title, "Scatterplot")
+		filename = paste("analysis/outliers/", title, ".png", sep="")
+		png(file=filename) # abrindo "cursor"
+		plot(data, main=title)
+		dev.off() # "fechando" arquivo
+	}
+	
+}
+
+analysis.outliers('Todos os atributos', data[, 4:25], FALSE, TRUE) # apenas numericos
+
+analysis.outliers('[4] Kills', data$Kills)
+analysis.outliers('[5] Assists', data$Assists)
+analysis.outliers('[6] Deaths', data$Deaths)
+analysis.outliers('[7] GoldEarned', data$GoldEarned)
+analysis.outliers('[8] TotalDamageDealt', data$TotalDamageDealt)
+analysis.outliers('[9] MagicDamageDealt', data$MagicDamageDealt)
+analysis.outliers('[10] PhysicalDamageDealt', data$PhysicalDamageDealt)
+analysis.outliers('[11] TotalDamageDealtToChampions', data$TotalDamageDealtToChampions)
+analysis.outliers('[12] TotalDamageTaken', data$TotalDamageTaken)
+analysis.outliers('[13] MinionsKilled', data$MinionsKilled)
+analysis.outliers('[14] NeutralMinionsKilled', data$NeutralMinionsKilled)
+analysis.outliers('[15] CrowdControl', data$CrowdControl)
+analysis.outliers('[16] WardsPlaced', data$WardsPlaced)
+analysis.outliers('[17] TowerKills', data$TowerKills)
+analysis.outliers('[18] LargestMultiKill', data$LargestMultiKill)
+analysis.outliers('[19] LargestKillingSpree', data$LargestKillingSpree)
+analysis.outliers('[20] LargestCritStrike', data$LargestCritStrike)
+analysis.outliers('[21] TotalHealAmount', data$TotalHealAmount)
+
 data = data[data$Kill < 35, ]
-
-boxplot(data$Assists)
-plot(data$Assists)
-data = data[data$Assists < 45, ]
-
-boxplot(data$Deaths)
-plot(data$Deaths)
+data = data[data$Assists < 40, ]
 data = data[data$Deaths < 30, ]
-
-boxplot(data$GoldEarned)
-plot(data$GoldEarned)
-data = data[data$GoldEarned < 27500, ]
-
-boxplot(data$TotalDamageDealt)
-plot(data$TotalDamageDealt)
-data = data[data$TotalDamageDealt < 550000, ]
-
-boxplot(data$MagicDamageDealt)
-plot(data$MagicDamageDealt)
-data = data[data$MagicDamageDealt < 400000, ]
-
-boxplot(data$PhysicalDamageDealt)
-plot(data$PhysicalDamageDealt)
-data = data[data$PhysicalDamageDealt < 500000, ]
-
-boxplot(data$TotalDamageDealtToChampions)
-plot(data$TotalDamageDealtToChampions)
-data = data[data$TotalDamageDealtToChampions < 95899, ]
-
-boxplot(data$TotalDamageTaken)
-plot(data$TotalDamageTaken)
-data = data[data$TotalDamageTaken < 90000, ]
-
-boxplot(data$MinionsKilled)
-plot(data$MinionsKilled)
-data = data[data$MinionsKilled < 450, ]
-
-boxplot(data$NeutralMinionsKilled)
-plot(data$NeutralMinionsKilled)
-data = data[data$NeutralMinionsKilled < 150, ]
-
-boxplot(data$CrowdControl)
-plot(data$CrowdControl)
-data = data[data$CrowdControl < 12500, ]
-
-boxplot(data$WardsPlaced)
-plot(data$WardsPlaced)
-data = data[data$WardsPlaced < 500, ]
-data = data[data$WardsPlaced < 150, ]
+data = data[data$GoldEarned < 26250, ]
+data = data[data$TotalDamageDealt < 500000, ]
+data = data[data$MagicDamageDealt < 350000, ]
+data = data[data$PhysicalDamageDealt < 450000, ]
+data = data[data$TotalDamageDealtToChampions < 80000, ]
+data = data[data$TotalDamageTaken < 80000, ]
+data = data[data$MinionsKilled < 400, ]
+data = data[data$NeutralMinionsKilled < 125, ]
+data = data[data$CrowdControl < 10000, ]
 data = data[data$WardsPlaced < 110, ]
-
-boxplot(data$TowerKills)
-plot(data$TowerKills)
 data = data[data$TowerKills < 9, ]
+data = data[data$LargestMultiKill < 6, ]
+data = data[data$LargestKillingSpree < 21, ]
+data = data[data$LargestCritStrike < 2500, ]
+data = data[data$TotalHealAmount < 40000, ]
 
-boxplot(data$LargestMultiKill)
-plot(data$LargestMultiKill)
-
-boxplot(data$LargestKillingSpree)
-plot(data$LargestKillingSpree)
-data = data[data$LargestKillingSpree < 22, ]
-
-boxplot(data$LargestCritStrike)
-plot(data$LargestCritStrike)
-data = data[data$LargestCritStrike < 2600, ]
-
-boxplot(data$TotalHealAmount)
-plot(data$TotalHealAmount)
-data = data[data$TotalHealAmount < 50000, ]
+analysis.outliers('Todos os atributos (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
 
 
 #Since the data attributes are of different varieties their scales are also different. In order to maintain uniform scalability we scale the columns.
@@ -281,3 +272,90 @@ fit <- kmeans(data.numerical.scaled[1:200,],4)
 clusplot(data.numerical[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 
 fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
+
+
+# removendo matchids com menos de 10 participantes
+
+contains = function (x, l) {
+	for (i in l)
+		if (x == i)
+			return(TRUE)
+	return(FALSE)
+}
+
+# retorna matches que nao tem todos os participantes (<10) ...
+matchs_without_participants = function () {
+
+	# matches to be removed
+	to_be_removed = c()
+
+	# matches already verified
+	already_verified = c()
+
+	for(i in c(1:nrow(data))){
+
+	    participant = data[i,]
+	    matchId = participant$matchId
+
+	    if(!contains(matchId, already_verified)) {
+
+	    	already_verified = c(already_verified, matchId)
+
+		    total_participants = nrow(data[data$matchId == matchId,])
+
+		    if (total_participants != 10)
+		    	to_be_removed = c(to_be_removed, matchId)
+
+	    }
+
+	}
+
+	return(to_be_removed)
+	
+}
+
+to_be_removed = matchs_without_participants()
+
+data = data[!(data$matchId %in% to_be_removed), ]
+
+data.normalized = cbind(data[,1:3], data[,4:7], scale(data[,8:25]))
+
+correlations = cor(data.normalized[,4:25])
+
+correlations.rounded = round(correlations, digits=1)
+
+correlations.mod = sqrt(correlations.rounded * correlations.rounded)
+
+write.csv(correlations.mod, file = "analysis/correlations_filtered_mod.csv", sep =",")
+
+correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv', header=FALSE)
+
+analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE) # apenas numericos
+
+# reducao atributos
+
+data.reduzido = data.normalized[,4:25]
+data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
+
+ldata = data.reduzido
+
+wss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
+
+max = 50
+
+for(i in 2:max)wss[i]<- sum(fit=kmeans(ldata,centers=i,max)$withinss)
+
+plot(1:max,wss,type="b",main="max clusters",xlab="no. of cluster",ylab="with clsuter sum of squares")
+
+fit <- kmeans(ldata, 11, algorithm='Lloyd')
+
+library(cluster)
+
+fit <- kmeans(ldata, 4, algorithm='Lloyd')
+clusplot(ldata[1:80,], fit$cluster[1:80], color=FALSE, shade=TRUE, labels=2, lines=0)
+
+fit <- kmeans(ldata[1:200,],4)
+clusplot(ldata[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
+
+fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
+
