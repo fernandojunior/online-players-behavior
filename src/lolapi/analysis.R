@@ -332,9 +332,13 @@ analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRU
 data.reduzido = data.normalized[,4:25]
 data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
 
+# removendo atr. win
+data.reduzido = data.reduzido[,2:ncol(data.reduzido)]
+
 # clusterizando dados
 ldata = data.reduzido
 
+# Calculating variance and storing at the first index in wss
 wss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
 
 max = 50
@@ -386,10 +390,104 @@ plot(vencedores[,c(3,4,9)],col=vencedores$cluster,pch=15)
 scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
 # corrigido
-scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
+scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
 
 scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # corrigido
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
+
+# diferentes k para analise
+fit = kmeans(ldata, 11, algorithm='Lloyd')
+fit2 = kmeans(ldata, 11, algorithm='Lloyd', iter.max=150)
+fit3 = kmeans(ldata, 8, algorithm='Lloyd')
+fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
+
+# gravando fits para uso posterior
+write.csv(fit$cluster, file = "analysis/cluster/testes/fit$cluster.csv")
+write.csv(fit2$cluster, file = "analysis/cluster/testes/fit2$cluster.csv")
+write.csv(fit3$cluster, file = "analysis/cluster/testes/fit3$cluster.csv")
+write.csv(fit4$cluster, file = "analysis/cluster/testes/fit4$cluster.csv")
+
+write.csv(fit$centers, file = "analysis/cluster/testes/fit$centers.csv")
+write.csv(fit2$centers, file = "analysis/cluster/testes/fit2$centers.csv")
+write.csv(fit3$centers, file = "analysis/cluster/testes/fit3$centers.csv")
+write.csv(fit4$centers, file = "analysis/cluster/testes/fit4$centers.csv")
+
+write.csv(fit$size, file = "analysis/cluster/testes/fit$size.csv")
+write.csv(fit2$size, file = "analysis/cluster/testes/fit2$size.csv")
+write.csv(fit3$size, file = "analysis/cluster/testes/fit3$size.csv")
+write.csv(fit4$size, file = "analysis/cluster/testes/fit4$size.csv")
+
+write.csv(fit$totss, file = "analysis/cluster/testes/fit$totss.csv")
+write.csv(fit2$totss, file = "analysis/cluster/testes/fit2$totss.csv")
+write.csv(fit3$totss, file = "analysis/cluster/testes/fit3$totss.csv")
+write.csv(fit4$totss, file = "analysis/cluster/testes/fit4$totss.csv")
+
+write.csv(fit$tot.withinss, file = "analysis/cluster/testes/fit$tot.withinss.csv")
+write.csv(fit2$tot.withinss, file = "analysis/cluster/testes/fit2$tot.withinss.csv")
+write.csv(fit3$tot.withinss, file = "analysis/cluster/testes/fit3$tot.withinss.csv")
+write.csv(fit4$tot.withinss, file = "analysis/cluster/testes/fit4$tot.withinss.csv")
+
+write.csv(fit$withinss, file = "analysis/cluster/testes/fit$withinss.csv")
+write.csv(fit2$withinss, file = "analysis/cluster/testes/fit2$withinss.csv")
+write.csv(fit3$withinss, file = "analysis/cluster/testes/fit3$withinss.csv")
+write.csv(fit4$withinss, file = "analysis/cluster/testes/fit4$withinss.csv")
+
+write.csv(fit$betweenss, file = "analysis/cluster/testes/fit$betweenss.csv")
+write.csv(fit2$betweenss, file = "analysis/cluster/testes/fit2$betweenss.csv")
+write.csv(fit3$betweenss, file = "analysis/cluster/testes/fit3$betweenss.csv")
+write.csv(fit4$betweenss, file = "analysis/cluster/testes/fit4$betweenss.csv")
+
+write.csv(fit$iter, file = "analysis/cluster/testes/fit$iter.csv")
+write.csv(fit2$iter, file = "analysis/cluster/testes/fit2$iter.csv")
+write.csv(fit3$iter, file = "analysis/cluster/testes/fit3$iter.csv")
+write.csv(fit4$iter, file = "analysis/cluster/testes/fit4$iter.csv")
+
+write.csv(fit$ifault, file = "analysis/cluster/testes/fit$ifault.csv")
+write.csv(fit2$ifault, file = "analysis/cluster/testes/fit2$ifault.csv")
+write.csv(fit3$ifault, file = "analysis/cluster/testes/fit3$ifault.csv")
+write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
+
+$ fit = kmeans(ldata, 11, algorithm='Lloyd')
+ (between_SS / total_SS =  61.2 %)
+Warning: did *not* converge in specified number of iterations
+
+$ fit2 =  kmeans(ldata, 11, algorithm='Lloyd', iter.max=150)
+ (between_SS / total_SS =  61.9 %)
+
+$ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
+ (between_SS / total_SS =  57.2 %)
+Warning: did *not* converge in specified number of iterations
+
+$ fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
+ (between_SS / total_SS =  57.7 %)
+
+clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
+
+# dispersao com cluster
+plot(ldata,col=fit4$cluster,pch=15)
+
+# dispersao apenas mais correlacionados
+plot(ldata[,c(3,4,9)],col=fit4$cluster,pch=15)
+
+
+Cluster = fit4$cluster
+
+ldata2 = cbind(data[, c(1,2,3,4)], ldata, Cluster)
+
+perdedores = ldata2[ldata2$Win == 0, 5:(ncol(ldata2))]
+plot(perdedores[,c(3,4,9)],col=perdedores$Cluster,pch=15)
+
+# dispersao com cluster dos participantes perdedores
+vencedores = ldata2[ldata2$Win == 1,5:(ncol(ldata2))]
+plot(vencedores[,c(3,4,9)],col=vencedores$Cluster,pch=15)
+
+library("scatterplot3d")
+
+scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit4$cluster, type = "h", angle = 95, color = fit4$cluster)
+
+scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$Cluster, type = "h", angle = 95, color = perdedores$Cluster)
+
+scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$Cluster, type = "h", angle = 95, color = vencedores$Cluster)
