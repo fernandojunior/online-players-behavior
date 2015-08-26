@@ -491,3 +491,60 @@ scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit4$cluster, typ
 scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$Cluster, type = "h", angle = 95, color = perdedores$Cluster)
 
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$Cluster, type = "h", angle = 95, color = vencedores$Cluster)
+
+
+
+# sum of squared cluster 1
+sum(apply(classified_data[classified_data$Cluster==1,c(1:15)],2,var)) * (fit4$size[1] - 1)
+
+# sum of squared hole data
+wss = (nrow(ldata)-1) * sum(apply(mydata,2,var))
+
+
+ss = function (input, cluster) {
+	x = input[input$Cluster == cluster, ]
+	s = nrow(x)
+	v = sum(apply(x,2,var)) 
+	ssd = ((s-1) * v) 
+	return(c(s, ssd, v))
+}
+
+ss.vencedores = c('size', 'sun of sq', 'var')
+
+for(i in c(1:8)) {
+	ss.vencedores = rbind(i=ss.vencedores, ss(vencedores, i))
+}
+
+#3739 41316.9371603666 11.0532202141163
+#4281 19268.3432556076 4.50194935878682
+#5223 49015.2318475736 9.38629487697695
+#5179 15236.4693924323 2.94253947323915
+#4035 27864.5755564661 6.90743072792912
+#3691 18353.4704144465 4.97384022071721
+#5835 46343.2471402998 7.94364880704487
+#9667 52208.3269817618 5.40123391079679
+
+ss.perdedores = c('size', 'sun of sq', 'var')
+
+for(i in c(1:8)) {
+	ss.perdedores = rbind(i=ss.perdedores, ss(perdedores, i))
+}
+
+#1674 16687.9878413122 9.97488812989375 
+#3772 16583.1388273172 4.39754410695233 
+#3217 25773.5785903237 8.01417244723994 
+#11838 34719.6991407263 2.9331502188668  
+#6453 39535.8716607882 6.12769244587541 
+#10711 51691.7332768328 4.82649236945218 
+#418 2547.04791512543 6.10802857344227 
+#3567 14730.9541129319 4.13094618982947 
+
+for(i in c(1:8)) {
+	print(fit4$withinss[i] / (fit4$size[i]-1))
+}
+
+# h0: mean ==
+aggregate(Kills ~ Cluster, perdedores, mean)
+
+
+aggregate(. ~ Cluster, perdedores, mean) - aggregate(. ~ Cluster, ldata, mean)
