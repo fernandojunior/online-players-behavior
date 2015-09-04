@@ -465,6 +465,7 @@ $ fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
  (between_SS / total_SS =  57.7 %)
 
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
+legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
 # dispersao com cluster
 plot(ldata,col=fit4$cluster,pch=15)
@@ -548,3 +549,145 @@ aggregate(Kills ~ Cluster, perdedores, mean)
 
 
 aggregate(. ~ Cluster, perdedores, mean) - aggregate(. ~ Cluster, ldata, mean)
+
+
+### H1-0: Não existe diferença entre as distribuições dos clusters encontrados no modelo de aprendizagem
+
+data.normalized_relative_weight = data[,4:25]
+data.normalized_relative_weight = cbind(data.normalized_relative_weight[,c(1,5)], data.normalized_relative_weight[,7:14], data.normalized_relative_weight[,17:21])
+data.normalized_relative_weight = data.normalized_relative_weight[,2:ncol(data.normalized_relative_weight)]
+
+data.normalized_relative_weight = data.matrix(data.normalized_relative_weight)
+data.normalized_relative_weight = data.normalized_relative_weight / sum(data.normalized_relative_weight)
+
+ttt = data.normalized_relative_weight + 0.0
+cbind(
+   ttt[,1]/sum(ttt[,1]),
+   ttt[,2]/sum(ttt[,2]),
+   ttt[,3]/sum(ttt[,3]),
+   ttt[,4]/sum(ttt[,4]),
+   ttt[,5]/sum(ttt[,5]),
+   ttt[,6]/sum(ttt[,6]),
+   ttt[,7]/sum(ttt[,7]),
+   ttt[,8]/sum(ttt[,8]),
+   ttt[,9]/sum(ttt[,9]),
+   ttt[,10]/sum(ttt[,10]),
+   ttt[,11]/sum(ttt[,11]),
+   ttt[,12]/sum(ttt[,12]),
+   ttt[,13]/sum(ttt[,13]),
+   ttt[,14]/sum(ttt[,14])
+)
+
+data.normalized_relative_weight = cbind(
+   ttt[,1]/sum(ttt[,1]),
+   ttt[,2]/sum(ttt[,2]),
+   ttt[,3]/sum(ttt[,3]),
+   ttt[,4]/sum(ttt[,4]),
+   ttt[,5]/sum(ttt[,5]),
+   ttt[,6]/sum(ttt[,6]),
+   ttt[,7]/sum(ttt[,7]),
+   ttt[,8]/sum(ttt[,8]),
+   ttt[,9]/sum(ttt[,9]),
+   ttt[,10]/sum(ttt[,10]),
+   ttt[,11]/sum(ttt[,11]),
+   ttt[,12]/sum(ttt[,12]),
+   ttt[,13]/sum(ttt[,13]),
+   ttt[,14]/sum(ttt[,14])
+)
+
+# dados normalizados pelo peso relativo
+kruskal.test(rowSums(data.normalized_relative_weight), fit4$cluster)
+
+	Kruskal-Wallis rank sum test
+
+data:  rowSums(data.normalized_relative_weight) and fit4$cluster
+Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
+
+# dados normalizado z-score
+
+kruskal.test(rowSums(ldata), fit4$cluster)
+
+	Kruskal-Wallis rank sum test
+
+data:  rowSums(ldata) and fit4$cluster
+Kruskal-Wallis chi-squared = 70036, df = 7, p-value < 2.2e-16
+
+# analisando pela soma dos quadrados
+wilcox.test(fit4$withinss, conf.int=T)
+
+	Wilcoxon signed rank test
+
+data:  fit4$withinss
+V = 36, p-value = 0.007813
+alternative hypothesis: true location is not equal to 0
+95 percent confidence interval:
+ 49032.26 73588.02
+sample estimates:
+(pseudo)median 
+      62429.24
+
+### H1-1: Para cada cluster encontrado, existe diferença entre as médias dos jogadores vitoriosos e perdedores
+
+x = rowSums(vencedores[ vencedores$Cluster == 1,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 1,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 3275300, p-value = 0.006096
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 2,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 2,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 8345600, p-value = 0.00907
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 3,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 3,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 9178000, p-value = 0.0000000000008951
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 4,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 4,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 30907000, p-value = 0.3918
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 5,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 5,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 14623000, p-value < 0.00000000000000022
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 6,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 6,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 23422000, p-value < 0.00000000000000022
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 7,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 7,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 1088700, p-value = 0.0002433
+alternative hypothesis: true location shift is not equal to 0
+
+x = rowSums(vencedores[ vencedores$Cluster == 8,  ][,1:14])
+y = rowSums(perdedores[ perdedores$Cluster == 8,  ][,1:14])
+wilcox.test(x , y, paired=FALSE)
+	Wilcoxon rank sum test with continuity correction
+data:  x and y
+W = 17823000, p-value = 0.002865
+alternative hypothesis: true location shift is not equal to 0
