@@ -626,7 +626,7 @@ sample estimates:
 (pseudo)median 
       62429.24
 
-### H1-1: Para cada cluster encontrado, existe diferença entre as médias dos jogadores vitoriosos e perdedores
+### H1-1: Para cada cluster encontrado, existe diferença entre as medianas dos jogadores vitoriosos e perdedores
 
 x = rowSums(vencedores[ vencedores$Cluster == 1,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 1,  ][,1:14])
