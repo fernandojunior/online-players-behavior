@@ -63,7 +63,7 @@ analysis.outliers('[19] LargestKillingSpree', data$LargestKillingSpree)
 analysis.outliers('[20] LargestCritStrike', data$LargestCritStrike)
 analysis.outliers('[21] TotalHealAmount', data$TotalHealAmount)
 
-# removendo participantes com large outliers
+# removing participants with 'large' outliers
 data = data[data$Kill < 35, ]
 data = data[data$Assists < 40, ]
 data = data[data$Deaths < 30, ]
@@ -85,40 +85,23 @@ data = data[data$TotalHealAmount < 40000, ]
 
 analysis.outliers('Todos os atributos (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
 
-# Calculating variance and storing at the first index in wss
-
-wss <- (nrow(data.numerical)-1)*sum(apply(data.numerical,2,var))
-
-for(i in 2:50)wss[i]<- sum(fit=kmeans(data.numerical,centers=i,50)$withinss)
-plot(1:50,wss,type="b",main="50 clusters",xlab="no. of cluster",ylab="with clsuter sum of squares")
-
-fit <- kmeans(data.numerical.scaled[1:1000,],2)
-
-library(cluster)
-
-clusplot(data.numerical[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
-
-fit <- kmeans(data.numerical.scaled[1:200,],4)
-clusplot(data.numerical[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
-
-fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
-
-
-# verifica se existe um valor x em uma lista l
-contains = function (x, l) {
-	for (i in l)
-		if (x == i)
-			return(TRUE)
-	return(FALSE)
-}
-
-# retorna matches que nao tem todos os participantes (<10) ...
+# Apos a remocao dos participantes com large outilies
+# alguns matches ficaram com menos de 10 participantes ...
+# Essa funcao retorna matches que nao tem todos os participantes (<10) ...
 matchs_without_participants = function () {
 
-	# matches to be removed
+    # Funcao que verifica se existe um objeto x em uma lista l
+    contains = function (x, l) {
+        for (i in l)
+            if (x == i)
+			    return(TRUE)
+        return(FALSE)
+    }
+
+	# list of matches without all participants
 	to_be_removed = c()
 
-	# matches already verified
+	# list of match ids already verified
 	already_verified = c()
 
 	for(i in c(1:nrow(data))){
@@ -128,8 +111,10 @@ matchs_without_participants = function () {
 
 	    if(!contains(matchId, already_verified)) {
 
+	    	# merge
 	    	already_verified = c(already_verified, matchId)
 
+	    	# verifying number of participants in match
 		    total_participants = nrow(data[data$matchId == matchId,])
 
 		    if (total_participants != 10)
@@ -143,14 +128,14 @@ matchs_without_participants = function () {
 	
 }
 
-to_be_removed = matchs_without_participants()
+# removendo matches que nao tem todos os 10 participantes
+data = data[!(data$matchId %in% matchs_without_participants()), ]
 
-# removendo mathcs que nao tem todos os 10 participantes
-data = data[!(data$matchId %in% to_be_removed), ]
-
+# persisting data
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 
-#Since the data attributes are of different varieties their scales are also different. In order to maintain uniform scalability we scale the columns.
+# Since the data attributes are of different varieties their scales are also different. 
+# In order to maintain uniform scalability we scale the columns.
 # normalizacao os dados numericos 8:25
 data.normalized = cbind(data[,1:3], data[,4:7], scale(data[,8:25]))
 
@@ -166,24 +151,35 @@ correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv'
 # boxplot das correlacoes
 analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE) # apenas numericos
 
-# reducao atributos com base na analise das correlacoes
-data.reduzido = data.normalized[,4:25]
+# apenas numericos: booleans + integers
+data.reduzido = data.normalized[,4:25] 
+# apenas atributos numericos com base na analise de correlacoes
 data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
 
-# removendo atr. win
+# removendo atr. win, pois eh boolean
 data.reduzido = data.reduzido[,2:ncol(data.reduzido)]
 
-# clusterizando dados
+# renomeando para melhor manipulacao
 ldata = data.reduzido
 
-# Calculating variance and storing at the first index in wss
+# Calculating total sum of squares and storing at the first index in wss
 wss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
 
+# max value of k
 max = 50
 
-for(i in 2:max)wss[i]<- sum(fit=kmeans(ldata,centers=i,max, algorithm='Lloyd')$withinss)
+# Calculating the sum of squares for each k == i and storing in wss[i]
+for(i in 2 : max)
+    wss[i] <- sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
 
-plot(1:max,wss,type="b",main="k clusters",xlab="no. of cluster",ylab="with clsuter sum of squares")
+# Analysing the 'knees' of the plot to find the ideal k number of cluster
+plot(
+    1:max,
+    wss,
+    type = "b", 
+    main = "k clusters", 
+    xlab = "no. of cluster", 
+    ylab = "within cluster sum of squares")
 
 fit <- kmeans(ldata, 11, algorithm='Lloyd')
 
@@ -227,13 +223,13 @@ plot(vencedores[,c(3,4,9)],col=vencedores$cluster,pch=15)
 # scatterplot most cor dos perdedores
 scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
-# corrigido
+# corrigido: apenas inteiros ... Win nao considerado
 scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
 
 scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
-# corrigido
+# corrigido: apenas inteiros ... Win nao considerado
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # diferentes k para analise
@@ -339,13 +335,13 @@ sum(apply(classified_data[classified_data$Cluster==1,c(1:15)],2,var)) * (fit4$si
 # sum of squared hole data
 wss = (nrow(ldata)-1) * sum(apply(mydata,2,var))
 
-
+# within sum of squares
 ss = function (input, cluster) {
 	x = input[input$Cluster == cluster, ]
-	s = nrow(x)
-	v = sum(apply(x,2,var)) 
-	ssd = ((s-1) * v) 
-	return(c(s, ssd, v))
+	s = nrow(x) # size
+	v = sum(apply(x,2,var))  # variance
+	ssd = ((s-1) * v) # within sum of square
+	return(c(s, ssd, v)) # returns the values
 }
 
 ss.vencedores = c('size', 'sun of sq', 'var')
@@ -442,7 +438,6 @@ data:  rowSums(data.normalized_relative_weight) and fit4$cluster
 Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
 
 # dados normalizado z-score
-
 kruskal.test(rowSums(ldata), fit4$cluster)
 
 	Kruskal-Wallis rank sum test
