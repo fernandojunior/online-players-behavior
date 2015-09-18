@@ -209,7 +209,7 @@ plot(ldata,col=fit$cluster,pch=15)
 # dispersao apenas mais correlacionados
 plot(ldata[,c(3,4,9)],col=fit$cluster,pch=15)
 
-# mapeando participantes aos matches
+# merge com dados nominais sobre os participantes, stats, e cluster
 ldata2 = cbind(data[, c(1,2,3,4)], ldata, cluster)
 
 # dispersao com cluster dos participantes perdedores
@@ -223,13 +223,13 @@ plot(vencedores[,c(3,4,9)],col=vencedores$cluster,pch=15)
 # scatterplot most cor dos perdedores
 scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
-# corrigido: apenas inteiros ... Win nao considerado
+# corrigido: apenas inteiros ... attr cluster nao considerado
 scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
 
 scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
-# corrigido: apenas inteiros ... Win nao considerado
+# corrigido: apenas inteiros ... attr cluster nao considerado
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # diferentes k para analise
