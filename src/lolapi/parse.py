@@ -9,7 +9,7 @@ from config import DUMP_DIR, TRAINING_DIR
 
 def clnstr(value):
     """
-    Convert a value of any type to string. 
+    Convert a value of any type to string.
     Boolean values are converted to int values: 1 (True), 0 (False)
     """
     return clnstr(int(value)) if type(value) == type(True) else str(value)
@@ -30,7 +30,7 @@ def open_match(path):
 trainingData = open(TRAINING_DIR + 'ranked_matches_2015_ong_features.csv','w+')
 
 # ONG et al. attributes
-headers = '"matchId","summonerId","championId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
+headers = '"matchId","matchCreation","summonerId","championId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
     '"Deaths","GoldEarned","TotalDamageDealt","MagicDamageDealt","PhysicalDamageDealt",' \
     '"TotalDamageDealtToChampions","TotalDamageTaken","MinionsKilled","NeutralMinionsKilled",' \
     '"CrowdControl","WardsPlaced","TowerKills","LargestMultiKill","LargestKillingSpree","LargestCritStrike","TotalHealAmount"'
@@ -59,6 +59,7 @@ for f in os.listdir(DUMP_DIR): # list matches
             row = csvrow(
                 # General Info -- not used for clustering
                 data['matchId'],
+                data['matchCreation'],
                 data['participantIdentities'][i]['player']['summonerId'],
                 participant['championId'],
 
