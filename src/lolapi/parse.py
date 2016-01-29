@@ -7,50 +7,76 @@ import json
 import os
 from config import DUMP_DIR, TRAINING_DIR
 
+
 def clnstr(value):
     """
     Convert a value of any type to string.
     Boolean values are converted to int values: 1 (True), 0 (False)
     """
-    return clnstr(int(value)) if type(value) == type(True) else str(value)
+    return clnstr(int(value)) if isinstance(value, bool) else str(value)
+
 
 def csvrow(*args):
     """
-    Convert a list of arguments (any type) into a comma separated value string in python.
+    Convert a list of arguments (any type) into a comma separated value string
+    in python.
     """
     return ",".join(map(clnstr, args))
+
 
 def open_match(path):
     """
     Open a specific match (.json) from the path
     """
-    with open(path) as f: # open match
-        return json.load(f) # read match
+    with open(path) as f:  # open match
+        return json.load(f)  # read match
 
-trainingData = open(TRAINING_DIR + 'ranked_matches_2015_ong_features.csv','w+')
+filename = TRAINING_DIR + 'ranked_matches_2015_ong_features.csv'
+trainingData = open(filename, 'w+')
 
-# ONG et al. attributes
-headers = '"matchId","matchCreation","summonerId","championId","Win","FirstBlood","FirstTower","FirstTowerAssist","Kills","Assists",'\
-    '"Deaths","GoldEarned","TotalDamageDealt","MagicDamageDealt","PhysicalDamageDealt",' \
-    '"TotalDamageDealtToChampions","TotalDamageTaken","MinionsKilled","NeutralMinionsKilled",' \
-    '"CrowdControl","WardsPlaced","TowerKills","LargestMultiKill","LargestKillingSpree","LargestCritStrike","TotalHealAmount"'
+# Based on ONG et al. (2015) attributes
+headers = ','.join('\"%s\"' % header for header in [
+    "matchId",
+    "matchCreation",
+    "summonerId",
+    "championId",
+    "Win",
+    "FirstBlood",
+    "FirstTower",
+    "FirstTowerAssist",
+    "Kills",
+    "Assists",
+    "Deaths",
+    "GoldEarned",
+    "TotalDamageDealt",
+    "MagicDamageDealt",
+    "PhysicalDamageDealt",
+    "TotalDamageDealtToChampions",
+    "TotalDamageTaken",
+    "MinionsKilled",
+    "NeutralMinionsKilled",
+    "CrowdControl",
+    "WardsPlaced",
+    "TowerKills",
+    "LargestMultiKill",
+    "LargestKillingSpree",
+    "LargestCritStrike",
+    "TotalHealAmount"
+])
 
 trainingData.write(headers.strip(' \t\n\r'))
 trainingData.write('\n')
 
-for f in os.listdir(DUMP_DIR): # list matches
-    if f.find('json') != -1: # each match must be a json file
+for f in os.listdir(DUMP_DIR):  # list matches
+    if f.find('json') != -1:  # each match must be a json file
 
         data = open_match(DUMP_DIR+f)
 
-        # ONG et al. attributes are based only participants (players of match) data
-        for i in range(0,10):  # printing loop by participant
+        # looking up by participants. Each match has 10 participants
+        for i in range(10):  # printing loop by participant
 
             # current participant
             participant = data['participants'][i]
-
-            # team array index (0 or 1) based on teamId of current participant
-            team_index = 0 if participant['teamId'] == data['teams'][0]['teamId'] else 1
 
             # participant stats in current match
             stats = participant['stats']
@@ -64,7 +90,7 @@ for f in os.listdir(DUMP_DIR): # list matches
                 participant['championId'],
 
                 # Booleans attributes -- not need be normalized
-                data['teams'][team_index]['winner'],
+                stats['winner'],
                 stats['firstBloodKill'],
                 stats['firstTowerKill'],
                 stats['firstTowerAssist'],
