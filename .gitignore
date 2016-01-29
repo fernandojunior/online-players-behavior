@@ -1,2 +1,4 @@
-src/lolapi/tmp/dump
-src/lolapi/dump
+src/lolapi/dump/
+src/python/
+TODO
+API_KEY
