@@ -183,10 +183,7 @@ analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRU
 data.reduzido = data.normalized[,4:25]
 
 # selecting attributes based on correlation analysis
-data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
-
-# removing win to minimize bias
-data.reduzido = data.reduzido[,2:ncol(data.reduzido)]
+data.reduzido = data.reduzido[, c(5, 7:14, 17: 21)]
 
 # renomeando para melhor manipulacao
 ldata = data.reduzido
@@ -400,8 +397,7 @@ aggregate(Kills ~ Cluster, ldata, mean)
 
 # mean of attributes non-scaled grouped by the found clusters
 tmp = cbind(data.bool, data.numerical)
-tmp = cbind(tmp[,c(1,5)], tmp[,7:14], tmp[,17:21])
-tmp = tmp[,2:ncol(tmp)]
+tmp = tmp[, c(5, 7:14, 17: 21)]
 centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
 write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/fit4$centers_not_scaled.csv")
 
