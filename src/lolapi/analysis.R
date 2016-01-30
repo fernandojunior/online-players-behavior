@@ -3,6 +3,14 @@ library("car")
 
 options(scipen=999)
 
+# total sum of squares of multidimensional X sample data: (n-1) * Var(X)
+sum_of_squares = function (X) {
+	n = nrow(X) # size
+	VarX = sum(apply(X,2,var))  # variance
+	TSS = ((n-1) * VarX) # total sum of square
+	return(c(n, TSS, VarX)) # return the values
+}
+
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
 # Outliers analysis
@@ -21,7 +29,7 @@ boxplot(data[, 8:25]) # only integer data
 # scatterplot: If true, creates a scatter plot of the data and saves into a file
 # names: If true, sets the boxplot names
 analysis.outliers = function (title, data, scatterplot=TRUE, names=FALSE) {
-	
+
 	title = paste(title, "Boxplot")
 	filename = paste("analysis/outliers/", title, ".png", sep="")
 	png(file=filename) # abrindo "cursor"
@@ -39,10 +47,10 @@ analysis.outliers = function (title, data, scatterplot=TRUE, names=FALSE) {
 		plot(data, main=title)
 		dev.off() # "fechando" arquivo
 	}
-	
+
 }
 
-analysis.outliers('Todos os atributos', data[, 4:25], FALSE, TRUE) # apenas numericos
+analysis.outliers('All numerical attributes', data[, 4:25], FALSE, TRUE)
 
 analysis.outliers('[4] Kills', data$Kills)
 analysis.outliers('[5] Assists', data$Assists)
@@ -83,7 +91,7 @@ data = data[data$LargestKillingSpree < 21, ]
 data = data[data$LargestCritStrike < 2500, ]
 data = data[data$TotalHealAmount < 40000, ]
 
-analysis.outliers('Todos os atributos (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
+analysis.outliers('All numerical attributes (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
 
 # Apos a remocao dos participantes com large outilies
 # alguns matches ficaram com menos de 10 participantes ...
@@ -125,64 +133,87 @@ matchs_without_participants = function () {
 	}
 
 	return(to_be_removed)
-	
+
 }
 
 # removendo matches que nao tem todos os 10 participantes
 data = data[!(data$matchId %in% matchs_without_participants()), ]
 
-# persisting data
+# persisting data with outliers softened
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 
-# Since the data attributes are of different varieties their scales are also different. 
-# In order to maintain uniform scalability we scale the columns.
-# normalizacao os dados numericos 8:25
-data.normalized = cbind(data[,1:3], data[,4:7], scale(data[,8:25]))
+# Data split
+# ----------
 
-# correlacoes dos atributos
+# info attributes
+data.info = data[,1:3]
+
+# bool attributes
+data.bool = data[,4:7]
+
+# numerical attributes
+data.numerical = data[,8:25]
+
+# Data normalization
+# ------------------
+
+# Since the data attributes are of different varieties their scales are also different.
+# In order to maintain uniform scalability we scale (z-score) the numerical attributes.
+data.normalized = cbind(data.info, data.bool, scale(data.numerical))
+
+# Correlation analysis
+# --------------------
+
+# correlation between booelean and numerical attributes
 correlations = cor(data.normalized[,4:25])
 correlations.rounded = round(correlations, digits=1)
-correlations.mod = sqrt(correlations.rounded * correlations.rounded)
-write.csv(correlations.mod, file = "analysis/correlations_filtered_mod.csv", sep =",")
+correlations.abs = abs(correlations.rounded)
+write.csv(correlations.abs, file = "analysis/correlations_filtered_mod.csv", sep =",")
 
 # dados tratados (sem diagonal e header) das correlacoes para o boxplot
 correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv', header=FALSE)
 
 # boxplot das correlacoes
-analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE) # apenas numericos
+analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE)
 
-# apenas numericos: booleans + integers
-data.reduzido = data.normalized[,4:25] 
-# apenas atributos numericos com base na analise de correlacoes
+# Attribute selection
+# -------------------
+
+# boolean and numerical attributes
+data.reduzido = data.normalized[,4:25]
+
+# selecting attributes based on correlation analysis
 data.reduzido = cbind(data.reduzido[,c(1,5)], data.reduzido[,7:14], data.reduzido[,17:21])
 
-# removendo atr. win, pois eh boolean
+# removing win to minimize bias
 data.reduzido = data.reduzido[,2:ncol(data.reduzido)]
 
 # renomeando para melhor manipulacao
 ldata = data.reduzido
 
-# Calculating total sum of squares and storing at the first index in wss
-wss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
+# K-means analysis
+# ----------------
+
+# calculating total sum of squares and storing at the first index in wss
+tss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
 
 # max value of k
 max = 50
 
-# Calculating the sum of squares for each k == i and storing in wss[i]
+# calculating the total sum of squares for each k == i and storing in tss[i]
 for(i in 2 : max)
-    wss[i] <- sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
+    tss[i] <- sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
 
 # Analysing the 'knees' of the plot to find the ideal k number of cluster
 plot(
     1:max,
-    wss,
-    type = "b", 
-    main = "k clusters", 
-    xlab = "no. of cluster", 
+    tss,
+    type = "b",
+    main = "k clusters",
+    xlab = "no. of cluster",
     ylab = "within cluster sum of squares")
 
-fit <- kmeans(ldata, 11, algorithm='Lloyd')
-
+# clusplot tests
 library(cluster)
 
 fit <- kmeans(ldata, 4, algorithm='Lloyd')
@@ -193,20 +224,20 @@ clusplot(ldata[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, line
 
 fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
 
-
+# catterplot3d tests
 library("scatterplot3d")
 
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 55, color = fit$cluster)
 
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
 
-# most cor: goldEarned, totalDamageDealt, minionsKilled
+# most cor. 3: goldEarned, 4: totalDamageDealt, 9: minionsKilled
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
 
-# dispersao com cluster
+# scatter plot with classified data
 plot(ldata,col=fit$cluster,pch=15)
 
-# dispersao apenas mais correlacionados
+# only most correlated attributes
 plot(ldata[,c(3,4,9)],col=fit$cluster,pch=15)
 
 # merge com dados nominais sobre os participantes, stats, e cluster
@@ -233,10 +264,20 @@ scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$c
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # diferentes k para analise
+
 fit = kmeans(ldata, 11, algorithm='Lloyd')
+# (between_SS / total_SS =  61.2 %)
+# Warning: did *not* converge in specified number of iterations
+
 fit2 = kmeans(ldata, 11, algorithm='Lloyd', iter.max=150)
+# (between_SS / total_SS =  61.9 %)
+
 fit3 = kmeans(ldata, 8, algorithm='Lloyd')
+# (between_SS / total_SS =  57.2 %)
+# Warning: did *not* converge in specified number of iterations
+
 fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
+# (between_SS / total_SS =  57.7 %)
 
 # gravando fits para uso posterior
 write.csv(fit$cluster, file = "analysis/cluster/testes/fit$cluster.csv")
@@ -284,20 +325,6 @@ write.csv(fit2$ifault, file = "analysis/cluster/testes/fit2$ifault.csv")
 write.csv(fit3$ifault, file = "analysis/cluster/testes/fit3$ifault.csv")
 write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
 
-$ fit = kmeans(ldata, 11, algorithm='Lloyd')
- (between_SS / total_SS =  61.2 %)
-Warning: did *not* converge in specified number of iterations
-
-$ fit2 =  kmeans(ldata, 11, algorithm='Lloyd', iter.max=150)
- (between_SS / total_SS =  61.9 %)
-
-$ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
- (between_SS / total_SS =  57.2 %)
-Warning: did *not* converge in specified number of iterations
-
-$ fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
- (between_SS / total_SS =  57.7 %)
-
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
@@ -319,6 +346,7 @@ plot(perdedores[,c(3,4,9)],col=perdedores$Cluster,pch=15)
 vencedores = ldata2[ldata2$Win == 1,5:(ncol(ldata2))]
 plot(vencedores[,c(3,4,9)],col=vencedores$Cluster,pch=15)
 
+# PCA
 library("scatterplot3d")
 
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit4$cluster, type = "h", angle = 95, color = fit4$cluster)
@@ -327,21 +355,10 @@ scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,
 
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$Cluster, type = "h", angle = 95, color = vencedores$Cluster)
 
-
-
-# sum of squared cluster 1
-sum(apply(classified_data[classified_data$Cluster==1,c(1:15)],2,var)) * (fit4$size[1] - 1)
-
-# sum of squared hole data
-wss = (nrow(ldata)-1) * sum(apply(mydata,2,var))
-
-# within sum of squares
-ss = function (input, cluster) {
-	x = input[input$Cluster == cluster, ]
-	s = nrow(x) # size
-	v = sum(apply(x,2,var))  # variance
-	ssd = ((s-1) * v) # within sum of square
-	return(c(s, ssd, v)) # returns the values
+# within cluster sum of squares
+ss = function (data, cluster) {
+	X = data[data$Cluster == cluster, ]
+	return(sum_of_squares(X))
 }
 
 ss.vencedores = c('size', 'sun of sq', 'var')
@@ -365,27 +382,44 @@ for(i in c(1:8)) {
 	ss.perdedores = rbind(i=ss.perdedores, ss(perdedores, i))
 }
 
-#1674 16687.9878413122 9.97488812989375 
-#3772 16583.1388273172 4.39754410695233 
-#3217 25773.5785903237 8.01417244723994 
-#11838 34719.6991407263 2.9331502188668  
-#6453 39535.8716607882 6.12769244587541 
-#10711 51691.7332768328 4.82649236945218 
-#418 2547.04791512543 6.10802857344227 
-#3567 14730.9541129319 4.13094618982947 
+#1674 16687.9878413122 9.97488812989375
+#3772 16583.1388273172 4.39754410695233
+#3217 25773.5785903237 8.01417244723994
+#11838 34719.6991407263 2.9331502188668
+#6453 39535.8716607882 6.12769244587541
+#10711 51691.7332768328 4.82649236945218
+#418 2547.04791512543 6.10802857344227
+#3567 14730.9541129319 4.13094618982947
 
 for(i in c(1:8)) {
 	print(fit4$withinss[i] / (fit4$size[i]-1))
 }
 
-# h0: mean ==
-aggregate(Kills ~ Cluster, perdedores, mean)
+# mean of Kills attribute grouped by clusters
+aggregate(Kills ~ Cluster, ldata, mean)
 
+# mean of attributes non-scaled grouped by the found clusters
+tmp = cbind(data.bool, data.numerical)
+tmp = cbind(tmp[,c(1,5)], tmp[,7:14], tmp[,17:21])
+tmp = tmp[,2:ncol(tmp)]
+centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
+write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/fit4$centers_not_scaled.csv")
 
-aggregate(. ~ Cluster, perdedores, mean) - aggregate(. ~ Cluster, ldata, mean)
+# TODO
 
+# cluster, participants, winners, losers, winrate (w/(w+l))
+# 1 5413 3739 1674 0.6907445039719194
+# 2 8053 4281 3772 0.5316031292685955
+# 3 8440 5223 3217 0.6188388625592417
+# 4 17017 5179 11838 0.304342716107422
+# 5 10488 4035 6453 0.3847254004576659
+# 6 14402 3691 10711 0.25628384946535204
+# 7 6253 5835 418 0.9331520869982408
+# 8 13234 9667 3567 0.7304669789935015
 
 ### H1-0: Não existe diferença entre as distribuições dos clusters encontrados no modelo de aprendizagem
+
+# normalized relative weight and normalized principal Eigen vector [Kardi Teknomo]
 
 data.normalized_relative_weight = data[,4:25]
 data.normalized_relative_weight = cbind(data.normalized_relative_weight[,c(1,5)], data.normalized_relative_weight[,7:14], data.normalized_relative_weight[,17:21])
@@ -456,7 +490,7 @@ alternative hypothesis: true location is not equal to 0
 95 percent confidence interval:
  49032.26 73588.02
 sample estimates:
-(pseudo)median 
+(pseudo)median
       62429.24
 
 ### H1-1: Para cada cluster encontrado, existe diferença entre as medianas dos jogadores vitoriosos e perdedores
@@ -524,3 +558,9 @@ wilcox.test(x , y, paired=FALSE)
 data:  x and y
 W = 17823000, p-value = 0.002865
 alternative hypothesis: true location shift is not equal to 0
+
+
+# References
+# [Kardi Teknomo] Kardi Teknomo. ANALYTIC HIERARCHY PROCESS (AHP) TUTORIAL. https://docs.google.com/file/d/0BxYU82vErc8xYS1PendBeHlpSkk/edit?usp=sharing
+# http://stats.stackexchange.com/questions/49521/how-to-find-variance-between-multidimensional-points
+# http://www.edureka.co/blog/clustering-on-bank-data-using-r/
