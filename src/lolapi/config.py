@@ -5,9 +5,9 @@ last_match = lambda path: max([int(m.split('.')[0]) for m in listdir(path)])
 
 API_KEY = 'SUA_API_AQUI'
 
-DUMP_DIR = 'lolapi/dump/'
+DUMP_DIR = '/home/fernando/Workspace/riot_api/dump/'
 
-TRAINING_DIR = 'lolapi/data/'
+DATA_DIR = 'data/'
 
 FIRST_MATCH_ID = {
     'SEASON2015': 456157041  # first match of season 2015
