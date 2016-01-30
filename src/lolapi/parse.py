@@ -37,40 +37,48 @@ def load_match(filename):
         return json.load(f)  # read match
 
 filename = 'data.%s.csv' % datetime.now().strftime('%Y%m%d.%H%M%S')
-datafile = open(DATA_DIR + filename, 'w+')
+csvfile = open(DATA_DIR + filename, 'w+')
 
-headers = ','.join('\"%s\"' % header for header in [
+# general info - not used for clustering
+info_attrs = [
     "matchId",
     "matchCreation",
     "summonerId",
     "championId",
-    # the 22 attributes selected by Ong et al. (2015):
-    "Win",
-    "FirstBlood",
-    "FirstTower",
-    "FirstTowerAssist",
-    "Kills",
-    "Assists",
-    "Deaths",
-    "GoldEarned",
-    "TotalDamageDealt",
-    "MagicDamageDealt",
-    "PhysicalDamageDealt",
-    "TotalDamageDealtToChampions",
-    "TotalDamageTaken",
-    "MinionsKilled",
-    "NeutralMinionsKilled",
-    "CrowdControl",
-    "WardsPlaced",
-    "TowerKills",
-    "LargestMultiKill",
-    "LargestKillingSpree",
-    "LargestCritStrike",
-    "TotalHealAmount"
-])
+]
 
-datafile.write(headers)
-datafile.write('\n')
+# the 22 statistical attributes of participants selected by Ong et al. (2015)
+stats_attrs = [
+    # booleans attributes - not need be normalized:
+    "winner",
+    "firstBloodKill",
+    "firstTowerKill",
+    "firstTowerAssist",
+    # numeric attributes:
+    "kills",
+    "assists",
+    "deaths",
+    "goldEarned",
+    "totalDamageDealt",
+    "magicDamageDealt",
+    "physicalDamageDealt",
+    "totalDamageDealtToChampions",
+    "totalDamageTaken",
+    "minionsKilled",
+    "neutralMinionsKilled",
+    "totalTimeCrowdControlDealt",
+    "wardsPlaced",
+    "towerKills",
+    "largestMultiKill",
+    "largestKillingSpree",
+    "largestCriticalStrike",
+    "totalHeal"
+]
+
+headers = ','.join('\"%s\"' % header for header in info_attrs + stats_attrs)
+
+csvfile.write(headers)
+csvfile.write('\n')
 
 for f in os.listdir(DUMP_DIR):  # list matches
 
@@ -79,41 +87,17 @@ for f in os.listdir(DUMP_DIR):  # list matches
     # looking up by participants
     for i, participant in enumerate(data['participants']):
 
-        stats = participant['stats']
-
-        # row based on ONG et al. attributes
-        row = csvrow(
-            # general info - not used for clustering:
+        # general info values
+        info = [
             data['matchId'],
             data['matchCreation'],
             data['participantIdentities'][i]['player']['summonerId'],
-            participant['championId'],
+            participant['championId']
+        ]
 
-            # booleans attributes - not need be normalized:
-            stats['winner'],
-            stats['firstBloodKill'],
-            stats['firstTowerKill'],
-            stats['firstTowerAssist'],
-            # numeric attributes:
-            stats['kills'],
-            stats['assists'],
-            stats['deaths'],
-            stats['goldEarned'],
-            stats['totalDamageDealt'],
-            stats['magicDamageDealt'],
-            stats['physicalDamageDealt'],
-            stats['totalDamageDealtToChampions'],
-            stats['totalDamageTaken'],
-            stats['minionsKilled'],
-            stats['neutralMinionsKilled'],
-            stats['totalTimeCrowdControlDealt'],
-            stats['wardsPlaced'],
-            stats['towerKills'],
-            stats['largestMultiKill'],
-            stats['largestKillingSpree'],
-            stats['largestCriticalStrike'],
-            stats['totalHeal']
-        )
+        # statistical values
+        stats = participant['stats']  # all attributes
+        stats = [stats[a] for a in stats_attrs]  # filtering stats values
 
-        datafile.write(row)
-        datafile.write('\n')
+        csvfile.write(csvrow(*(info + stats)))  # write values in csv format
+        csvfile.write('\n')
