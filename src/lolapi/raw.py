@@ -1,4 +1,4 @@
-"""
+'''
 Raw  matches from LOL API using RiotWatcher.
 
 Match filter:
@@ -6,47 +6,41 @@ Match filter:
     season: SEASON2015
     region: BR
     queueType: RANKED_SOLO_5x5
-    participants: 10
-"""
+'''
 
 import json
 from riotwatcher import RiotWatcher, BRAZIL
 from config import API_KEY, DUMP_DIR, STARTING_MATCH_ID
 
-# lol api wrapper
-w = RiotWatcher(key=API_KEY, default_region=BRAZIL)
+api = RiotWatcher(key=API_KEY, default_region=BRAZIL)
 
 starting_match_id = STARTING_MATCH_ID  # first match to dump
+
 n_matches = 10000  # total matches to dump
 
 
-def isClassicMatch(match):
+def is_classic(match):
     return match['matchMode'] == 'CLASSIC'
 
 
-def isSeason2015(match):
+def is_season_2015(match):
     return match['season'] == 'SEASON2015'
 
 
-def isBr(match):
+def is_br(match):
     return match['region'] == 'BR'
 
 
-def isRankedSolo5x5(match):
+def is_ranked_solo_5x5(match):
     return match['queueType'] == 'RANKED_SOLO_5x5'
 
 
-def hasAllParticipants(match):
-    return len(match['participants']) == 10
-
-
-def isValid(match):
+def is_valid(match):
     return (
-        isClassicMatch(match) and
-        isSeason2015(match) and
-        isBr(match) and
-        isRankedSolo5x5(match) and
-        hasAllParticipants(match))
+        is_classic(match) and
+        is_season_2015(match) and
+        is_br(match) and
+        is_ranked_solo_5x5(match))
 
 
 counter = 0  # total matches dumped
@@ -56,11 +50,11 @@ while counter < n_matches:
 
         match_id = i + starting_match_id
         print match_id
-        match = w.get_match(match_id=match_id)
+        match = api.get_match(match_id=match_id)
 
-        if isValid(match):
+        if is_valid(match):
             print True
-            with open(DUMP_DIR + str(match_id) + ".json", 'w+') as f:
+            with open(DUMP_DIR + str(match_id) + '.json', 'w+') as f:
                 json.dump(match, f)
             counter += 1
             print(counter)
