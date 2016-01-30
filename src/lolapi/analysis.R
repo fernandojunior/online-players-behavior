@@ -1,9 +1,21 @@
-
 library("car")
+library(cluster)  # for clusplot
+library("scatterplot3d")  # scatterplot3d
 
 options(scipen=999)
 
-# total sum of squares of multidimensional X sample data: (n-1) * Var(X)
+# Some functions
+# --------------
+
+# Return TRUE if an object is in list, FALSE otherwise
+contains = function (obj, list_) {
+	for (i in list_)
+		if (obj == i)
+			return(TRUE)
+	return(FALSE)
+}
+
+# Return total sum of squares of multidimensional X sample data: (n-1) * Var(X)
 sum_of_squares = function (X) {
 	n = nrow(X) # size
 	VarX = sum(apply(X,2,var))  # variance
@@ -11,67 +23,100 @@ sum_of_squares = function (X) {
 	return(c(n, TSS, VarX)) # return the values
 }
 
+# Return TRUE if s starts with the specified prefix, FALSE otherwise.
+startswith = function (s, prefix) {
+	return(grepl(paste('^', prefix), s))
+}
+
+# Return TRUE if s ends with the specified suffix, FALSE otherwise.
+endswith = function (s, suffix) {
+	return(grepl(paste(suffix, '$', sep=''), s))
+}
+
+# Create a boxplot
+plot.boxplot = function (...) {
+	args = list(...)
+	do.call(boxplot, args)
+}
+
+# Create a scatterplot
+plot.scatter = function (...) {
+	args = list(...)
+	do.call(plot, args)
+}
+
+# Save the output of a function in a png file.
+save_png = function (filename, fn, ...) {
+	if (!endswith(filename, '.png'))
+		filename = paste(filename, '.png', sep='')
+	png(file=filename)
+	fn(...)
+	dev.off()
+}
+
+# Create a boxplot and save the output in a png file.
+save_boxplot = function (title, data, ...) {
+	filename = paste(BOXPLOTS, title, sep='')
+	save_png(filename, plot.boxplot, data, main=title , ...)
+}
+
+# Create a scatterplot and save the output in a png file.
+save_scatterplot = function (title, data, ...) {
+	filename = paste(SCATTERPLOTS, title, sep='')
+	save_png(filename, plot.scatter, data, main=title, ...)
+}
+
+# Create box and scatter plots and save the outputs in png files.
+save_plots = function (title, data) {
+	save_boxplot(title, data)
+	save_scatterplot(title, data)
+}
+
+# Constants
+# ---------
+
+BOXPLOTS = 'data/boxplots/'
+
+SCATTERPLOTS = 'data/scatterplots/'
+
+# Load data
+# -----------
+
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
+
+# attributes range:
+# info = 1:3
+# boolean = 4:7
+# numerical = 8:25
 
 # Outliers analysis
 # -----------------
 
-# selecting only numerical data
-boxplot(data[, 4:25]) # boolean and integer data
-boxplot(data[, 8:25]) # only integer data
+# analyzing all attributes using boxplot
+save_boxplot('All attributes', data[, 4:25], names=c(1:ncol(data[, 4:25])))
 
-# As we can see from the above plots that some attributes has outliers in the data
-# Let’s analyze all them individually.
+# As we can see from the above plot that some attributes has outliers in the
+# data. Let's analyze all them individually using boxplot and scatterplot.
+save_plots('[4] Kills', data$Kills)
+save_plots('[5] Assists', data$Assists)
+save_plots('[6] Deaths', data$Deaths)
+save_plots('[7] GoldEarned', data$GoldEarned)
+save_plots('[8] TotalDamageDealt', data$TotalDamageDealt)
+save_plots('[9] MagicDamageDealt', data$MagicDamageDealt)
+save_plots('[10] PhysicalDamageDealt', data$PhysicalDamageDealt)
+save_plots('[11] TotalDamageDealtToChampions', data$TotalDamageDealtToChampions)
+save_plots('[12] TotalDamageTaken', data$TotalDamageTaken)
+save_plots('[13] MinionsKilled', data$MinionsKilled)
+save_plots('[14] NeutralMinionsKilled', data$NeutralMinionsKilled)
+save_plots('[15] CrowdControl', data$CrowdControl)
+save_plots('[16] WardsPlaced', data$WardsPlaced)
+save_plots('[17] TowerKills', data$TowerKills)
+save_plots('[18] LargestMultiKill', data$LargestMultiKill)
+save_plots('[19] LargestKillingSpree', data$LargestKillingSpree)
+save_plots('[20] LargestCritStrike', data$LargestCritStrike)
+save_plots('[21] TotalHealAmount', data$TotalHealAmount)
 
-# Function to analyze the outliers of a data set with boxplot and scatter plot
-# title: Title of the analysis
-# data: The data set
-# scatterplot: If true, creates a scatter plot of the data and saves into a file
-# names: If true, sets the boxplot names
-analysis.outliers = function (title, data, scatterplot=TRUE, names=FALSE) {
-
-	title = paste(title, "Boxplot")
-	filename = paste("analysis/outliers/", title, ".png", sep="")
-	png(file=filename) # abrindo "cursor"
-
-	if (names == TRUE)
-		boxplot(data, main=title, names=c(1:ncol(data)))
-	else
-		boxplot(data, main=title)
-	dev.off() # "fechando" arquivo
-
-	if(scatterplot == TRUE) {
-		title = paste(title, "Scatterplot")
-		filename = paste("analysis/outliers/", title, ".png", sep="")
-		png(file=filename) # abrindo "cursor"
-		plot(data, main=title)
-		dev.off() # "fechando" arquivo
-	}
-
-}
-
-analysis.outliers('All numerical attributes', data[, 4:25], FALSE, TRUE)
-
-analysis.outliers('[4] Kills', data$Kills)
-analysis.outliers('[5] Assists', data$Assists)
-analysis.outliers('[6] Deaths', data$Deaths)
-analysis.outliers('[7] GoldEarned', data$GoldEarned)
-analysis.outliers('[8] TotalDamageDealt', data$TotalDamageDealt)
-analysis.outliers('[9] MagicDamageDealt', data$MagicDamageDealt)
-analysis.outliers('[10] PhysicalDamageDealt', data$PhysicalDamageDealt)
-analysis.outliers('[11] TotalDamageDealtToChampions', data$TotalDamageDealtToChampions)
-analysis.outliers('[12] TotalDamageTaken', data$TotalDamageTaken)
-analysis.outliers('[13] MinionsKilled', data$MinionsKilled)
-analysis.outliers('[14] NeutralMinionsKilled', data$NeutralMinionsKilled)
-analysis.outliers('[15] CrowdControl', data$CrowdControl)
-analysis.outliers('[16] WardsPlaced', data$WardsPlaced)
-analysis.outliers('[17] TowerKills', data$TowerKills)
-analysis.outliers('[18] LargestMultiKill', data$LargestMultiKill)
-analysis.outliers('[19] LargestKillingSpree', data$LargestKillingSpree)
-analysis.outliers('[20] LargestCritStrike', data$LargestCritStrike)
-analysis.outliers('[21] TotalHealAmount', data$TotalHealAmount)
-
-# removing participants with 'large' outliers
+# removing participants with large outliers
 data = data[data$Kill < 35, ]
 data = data[data$Assists < 40, ]
 data = data[data$Deaths < 30, ]
@@ -91,42 +136,37 @@ data = data[data$LargestKillingSpree < 21, ]
 data = data[data$LargestCritStrike < 2500, ]
 data = data[data$TotalHealAmount < 40000, ]
 
-analysis.outliers('All numerical attributes (pos)', data[, 4:25], FALSE, TRUE) # apenas numericos
+# analyzing attributes after removal of large outliers
+save_boxplot('All attributes (pos)', data[, 4:25], names=c(1:ncol(data)))
 
 # Apos a remocao dos participantes com large outilies
 # alguns matches ficaram com menos de 10 participantes ...
 # Essa funcao retorna matches que nao tem todos os participantes (<10) ...
+# TODO utilizar aggregate
+# aggregate(summonerId ~ matchId, data=data, FUN = function(x) length(x))
 matchs_without_participants = function () {
 
-    # Funcao que verifica se existe um objeto x em uma lista l
-    contains = function (x, l) {
-        for (i in l)
-            if (x == i)
-			    return(TRUE)
-        return(FALSE)
-    }
+	# matches without 10 participants
+	without_participants = c()
 
-	# list of matches without all participants
-	to_be_removed = c()
-
-	# list of match ids already verified
+	# match IDs already verified
 	already_verified = c()
 
 	for(i in c(1:nrow(data))){
 
 	    participant = data[i,]
+
 	    matchId = participant$matchId
 
 	    if(!contains(matchId, already_verified)) {
 
-	    	# merge
-	    	already_verified = c(already_verified, matchId)
-
-	    	# verifying number of participants in match
+	    	# total of participants in match
 		    total_participants = nrow(data[data$matchId == matchId,])
 
 		    if (total_participants != 10)
-		    	to_be_removed = c(to_be_removed, matchId)
+		    	without_participants = c(without_participants, matchId)
+
+	    	already_verified = c(already_verified, matchId)
 
 	    }
 
@@ -146,19 +186,20 @@ write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 # ----------
 
 # info attributes
-data.info = data[,1:3]
+data.info = data[, 1:3]
 
 # bool attributes
-data.bool = data[,4:7]
+data.bool = data[, 4:7]
 
 # numerical attributes
-data.numerical = data[,8:25]
+data.numerical = data[, 8:25]
 
-# Data normalization
+# Data normalization (z-score)
 # ------------------
 
-# Since the data attributes are of different varieties their scales are also different.
-# In order to maintain uniform scalability we scale (z-score) the numerical attributes.
+# Since the data attributes are of different varieties their scales are also
+# different. In order to maintain uniform scalability we scale (z-score) the
+# numerical attributes.
 data.normalized = cbind(data.info, data.bool, scale(data.numerical))
 
 # Correlation analysis
@@ -174,13 +215,13 @@ write.csv(correlations.abs, file = "analysis/correlations_filtered_mod.csv", sep
 correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv', header=FALSE)
 
 # boxplot das correlacoes
-analysis.outliers('Correlações de atributos', correlations.boxplot, FALSE, TRUE)
+save_boxplot('Attributes correlation', correlations.boxplot)
 
 # Attribute selection
 # -------------------
 
 # boolean and numerical attributes
-data.reduzido = data.normalized[,4:25]
+data.reduzido = data.normalized[, 4:25]
 
 # selecting attributes based on correlation analysis
 data.reduzido = data.reduzido[, c(5, 7:14, 17: 21)]
@@ -191,7 +232,7 @@ ldata = data.reduzido
 # K-means analysis
 # ----------------
 
-# calculating total sum of squares and storing at the first index in wss
+# calculating total sum of squares and storing at the first index in tss
 tss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
 
 # max value of k
@@ -199,54 +240,41 @@ max = 50
 
 # calculating the total sum of squares for each k == i and storing in tss[i]
 for(i in 2 : max)
-    tss[i] <- sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
+    tss[i] = sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
 
-# Analysing the 'knees' of the plot to find the ideal k number of cluster
+# analysing the knees of the plot to find the ideal k number of cluster
 plot(
     1:max,
     tss,
     type = "b",
-    main = "k clusters",
-    xlab = "no. of cluster",
-    ylab = "within cluster sum of squares")
+    main = "K clusters",
+    xlab = "No. of cluster",
+    ylab = "Cluster sum of squares")
 
-# clusplot tests
-library(cluster)
+# Some tests
+# ----------
 
 fit <- kmeans(ldata, 4, algorithm='Lloyd')
-clusplot(ldata[1:80,], fit$cluster[1:80], color=FALSE, shade=TRUE, labels=2, lines=0)
 
 fit <- kmeans(ldata[1:200,],4)
-clusplot(ldata[1:80,], fit$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
-
-fit <- kmeans(data.numerical.scaled, 4, algorithm='Lloyd')
-
-# catterplot3d tests
-library("scatterplot3d")
 
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 55, color = fit$cluster)
 
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
 
-# most cor. 3: goldEarned, 4: totalDamageDealt, 9: minionsKilled
+# most correlated {3: goldEarned, 4: totalDamageDealt, 9: minionsKilled}
 scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
-
-# scatter plot with classified data
-plot(ldata,col=fit$cluster,pch=15)
-
-# only most correlated attributes
-plot(ldata[,c(3,4,9)],col=fit$cluster,pch=15)
 
 # merge com dados nominais sobre os participantes, stats, e cluster
 ldata2 = cbind(data[, c(1,2,3,4)], ldata, cluster)
 
 # dispersao com cluster dos participantes perdedores
-perdedores = ldata2[ldata2$Win == 0,5:(ncol(ldata2))]
-plot(perdedores[,c(3,4,9)],col=perdedores$cluster,pch=15)
+perdedores = ldata2[ldata2$Win == 0, 5:(ncol(ldata2))]
+plot(perdedores[,c(3,4,9)], col=perdedores$cluster, pch=15)
 
 # dispersao com cluster dos participantes perdedores
-vencedores = ldata2[ldata2$Win == 1,5:(ncol(ldata2))]
-plot(vencedores[,c(3,4,9)],col=vencedores$cluster,pch=15)
+vencedores = ldata2[ldata2$Win == 1, 5:(ncol(ldata2))]
+plot(vencedores[, c(3,4,9)], col=vencedores$cluster, pch=15)
 
 # scatterplot most cor dos perdedores
 scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
@@ -254,13 +282,13 @@ scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$c
 # corrigido: apenas inteiros ... attr cluster nao considerado
 scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
 
-
 scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # corrigido: apenas inteiros ... attr cluster nao considerado
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
-# diferentes k para analise
+# Testing k-means configurations
+# -----------------------------
 
 fit = kmeans(ldata, 11, algorithm='Lloyd')
 # (between_SS / total_SS =  61.2 %)
@@ -276,7 +304,7 @@ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
 fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  57.7 %)
 
-# gravando fits para uso posterior
+# persisting k-means results
 write.csv(fit$cluster, file = "analysis/cluster/testes/fit$cluster.csv")
 write.csv(fit2$cluster, file = "analysis/cluster/testes/fit2$cluster.csv")
 write.csv(fit3$cluster, file = "analysis/cluster/testes/fit3$cluster.csv")
@@ -322,15 +350,15 @@ write.csv(fit2$ifault, file = "analysis/cluster/testes/fit2$ifault.csv")
 write.csv(fit3$ifault, file = "analysis/cluster/testes/fit3$ifault.csv")
 write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
 
+# clusplot of the best configuration fit4 using sampled n=80 data
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
-# dispersao com cluster
-plot(ldata,col=fit4$cluster,pch=15)
+# scatter plot with data clusterized
+plot(ldata, col=fit4$cluster, pch=15)
 
-# dispersao apenas mais correlacionados
-plot(ldata[,c(3,4,9)],col=fit4$cluster,pch=15)
-
+# only most correlated attributes
+plot(ldata[, c(3,4,9)], col=fit4$cluster, pch=15)
 
 Cluster = fit4$cluster
 
@@ -560,3 +588,4 @@ alternative hypothesis: true location shift is not equal to 0
 # [Kardi Teknomo] Kardi Teknomo. ANALYTIC HIERARCHY PROCESS (AHP) TUTORIAL. https://docs.google.com/file/d/0BxYU82vErc8xYS1PendBeHlpSkk/edit?usp=sharing
 # http://stats.stackexchange.com/questions/49521/how-to-find-variance-between-multidimensional-points
 # http://www.edureka.co/blog/clustering-on-bank-data-using-r/
+# http://stackoverflow.com/questions/1567718/getting-a-function-name-as-a-string
