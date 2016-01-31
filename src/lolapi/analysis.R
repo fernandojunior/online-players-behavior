@@ -116,25 +116,30 @@ for (attribute in attributes[4:25]) {
 	save_scatterplot(title, values)
 }
 
-# removing participants with large outliers
-data = data[data$Kill < 35, ]
-data = data[data$Assists < 40, ]
-data = data[data$Deaths < 30, ]
-data = data[data$GoldEarned < 26250, ]
-data = data[data$TotalDamageDealt < 500000, ]
-data = data[data$MagicDamageDealt < 350000, ]
-data = data[data$PhysicalDamageDealt < 450000, ]
-data = data[data$TotalDamageDealtToChampions < 80000, ]
-data = data[data$TotalDamageTaken < 80000, ]
-data = data[data$MinionsKilled < 400, ]
-data = data[data$NeutralMinionsKilled < 125, ]
-data = data[data$CrowdControl < 10000, ]
-data = data[data$WardsPlaced < 110, ]
-data = data[data$TowerKills < 9, ]
-data = data[data$LargestMultiKill < 6, ]
-data = data[data$LargestKillingSpree < 21, ]
-data = data[data$LargestCritStrike < 2500, ]
-data = data[data$TotalHealAmount < 40000, ]
+# a filter that defines a value limit for each attribute based on the analysis
+filter = (
+	data$Kill < 35 &
+	data$Assists < 40 &
+	data$Deaths < 30 &
+	data$GoldEarned < 26250 &
+	data$TotalDamageDealt < 500000 &
+	data$MagicDamageDealt < 350000 &
+	data$PhysicalDamageDealt < 450000 &
+	data$TotalDamageDealtToChampions < 80000 &
+	data$TotalDamageTaken < 80000 &
+	data$MinionsKilled < 400 &
+	data$NeutralMinionsKilled < 125 &
+	data$CrowdControl < 10000 &
+	data$WardsPlaced < 110 &
+	data$TowerKills < 9 &
+	data$LargestMultiKill < 6 &
+	data$LargestKillingSpree < 21 &
+	data$LargestCritStrike < 2500 &
+	data$TotalHealAmount < 40000
+)
+
+# filtering data to remove participants with large outliers
+data = data[filter,]
 
 # as data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
