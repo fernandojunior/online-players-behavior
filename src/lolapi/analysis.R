@@ -94,14 +94,13 @@ save_plots = function (title, data) {
 }
 
 # Load data
-# -----------
+# ---------
 
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
-# attributes range:
-# info = 1:3
-# boolean = 4:7
-# numerical = 8:25
+# data attributes
+# summary: info [1:3], boolean [4:7], numerical [8:25]
+attributes = names(data)
 
 # Treatment of outliers
 # ---------------------
@@ -111,24 +110,11 @@ save_boxplot('All attributes', data[, 4:25], names=c(1:ncol(data[, 4:25])))
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
-save_plots('[4] Kills', data$Kills)
-save_plots('[5] Assists', data$Assists)
-save_plots('[6] Deaths', data$Deaths)
-save_plots('[7] GoldEarned', data$GoldEarned)
-save_plots('[8] TotalDamageDealt', data$TotalDamageDealt)
-save_plots('[9] MagicDamageDealt', data$MagicDamageDealt)
-save_plots('[10] PhysicalDamageDealt', data$PhysicalDamageDealt)
-save_plots('[11] TotalDamageDealtToChampions', data$TotalDamageDealtToChampions)
-save_plots('[12] TotalDamageTaken', data$TotalDamageTaken)
-save_plots('[13] MinionsKilled', data$MinionsKilled)
-save_plots('[14] NeutralMinionsKilled', data$NeutralMinionsKilled)
-save_plots('[15] CrowdControl', data$CrowdControl)
-save_plots('[16] WardsPlaced', data$WardsPlaced)
-save_plots('[17] TowerKills', data$TowerKills)
-save_plots('[18] LargestMultiKill', data$LargestMultiKill)
-save_plots('[19] LargestKillingSpree', data$LargestKillingSpree)
-save_plots('[20] LargestCritStrike', data$LargestCritStrike)
-save_plots('[21] TotalHealAmount', data$TotalHealAmount)
+for (attribute in attributes[4:25]) {
+	values = data[, attribute]
+	save_boxplot(title, values)
+	save_scatterplot(title, values)
+}
 
 # removing participants with large outliers
 data = data[data$Kill < 35, ]
@@ -212,7 +198,7 @@ data.reduzido = data.normalized[, 4:25]
 # selecting attributes based on correlation analysis
 data.reduzido = data.reduzido[, c(5, 7:14, 17: 21)]
 
-# renomeando para melhor manipulacao
+# alias
 ldata = data.reduzido
 
 # K-means analysis
