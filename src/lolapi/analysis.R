@@ -19,12 +19,26 @@ contains = function (list_, obj) {
 	return(obj %in% list_)
 }
 
-# Return total sum of squares of multidimensional X sample data: (n-1) * Var(X)
+# Return sum of squares of multidimensional X sample data: (n-1) * Var(X)
 sum_of_squares = function (X) {
 	n = nrow(X) # size
-	VarX = sum(apply(X,2,var))  # variance
-	TSS = ((n-1) * VarX) # total sum of square
-	return(c(n, TSS, VarX)) # return the values
+	VarX = apply(X,2,var)  # variance
+	SS = (n-1) * VarX # sum of square
+	result = c()
+	result$size = n
+	result$ss = SS
+	result$var = VarX
+	return(result)
+}
+
+# Return total sum of squares of multidimensional X sample data: sum(ss(X))
+total_sum_of_squares = function (X) {
+	ss = sum_of_squares(X)
+	result = c()
+	result$size = ss$size
+	result$tss = sum(ss$ss)
+	result$tvar = sum(ss$var)
+	return(result)
 }
 
 # Return TRUE if s starts with the specified prefix, FALSE otherwise.
@@ -412,7 +426,8 @@ scatterplot3d(
 # within cluster sum of squares
 withinss = function (data, cluster) {
 	X = data[data$Cluster == cluster, ]
-	return(sum_of_squares(X))
+	tss = total_sum_of_squares(X)
+	return(c(tss$size, tss$tss, tss$tvar))
 }
 
 vencedores = c('size', 'withinss', 'var')
