@@ -100,8 +100,8 @@ data = read.csv("data/ranked_matches_2015_ong_features.csv")
 # boolean = 4:7
 # numerical = 8:25
 
-# Outliers analysis
-# -----------------
+# Treatment of outliers
+# ---------------------
 
 # analyzing all attributes using boxplot
 save_boxplot('All attributes', data[, 4:25], names=c(1:ncol(data[, 4:25])))
@@ -147,54 +147,26 @@ data = data[data$LargestKillingSpree < 21, ]
 data = data[data$LargestCritStrike < 2500, ]
 data = data[data$TotalHealAmount < 40000, ]
 
-# analyzing attributes after removal of large outliers
-save_boxplot('All attributes (pos)', data[, 4:25], names=c(1:ncol(data)))
+# as data were looked up by participants, some matches were left with less than
+# 10 participants. So, these inconsistent matches need to be removed.
 
-# Apos a remocao dos participantes com large outilies
-# alguns matches ficaram com menos de 10 participantes ...
-# Essa funcao retorna matches que nao tem todos os participantes (<10) ...
-# TODO utilizar aggregate
-# aggregate(summonerId ~ matchId, data=data, FUN = function(x) length(x))
-matchs_without_participants = function () {
+# number of participants in the matches
+matches_frequency = table(data$matchId)
 
-	# matches without 10 participants
-	without_participants = c()
+# matches that do not contain all 10 participants
+inconsistent_matches = names(matches_frequency)[matches_frequency < 10]
 
-	# match IDs already verified
-	already_verified = c()
-
-	for(i in c(1:nrow(data))){
-
-	    participant = data[i,]
-
-	    matchId = participant$matchId
-
-	    if(!contains(already_verified, matchId)) {
-
-	    	# total of participants in match
-		    total_participants = nrow(data[data$matchId == matchId,])
-
-		    if (total_participants != 10)
-		    	without_participants = c(without_participants, matchId)
-
-	    	already_verified = c(already_verified, matchId)
-
-	    }
-
-	}
-
-	return(to_be_removed)
-
-}
-
-# removendo matches que nao tem todos os 10 participantes
+# removing inconsistent matches from data
 data = data[!(data$matchId %in% matchs_without_participants()), ]
 
-# persisting data with outliers softened
+# analyzing attributes after the tratament of outliers
+save_boxplot('All attributes (pos)', data[, 4:25], names=c(1:ncol(data)))
+
+# persisting data without large outliers and inconsistent matches
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 
-# Data split
-# ----------
+# Data spliting by attribute type
+# -------------------------------
 
 # info attributes
 data.info = data[, 1:3]
@@ -206,7 +178,7 @@ data.bool = data[, 4:7]
 data.numerical = data[, 8:25]
 
 # Data normalization (z-score)
-# ------------------
+# ----------------------------
 
 # Since the data attributes are of different varieties their scales are also
 # different. In order to maintain uniform scalability we scale (z-score) the
