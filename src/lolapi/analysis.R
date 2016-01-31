@@ -117,7 +117,7 @@ for (attribute in attributes[4:25]) {
 }
 
 # a filter that defines a value limit for each attribute based on the analysis
-filter = (
+attributes_filter = (
 	data$Kill < 35 &
 	data$Assists < 40 &
 	data$Deaths < 30 &
@@ -139,7 +139,7 @@ filter = (
 )
 
 # filtering data to remove participants with large outliers
-data = data[filter,]
+data = data[attributes_filter,]
 
 # as data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
