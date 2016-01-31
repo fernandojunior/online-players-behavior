@@ -598,3 +598,4 @@ alternative hypothesis: true location shift is not equal to 0
 # http://www.edureka.co/blog/clustering-on-bank-data-using-r/
 # http://stackoverflow.com/questions/1567718/getting-a-function-name-as-a-string
 # http://vis.supstat.com/2013/04/plotting-symbols-and-color-palettes/
+# http://stackoverflow.com/questions/1923273/counting-the-number-of-elements-with-the-values-of-x-in-a-vector
