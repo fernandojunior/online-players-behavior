@@ -4,6 +4,13 @@ library("scatterplot3d")  # scatterplot3d
 
 options(scipen=999)
 
+# Constants
+# ---------
+
+BOXPLOTS = 'data/boxplots/'
+
+SCATTERPLOTS = 'data/scatterplots/'
+
 # Some functions
 # --------------
 
@@ -71,13 +78,6 @@ save_plots = function (title, data) {
 	save_boxplot(title, data)
 	save_scatterplot(title, data)
 }
-
-# Constants
-# ---------
-
-BOXPLOTS = 'data/boxplots/'
-
-SCATTERPLOTS = 'data/scatterplots/'
 
 # Load data
 # -----------
