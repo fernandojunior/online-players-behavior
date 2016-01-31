@@ -14,6 +14,11 @@ SCATTERPLOTS = 'data/scatterplots/'
 # Some functions
 # --------------
 
+# Alias for typeof
+type = function (obj) {
+	return(typeof(obj))
+}
+
 # Return TRUE if list contains an object, FALSE otherwise
 contains = function (list_, obj) {
 	return(obj %in% list_)
@@ -53,14 +58,12 @@ endswith = function (s, suffix) {
 
 # Create a boxplot
 plot.boxplot = function (...) {
-	args = list(...)
-	do.call(boxplot, args)
+	do.call(boxplot, ...)
 }
 
 # Create a scatterplot
 plot.scatter = function (...) {
-	args = list(...)
-	do.call(plot, args)
+	do.call(plot, ...)
 }
 
 # Save the output of a function in a png file.
@@ -190,15 +193,15 @@ data.normalized = cbind(data.info, data.bool, scale(data.numerical))
 
 # correlation between booelean and numerical attributes
 correlations = cor(data.normalized[,4:25])
-correlations.rounded = round(correlations, digits=1)
-correlations.abs = abs(correlations.rounded)
-write.csv(correlations.abs, file = "analysis/correlations_filtered_mod.csv", sep =",")
+correlations = round(correlations, digits=1)  # just to be more presentable
+correlations = abs(correlations)  # the signal does not matter
+write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
-# dados tratados (sem diagonal e header) das correlacoes para o boxplot
-correlations.boxplot = read.csv('analysis/correlations_filtered_mod_boxplot.csv', header=FALSE)
-
-# boxplot das correlacoes
-save_boxplot('Attributes correlation', correlations.boxplot)
+# cleaning correlations data to create a boxplot
+rownames(correlations) = NULL  # removing row headers
+colnames(correlations) = NULL  # removing col headers
+diag(correlations) = NA  # the correlation of a set with itself does not matter
+save_boxplot('Attributes correlation', correlations)
 
 # Attribute selection
 # -------------------
