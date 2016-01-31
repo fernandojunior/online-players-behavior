@@ -15,7 +15,7 @@ def parse(value):
     '''
     Parse a value of any python type to string.
 
-    Boolean values are converted to integer values {True: 1, False: 2}.
+    Boolean values are converted to integer values {True: 1, False: 0}.
     '''
     return parse(int(value)) if isinstance(value, bool) else str(value)
 
