@@ -14,12 +14,9 @@ SCATTERPLOTS = 'data/scatterplots/'
 # Some functions
 # --------------
 
-# Return TRUE if an object is in list, FALSE otherwise
-contains = function (obj, list_) {
-	for (i in list_)
-		if (obj == i)
-			return(TRUE)
-	return(FALSE)
+# Return TRUE if list contains an object, FALSE otherwise
+contains = function (list_, obj) {
+	return(obj %in% list_)
 }
 
 # Return total sum of squares of multidimensional X sample data: (n-1) * Var(X)
@@ -158,7 +155,7 @@ matchs_without_participants = function () {
 
 	    matchId = participant$matchId
 
-	    if(!contains(matchId, already_verified)) {
+	    if(!contains(already_verified, matchId)) {
 
 	    	# total of participants in match
 		    total_participants = nrow(data[data$matchId == matchId,])
