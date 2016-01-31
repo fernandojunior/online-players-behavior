@@ -251,6 +251,8 @@ plot(
     xlab = "No. of cluster",
     ylab = "Cluster sum of squares")
 
+# best k == 8
+
 # Some tests
 # ----------
 
@@ -288,7 +290,7 @@ scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$c
 scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
 
 # Testing k-means configurations
-# -----------------------------
+# ------------------------------
 
 fit = kmeans(ldata, 11, algorithm='Lloyd')
 # (between_SS / total_SS =  61.2 %)
@@ -350,87 +352,109 @@ write.csv(fit2$ifault, file = "analysis/cluster/testes/fit2$ifault.csv")
 write.csv(fit3$ifault, file = "analysis/cluster/testes/fit3$ifault.csv")
 write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
 
-# clusplot of the best configuration fit4 using sampled n=80 data
+# variance of each cluster
+fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
+# TODO put in csv file
+
+# Scatterplot of clusterized data (fit4)
+# --------------------------------------
+
+# clusplot of sampled n=80 data
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
-# scatter plot with data clusterized
+# scatterplot of all attributes # TODO put in csv file
 plot(ldata, col=fit4$cluster, pch=15)
 
-# only most correlated attributes
+# only most correlated attributes # TODO put in csv file
 plot(ldata[, c(3,4,9)], col=fit4$cluster, pch=15)
 
-Cluster = fit4$cluster
+# associating each participant tuple with its cluster
+ldata2 = cbind(ldata, Cluster=fit4$cluster)
 
-ldata2 = cbind(data[, c(1,2,3,4)], ldata, Cluster)
+# spliting clusterized data between winners and losers
+vencedores = ldata2[ldata2$Win == 1,]
+perdedores = ldata2[ldata2$Win == 0,]
 
-perdedores = ldata2[ldata2$Win == 0, 5:(ncol(ldata2))]
-plot(perdedores[,c(3,4,9)],col=perdedores$Cluster,pch=15)
+# scatterplot of each partition # TODO put in csv file
+plot(vencedores[, c(3,4,9)], col=vencedores$Cluster, pch=15)
+plot(perdedores[, c(3,4,9)], col=perdedores$Cluster, pch=15)
 
-# dispersao com cluster dos participantes perdedores
-vencedores = ldata2[ldata2$Win == 1,5:(ncol(ldata2))]
-plot(vencedores[,c(3,4,9)],col=vencedores$Cluster,pch=15)
+# 3D scatterplot using PCA of clusterized data
+----------------------------------------------
 
-# PCA
-library("scatterplot3d")
+# 3D scatterplot of most correlated attributes
+scatterplot3d(
+	prcomp(ldata, center = TRUE)$x[, c(3,4,9)],
+	pch=fit4$cluster,
+	type="h",
+	angle=95,
+	color=fit4$cluster)
 
-scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit4$cluster, type = "h", angle = 95, color = fit4$cluster)
+# 3D scatterplot of most correlated attributes of winners # TODO put in csv file
+scatterplot3d(
+	prcomp(vencedores[,1:(ncol(vencedores)-1)],
+	center=TRUE)$x[,c(3,4,9)],
+	pch=vencedores$Cluster,
+	type="h",
+	angle=95,
+	color=vencedores$Cluster)
 
-scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$Cluster, type = "h", angle = 95, color = perdedores$Cluster)
+# 3D scatterplot of most correlated attributes of losers # TODO put in csv file
+scatterplot3d(
+	prcomp(perdedores[, 1:(ncol(perdedores)-1)],
+	center=TRUE)$x[,c(3,4,9)],
+	pch=perdedores$Cluster,
+	type="h",
+	angle=95,
+	color=perdedores$Cluster)
 
-scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$Cluster, type = "h", angle = 95, color = vencedores$Cluster)
+# Summarying partitions
+-----------------------
 
 # within cluster sum of squares
-ss = function (data, cluster) {
+withinss = function (data, cluster) {
 	X = data[data$Cluster == cluster, ]
 	return(sum_of_squares(X))
 }
 
-ss.vencedores = c('size', 'sun of sq', 'var')
+vencedores = c('size', 'withinss', 'var')
+perdedores = c('size', 'withinss', 'var')
 
 for(i in c(1:8)) {
-	ss.vencedores = rbind(i=ss.vencedores, ss(vencedores, i))
+	vencedores = rbind(i=vencedores, withinss(vencedores, i))
+	perdedores = rbind(i=perdedores, withinss(perdedores, i))
 }
 
-#3739 41316.9371603666 11.0532202141163
-#4281 19268.3432556076 4.50194935878682
-#5223 49015.2318475736 9.38629487697695
-#5179 15236.4693924323 2.94253947323915
-#4035 27864.5755564661 6.90743072792912
-#3691 18353.4704144465 4.97384022071721
-#5835 46343.2471402998 7.94364880704487
-#9667 52208.3269817618 5.40123391079679
+# winners output TODO put in csv file
+# 3739 41316.9371603666 11.0532202141163
+# 4281 19268.3432556076 4.50194935878682
+# 5223 49015.2318475736 9.38629487697695
+# 5179 15236.4693924323 2.94253947323915
+# 4035 27864.5755564661 6.90743072792912
+# 3691 18353.4704144465 4.97384022071721
+# 5835 46343.2471402998 7.94364880704487
+# 9667 52208.3269817618 5.40123391079679
 
-ss.perdedores = c('size', 'sun of sq', 'var')
+# losers output TODO put in csv file
+# 1674 16687.9878413122 9.97488812989375
+# 3772 16583.1388273172 4.39754410695233
+# 3217 25773.5785903237 8.01417244723994
+# 11838 34719.6991407263 2.9331502188668
+# 6453 39535.8716607882 6.12769244587541
+# 10711 51691.7332768328 4.82649236945218
+# 418 2547.04791512543 6.10802857344227
+# 3567 14730.9541129319 4.13094618982947
 
-for(i in c(1:8)) {
-	ss.perdedores = rbind(i=ss.perdedores, ss(perdedores, i))
-}
+# TODO centers of each partition ... scaled and not scaled
 
-#1674 16687.9878413122 9.97488812989375
-#3772 16583.1388273172 4.39754410695233
-#3217 25773.5785903237 8.01417244723994
-#11838 34719.6991407263 2.9331502188668
-#6453 39535.8716607882 6.12769244587541
-#10711 51691.7332768328 4.82649236945218
-#418 2547.04791512543 6.10802857344227
-#3567 14730.9541129319 4.13094618982947
-
-for(i in c(1:8)) {
-	print(fit4$withinss[i] / (fit4$size[i]-1))
-}
-
-# mean of Kills attribute grouped by clusters
-aggregate(Kills ~ Cluster, ldata, mean)
-
-# mean of attributes non-scaled grouped by the found clusters
+# mean of all attributes (not scaled) grouped by clusters
 tmp = cbind(data.bool, data.numerical)
 tmp = tmp[, c(5, 7:14, 17: 21)]
 centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
-write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/fit4$centers_not_scaled.csv")
+write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/centers_not_scaled.csv")
 
 # TODO
-
 # cluster, participants, winners, losers, winrate (w/(w+l))
 # 1 5413 3739 1674 0.6907445039719194
 # 2 8053 4281 3772 0.5316031292685955
@@ -589,3 +613,4 @@ alternative hypothesis: true location shift is not equal to 0
 # http://stats.stackexchange.com/questions/49521/how-to-find-variance-between-multidimensional-points
 # http://www.edureka.co/blog/clustering-on-bank-data-using-r/
 # http://stackoverflow.com/questions/1567718/getting-a-function-name-as-a-string
+# http://vis.supstat.com/2013/04/plotting-symbols-and-color-palettes/
