@@ -28,12 +28,15 @@ mvar = function (x) {
 }
 
 # Return the sum of square error of x.
-# If VAR == TRUE, x is a variance of a sample data with length == n
-# Else, x is a unidimensional sample data
-ss = function (x, n=NULL, VAR=FALSE) {
+# If VAR == TRUE, x is a [list of] variance of a sample data with length == n
+# Else, x is a sample data
+ss = function (x, n=NA, VAR=FALSE) {
 	if (VAR == FALSE) {
+		if (is.vector(x))
+			n = length(x)
+		if (is.matrix(x))
+			n = nrow(x)
 		x = var(x)
-		n = length(x)
 	}
 	return ((n - 1) * x)
 }
