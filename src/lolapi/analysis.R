@@ -220,42 +220,6 @@ plot(tss, type = "b", main = "K clusters", xlab = "k", ylab = "Total wihtinss")
 
 # best k == 8
 
-# Some tests
-# ----------
-
-fit <- kmeans(ldata, 4, algorithm='Lloyd')
-
-fit <- kmeans(ldata[1:200,],4)
-
-scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 55, color = fit$cluster)
-
-scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(1,2,3)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
-
-# most correlated {3: goldEarned, 4: totalDamageDealt, 9: minionsKilled}
-scatterplot3d(prcomp(ldata, center = TRUE)$x[,c(3,4,9)], pch = fit$cluster, type = "h", angle = 95, color = fit$cluster)
-
-# merge com dados nominais sobre os participantes, stats, e cluster
-ldata2 = cbind(data[, c(1,2,3,4)], ldata, cluster)
-
-# dispersao com cluster dos participantes perdedores
-perdedores = ldata2[ldata2$Win == 0, 5:(ncol(ldata2))]
-plot(perdedores[,c(3,4,9)], col=perdedores$cluster, pch=15)
-
-# dispersao com cluster dos participantes perdedores
-vencedores = ldata2[ldata2$Win == 1, 5:(ncol(ldata2))]
-plot(vencedores[, c(3,4,9)], col=vencedores$cluster, pch=15)
-
-# scatterplot most cor dos perdedores
-scatterplot3d(prcomp(perdedores, center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
-
-# corrigido: apenas inteiros ... attr cluster nao considerado
-scatterplot3d(prcomp(perdedores[,1:(ncol(perdedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = perdedores$cluster, type = "h", angle = 95, color = perdedores$cluster)
-
-scatterplot3d(prcomp(vencedores, center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
-
-# corrigido: apenas inteiros ... attr cluster nao considerado
-scatterplot3d(prcomp(vencedores[,1:(ncol(vencedores)-1)], center = TRUE)$x[,c(3,4,9)], pch = vencedores$cluster, type = "h", angle = 95, color = vencedores$cluster)
-
 # Testing k-means configurations
 # ------------------------------
 
