@@ -12,12 +12,17 @@ PLOTS = 'plots/'
 # Some functions
 # --------------
 
+format.string = function (fmt, ...) {
+	"Alias for sprintf."
+	return(sprintf(fmt, ...))
+}
+
 type = function (obj) {
 	"Alias for typeof."
 	return(typeof(obj))
 }
 
-index = function (l, e) {
+index = function (e, l) {
 	"Index of an element e in a list l."
 	return(which(l == e))
 }
@@ -27,9 +32,9 @@ len = function (l) {
 	return(length(l))
 }
 
-contains = function (list_, obj) {
-	"Return TRUE if list contains an object, FALSE otherwise."
-	return(obj %in% list_)
+contains = function (l, e) {
+	"Return TRUE if list l contains an element e, FALSE otherwise."
+	return(e %in% l)
 }
 
 range = function (...) {
@@ -122,18 +127,18 @@ total_sum_of_squares = function (X) {
 
 startswith = function (s, prefix) {
 	"Return TRUE if s starts with the specified prefix, FALSE otherwise."
-	return(grepl(paste('^', prefix), s))
+	return(grepl(format.string('^%s', prefix), s))
 }
 
 endswith = function (s, suffix) {
 	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
-	return(grepl(paste(suffix, '$', sep=''), s))
+	return(grepl(format.string('%s$', suffix), s))
 }
 
 save.png = function (filename, fn, ...) {
 	"Save the output of a function in a png file."
 	if (!endswith(filename, '.png'))
-		filename = paste(filename, '.png', sep='')
+		filename = format.string('%s.png', filename)
 	png(file=filename)
 	fn(...)
 	dev.off()
@@ -141,13 +146,13 @@ save.png = function (filename, fn, ...) {
 
 save.boxplot = function (data, title, ...) {
 	"Create a boxplot and save the output in a png file."
-	filename = paste(PLOTS, title, '.boxplot', sep='')
+	filename = format.string('%s%s.boxplot', PLOTS, title)
 	save.png(filename, boxplot, data, main=title , ...)
 }
 
 save.plot = function (data, title, ...) {
 	"Create a plot and save the output in a png file."
-	filename = paste(PLOTS, title, '.plot', sep='')
+	filename = format.string('%s%s.plot', PLOTS, title)
 	save.png(filename, plot, data, main=title, ...)
 }
 
@@ -176,9 +181,8 @@ save.boxplot(
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attribute in attributes.integer) {
-	i = index(attributes.integer, attribute)
-	prefix = paste('[', i, ']', sep='')
-	title = paste(prefix, attribute)
+	i = index(attribute, attributes.integer)
+	title = format.string('[%d] %s', i, attribute)
 
 	values = data[, attribute]
 
