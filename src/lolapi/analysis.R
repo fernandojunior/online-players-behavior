@@ -150,7 +150,7 @@ data = data[!(data$matchId %in% matchs_without_participants()), ]
 # analyzing attributes after the tratament of outliers
 save.boxplot('All attributes (pos)', data[, 4:25], names=c(1:ncol(data)))
 
-# persisting data without large outliers and inconsistent matches
+# saving the data processed
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 
 # Data spliting by attribute type
@@ -203,24 +203,20 @@ ldata = data.reduzido
 # K-means analysis
 # ----------------
 
-# calculating total sum of squares and storing at the first index in tss
-tss <- (nrow(ldata)-1)*sum(apply(ldata,2,var))
+# To find the k number of clusters we can use the method that finds the "knee"
+# of the error curve, which tries to find an appropriate number of clusters
+# analyzing the curve of a generated graph from a test (based on k-means)
+# conducted for each possible.
 
-# max value of k
-max = 50
+# storing the total within sum of square resultant of k-means test for each k
+twss = c()
 
-# calculating the total sum of squares for each k == i and storing in tss[i]
-for(i in 2 : max)
-    tss[i] = sum(fit = kmeans(ldata, centers = i, max, algorithm = 'Lloyd')$withinss)
+# testing k <= 50 clusters
+for(k in 1 : 50)
+    twss[k] = sum(kmeans(ldata, centers = k, algorithm = 'Lloyd')$withinss)
 
-# analysing the knees of the plot to find the ideal k number of cluster
-plot(
-    1:max,
-    tss,
-    type = "b",
-    main = "K clusters",
-    xlab = "No. of cluster",
-    ylab = "Cluster sum of squares")
+# ploting the test for each possible number of clusters to analyse the knee
+plot(tss, type = "b", main = "K clusters", xlab = "k", ylab = "Total wihtinss")
 
 # best k == 8
 
