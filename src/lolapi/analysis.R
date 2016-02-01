@@ -61,7 +61,7 @@ ss = function (x, n=NA, VAR=FALSE) {
 	return ((n - 1) * x)
 }
 
-mss = function (X) {
+mss = function (x) {
 	"Return the sum of square error of a multidimensional x sample data.
 
 	Example:
