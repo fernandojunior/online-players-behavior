@@ -17,6 +17,16 @@ type = function (obj) {
 	return(typeof(obj))
 }
 
+index = function (l, e) {
+	"Index of an element e in a list l."
+	return(which(l == e))
+}
+
+len = function (l) {
+	"Alias for length"
+	return(length(l))
+}
+
 contains = function (list_, obj) {
 	"Return TRUE if list contains an object, FALSE otherwise."
 	return(obj %in% list_)
@@ -133,24 +143,36 @@ save.plot = function (data, title, ...) {
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
 # data attributes
-# summary: info [1:3], boolean [4:7], numerical [8:25]
 attributes = names(data)
+attributes.info = attributes[1:3]
+attributes.boolean = attributes[4:7]
+attributes.integer = attributes[8:25]
+attributes.numerical = c(attributes.boolean, attributes.integer)
 
 # Treatment of outliers
 # ---------------------
 
-# analyzing all attributes using boxplot
-save.boxplot(data[, 4:25], 'All attributes', names=c(1:ncol(data[, 4:25])))
+# analyzing the outliers of all integer attributes using boxplot
+save.boxplot(
+	data[, attributes.integer],
+	'[All] Integer attributes',
+	names=c(1:len(attributes.integer))
+)
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
-for (attribute in attributes[4:25]) {
+for (attribute in attributes.integer) {
+	i = index(attributes.integer, attribute)
+	prefix = paste('[', i, ']', sep='')
+	title = paste(prefix, attribute)
+
 	values = data[, attribute]
-	save.boxplot(values, attribute)
-	save.plot(values, attribute)
+
+	save.boxplot(values, title)
+	save.plot(values, title)
 }
 
-# a filter that defines a value limit for each attribute based on the analysis
+# defines a value limit for each integer attribute based on the analysis
 attributes_filter = (
 	data$Kill < 35 &
 	data$Assists < 40 &
