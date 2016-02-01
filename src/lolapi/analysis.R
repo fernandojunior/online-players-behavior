@@ -22,7 +22,7 @@ contains = function (list_, obj) {
 	return(obj %in% list_)
 }
 
-# Return the variance of multidimensional x sample data.
+# Return the variance of a multidimensional x sample data.
 mvar = function (x) {
 	return(apply(x,2,var))
 }
@@ -39,6 +39,11 @@ ss = function (x, n=NA, VAR=FALSE) {
 		x = var(x)
 	}
 	return ((n - 1) * x)
+}
+
+# Return the sum of square error of a multidimensional x sample data.
+mss = function (X) {
+	return(apply(x, 2, ss))
 }
 
 # Return sum of squares of multidimensional X sample data: (n-1) * Var(X)
