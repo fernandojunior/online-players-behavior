@@ -27,6 +27,17 @@ mvar = function (x) {
 	return(apply(x,2,var))
 }
 
+# Return the sum of square error of x.
+# If VAR == TRUE, x is a variance of a sample data with length == n
+# Else, x is a unidimensional sample data
+ss = function (x, n=NULL, VAR=FALSE) {
+	if (VAR == FALSE) {
+		x = var(x)
+		n = length(x)
+	}
+	return ((n - 1) * x)
+}
+
 # Return sum of squares of multidimensional X sample data: (n-1) * Var(X)
 sum_of_squares = function (X) {
 	n = nrow(X) # size
