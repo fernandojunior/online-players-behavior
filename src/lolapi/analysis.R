@@ -56,14 +56,9 @@ endswith = function (s, suffix) {
 	return(grepl(paste(suffix, '$', sep=''), s))
 }
 
-# Create a boxplot
+# Alias for boxplot
 plot.boxplot = function (...) {
 	do.call(boxplot, ...)
-}
-
-# Create a scatterplot
-plot.scatter = function (...) {
-	do.call(plot, ...)
 }
 
 # Save the output of a function in a png file.
@@ -76,15 +71,15 @@ save.png = function (filename, fn, ...) {
 }
 
 # Create a boxplot and save the output in a png file.
-save.boxplot = function (title, data, ...) {
+save.boxplot = function (data, title, ...) {
 	filename = paste(BOXPLOTS, title, sep='')
 	save.png(filename, plot.boxplot, data, main=title , ...)
 }
 
-# Create a scatterplot and save the output in a png file.
-save.scatterplot = function (title, data, ...) {
+# Create a plot and save the output in a png file.
+save.plot = function (data, title, ...) {
 	filename = paste(SCATTERPLOTS, title, sep='')
-	save.png(filename, plot.scatter, data, main=title, ...)
+	save.png(filename, plot, data, main=title, ...)
 }
 
 # Load data
@@ -100,14 +95,14 @@ attributes = names(data)
 # ---------------------
 
 # analyzing all attributes using boxplot
-save.boxplot('All attributes', data[, 4:25], names=c(1:ncol(data[, 4:25])))
+save.boxplot(data[, 4:25], 'All attributes', names=c(1:ncol(data[, 4:25])))
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attribute in attributes[4:25]) {
 	values = data[, attribute]
-	save.boxplot(title, values)
-	save.scatterplot(title, values)
+	save.boxplot(values, attribute)
+	save.plot(values, attribute)
 }
 
 # a filter that defines a value limit for each attribute based on the analysis
@@ -148,7 +143,7 @@ inconsistent_matches = names(matches_frequency)[matches_frequency < 10]
 data = data[!(data$matchId %in% matchs_without_participants()), ]
 
 # analyzing attributes after the tratament of outliers
-save.boxplot('All attributes (pos)', data[, 4:25], names=c(1:ncol(data)))
+save.boxplot(data[, 4:25], 'All attributes (pos)', names=c(1:ncol(data)))
 
 # saving the data processed
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
@@ -186,7 +181,7 @@ write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 rownames(correlations) = NULL  # removing row headers
 colnames(correlations) = NULL  # removing col headers
 diag(correlations) = NA  # the correlation of a set with itself does not matter
-save.boxplot('Attributes correlation', correlations)
+save.boxplot(correlations, 'Attributes correlation')
 
 # Attribute selection
 # -------------------
@@ -216,7 +211,7 @@ for(k in 1 : 50)
     twss[k] = sum(kmeans(ldata, centers = k, algorithm = 'Lloyd')$withinss)
 
 # ploting the test for each possible number of clusters to analyse the knee
-plot(tss, type = "b", main = "K clusters", xlab = "k", ylab = "Total wihtinss")
+save.plot(tss, "K clusters", type="b", xlab="k", ylab="Total wihtinss")
 
 # best k == 8
 
