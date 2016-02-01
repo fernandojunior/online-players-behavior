@@ -7,9 +7,7 @@ options(scipen=999)
 # Constants
 # ---------
 
-BOXPLOTS = 'data/boxplots/'
-
-SCATTERPLOTS = 'data/scatterplots/'
+PLOTS = 'plots/'
 
 # Some functions
 # --------------
@@ -67,13 +65,13 @@ save.png = function (filename, fn, ...) {
 
 # Create a boxplot and save the output in a png file.
 save.boxplot = function (data, title, ...) {
-	filename = paste(BOXPLOTS, title, sep='')
+	filename = paste(PLOTS, title, '.boxplot', sep='')
 	save.png(filename, boxplot, data, main=title , ...)
 }
 
 # Create a plot and save the output in a png file.
 save.plot = function (data, title, ...) {
-	filename = paste(SCATTERPLOTS, title, sep='')
+	filename = paste(PLOTS, title, '.plot', sep='')
 	save.png(filename, plot, data, main=title, ...)
 }
 
