@@ -34,13 +34,12 @@ mvar = function (x) {
 }
 
 ss = function (x, n=NA, VAR=FALSE) {
-	"Return the sum of square error of x.
+	"Return the sum of square error of a sample data x: (n - 1) * var(x).
 
-	If VAR == TRUE, x is a [list of] variance of a sample data with length == n,
-	else, x is a sample data.
+	If VAR == TRUE, x is a [list of] variance of a sample data with n length.
 
 	Example:
-		> x = c(1,2,3,4,5)
+		> x = c(1, 2, 3, 4, 5)
 		> length(x)
 		[1] 5
 		> var(x)
@@ -50,9 +49,6 @@ ss = function (x, n=NA, VAR=FALSE) {
 		> ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
 		[1] 10
 		> ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
-		[1] 10 10
-		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,10))
-		> ss(mvar(x), nrow(x), VAR=TRUE)
 		[1] 10 10
 	"
 	if (VAR == FALSE) {
@@ -69,7 +65,7 @@ mss = function (X) {
 	"Return the sum of square error of a multidimensional x sample data.
 
 	Example:
-		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
+		> x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
 		> ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
 		[1] 10 10
 		> mss(x)  # or simply
