@@ -213,10 +213,10 @@ for(k in 1 : 50)
 # ploting the test for each possible number of clusters to analyse the knee
 save.plot(tss, "K clusters", type="b", xlab="k", ylab="Total wihtinss")
 
-# best k == 8
+# What is the best? k==8 or k==11?
 
-# Testing k-means configurations
-# ------------------------------
+# Extra k-means configurations tests
+# ----------------------------------
 
 fit = kmeans(ldata, 11, algorithm='Lloyd')
 # (between_SS / total_SS =  61.2 %)
@@ -232,55 +232,20 @@ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
 fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  57.7 %)
 
-# persisting k-means results
-write.csv(fit$cluster, file = "analysis/cluster/testes/fit$cluster.csv")
-write.csv(fit2$cluster, file = "analysis/cluster/testes/fit2$cluster.csv")
-write.csv(fit3$cluster, file = "analysis/cluster/testes/fit3$cluster.csv")
+# saving the fit4, which has the best trade-off
 write.csv(fit4$cluster, file = "analysis/cluster/testes/fit4$cluster.csv")
-
-write.csv(fit$centers, file = "analysis/cluster/testes/fit$centers.csv")
-write.csv(fit2$centers, file = "analysis/cluster/testes/fit2$centers.csv")
-write.csv(fit3$centers, file = "analysis/cluster/testes/fit3$centers.csv")
 write.csv(fit4$centers, file = "analysis/cluster/testes/fit4$centers.csv")
-
-write.csv(fit$size, file = "analysis/cluster/testes/fit$size.csv")
-write.csv(fit2$size, file = "analysis/cluster/testes/fit2$size.csv")
-write.csv(fit3$size, file = "analysis/cluster/testes/fit3$size.csv")
 write.csv(fit4$size, file = "analysis/cluster/testes/fit4$size.csv")
-
-write.csv(fit$totss, file = "analysis/cluster/testes/fit$totss.csv")
-write.csv(fit2$totss, file = "analysis/cluster/testes/fit2$totss.csv")
-write.csv(fit3$totss, file = "analysis/cluster/testes/fit3$totss.csv")
 write.csv(fit4$totss, file = "analysis/cluster/testes/fit4$totss.csv")
-
-write.csv(fit$tot.withinss, file = "analysis/cluster/testes/fit$tot.withinss.csv")
-write.csv(fit2$tot.withinss, file = "analysis/cluster/testes/fit2$tot.withinss.csv")
-write.csv(fit3$tot.withinss, file = "analysis/cluster/testes/fit3$tot.withinss.csv")
 write.csv(fit4$tot.withinss, file = "analysis/cluster/testes/fit4$tot.withinss.csv")
-
-write.csv(fit$withinss, file = "analysis/cluster/testes/fit$withinss.csv")
-write.csv(fit2$withinss, file = "analysis/cluster/testes/fit2$withinss.csv")
-write.csv(fit3$withinss, file = "analysis/cluster/testes/fit3$withinss.csv")
 write.csv(fit4$withinss, file = "analysis/cluster/testes/fit4$withinss.csv")
-
-write.csv(fit$betweenss, file = "analysis/cluster/testes/fit$betweenss.csv")
-write.csv(fit2$betweenss, file = "analysis/cluster/testes/fit2$betweenss.csv")
-write.csv(fit3$betweenss, file = "analysis/cluster/testes/fit3$betweenss.csv")
 write.csv(fit4$betweenss, file = "analysis/cluster/testes/fit4$betweenss.csv")
-
-write.csv(fit$iter, file = "analysis/cluster/testes/fit$iter.csv")
-write.csv(fit2$iter, file = "analysis/cluster/testes/fit2$iter.csv")
-write.csv(fit3$iter, file = "analysis/cluster/testes/fit3$iter.csv")
 write.csv(fit4$iter, file = "analysis/cluster/testes/fit4$iter.csv")
-
-write.csv(fit$ifault, file = "analysis/cluster/testes/fit$ifault.csv")
-write.csv(fit2$ifault, file = "analysis/cluster/testes/fit2$ifault.csv")
-write.csv(fit3$ifault, file = "analysis/cluster/testes/fit3$ifault.csv")
 write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
 
 # variance of each cluster
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
-# TODO put in csv file
+write.csv(fit4$withinvar, file = "analysis/cluster/testes/fit4$withinvar.csv")
 
 # Scatterplot of clusterized data (fit4)
 # --------------------------------------
