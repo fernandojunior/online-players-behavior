@@ -12,14 +12,11 @@ PLOTS = 'plots/'
 # Some functions
 # --------------
 
-format.string = function (fmt, ...) {
-	"Alias for sprintf."
-	return(sprintf(fmt, ...))
-}
+# helper functions
 
-type = function (obj) {
-	"Alias for typeof."
-	return(typeof(obj))
+contains = function (l, e) {
+	"Return TRUE if list l contains an element e, FALSE otherwise."
+	return(e %in% l)
 }
 
 index = function (e, l) {
@@ -28,27 +25,48 @@ index = function (e, l) {
 }
 
 len = function (l) {
-	"Alias for length"
+	"Alias for length."
 	return(length(l))
 }
 
-contains = function (l, e) {
-	"Return TRUE if list l contains an element e, FALSE otherwise."
-	return(e %in% l)
+range = function (...) {
+	"Alias for seq.int."
+	return(seq.int(...))
 }
 
-range = function (...) {
-	"Return a list containing an arithmetic progression of integers.
+type = function (obj) {
+	"Alias for typeof."
+	return(typeof(obj))
+}
 
-	range(stop) -> list of integers
-	range(start, stop[, by]) -> list of integers
+endswith = function (s, suffix) {
+	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
+	return(grepl(format.string('%s$', suffix), s))
+}
 
-    range(i, j) returns [i, i+1, i+2, ..., j]; start (!) defaults to 1.
-	When by is given, it specifies the increment (or decrement).
+format.string = function (fmt, ...) {
+	"Alias for sprintf."
+	return(sprintf(fmt, ...))
+}
 
-	Alias for seq.int
+startswith = function (s, prefix) {
+	"Return TRUE if s starts with the specified prefix, FALSE otherwise."
+	return(grepl(format.string('^%s', prefix), s))
+}
+
+# math functions
+
+mss = function (x) {
+	"Return the sum of square error of a multidimensional x sample data.
+
+	Example:
+		> x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
+		> ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
+		[1] 10 10
+		> mss(x)  # or simply
+		[1] 10 10
 	"
-	return(seq.int(...))
+	return(apply(x, 2, ss))
 }
 
 mvar = function (x) {
@@ -90,18 +108,33 @@ ss = function (x, n=NA, VAR=FALSE) {
 	return ((n - 1) * x)
 }
 
-mss = function (x) {
-	"Return the sum of square error of a multidimensional x sample data.
+# functions to save plots
 
-	Example:
-		> x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
-		> ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
-		[1] 10 10
-		> mss(x)  # or simply
-		[1] 10 10
+save.png = function (filename, fn, ...) {
+	"Save the output of a plot function to a png file.
+
+	Similar to savePlot(type='png').
 	"
-	return(apply(x, 2, ss))
+	if (!endswith(filename, '.png'))
+		filename = format.string('%s.png', filename)
+	png(file=filename)
+	fn(...)
+	dev.off()
 }
+
+save.boxplot = function (data, title, ...) {
+	"Create a boxplot and save the output in a png file."
+	filename = format.string('%s%s.boxplot', PLOTS, title)
+	save.png(filename, boxplot, data, main=title , ...)
+}
+
+save.plot = function (data, title, ...) {
+	"Create a plot and save the output in a png file."
+	filename = format.string('%s%s.plot', PLOTS, title)
+	save.png(filename, plot, data, main=title, ...)
+}
+
+# deprecated functions
 
 sum_of_squares = function (X) {
 	"Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
@@ -123,37 +156,6 @@ total_sum_of_squares = function (X) {
 	result$tss = sum(ss$ss)
 	result$tvar = sum(ss$var)
 	return(result)
-}
-
-startswith = function (s, prefix) {
-	"Return TRUE if s starts with the specified prefix, FALSE otherwise."
-	return(grepl(format.string('^%s', prefix), s))
-}
-
-endswith = function (s, suffix) {
-	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
-	return(grepl(format.string('%s$', suffix), s))
-}
-
-save.png = function (filename, fn, ...) {
-	"Save the output of a function in a png file."
-	if (!endswith(filename, '.png'))
-		filename = format.string('%s.png', filename)
-	png(file=filename)
-	fn(...)
-	dev.off()
-}
-
-save.boxplot = function (data, title, ...) {
-	"Create a boxplot and save the output in a png file."
-	filename = format.string('%s%s.boxplot', PLOTS, title)
-	save.png(filename, boxplot, data, main=title , ...)
-}
-
-save.plot = function (data, title, ...) {
-	"Create a plot and save the output in a png file."
-	filename = format.string('%s%s.plot', PLOTS, title)
-	save.png(filename, plot, data, main=title, ...)
 }
 
 # Load data
