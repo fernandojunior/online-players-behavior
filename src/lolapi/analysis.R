@@ -32,6 +32,20 @@ contains = function (list_, obj) {
 	return(obj %in% list_)
 }
 
+range = function (...) {
+	"Return a list containing an arithmetic progression of integers.
+
+	range(stop) -> list of integers
+	range(start, stop[, by]) -> list of integers
+
+    range(i, j) returns [i, i+1, i+2, ..., j]; start (!) defaults to 1.
+	When by is given, it specifies the increment (or decrement).
+
+	Alias for seq.int
+	"
+	return(seq.int(...))
+}
+
 mvar = function (x) {
 	"Return the variance of a multidimensional x sample data.
 
@@ -156,7 +170,7 @@ attributes.numerical = c(attributes.boolean, attributes.integer)
 save.boxplot(
 	data[, attributes.integer],
 	'[All] Integer attributes',
-	names=c(1:len(attributes.integer))
+	names=range(len(attributes.integer))
 )
 
 # As we can see from the above plot that some attributes has outliers in the
