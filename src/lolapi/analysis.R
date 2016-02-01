@@ -12,25 +12,49 @@ PLOTS = 'plots/'
 # Some functions
 # --------------
 
-# Alias for typeof
 type = function (obj) {
+	"Alias for typeof."
 	return(typeof(obj))
 }
 
-# Return TRUE if list contains an object, FALSE otherwise
 contains = function (list_, obj) {
+	"Return TRUE if list contains an object, FALSE otherwise."
 	return(obj %in% list_)
 }
 
-# Return the variance of a multidimensional x sample data.
 mvar = function (x) {
+	"Return the variance of a multidimensional x sample data.
+
+	Example:
+		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
+		> mvar(x) # variance for each column
+		[1] 2.5 2.5
+	"
 	return(apply(x,2,var))
 }
 
-# Return the sum of square error of x.
-# If VAR == TRUE, x is a [list of] variance of a sample data with length == n
-# Else, x is a sample data
 ss = function (x, n=NA, VAR=FALSE) {
+	"Return the sum of square error of x.
+
+	If VAR == TRUE, x is a [list of] variance of a sample data with length == n,
+	else, x is a sample data.
+
+	Example:
+		> x = c(1,2,3,4,5)
+		> length(x)
+		[1] 5
+		> var(x)
+		[1] 2.5
+		> ss(x)  # sum of square of x
+		[1] 10
+		> ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
+		[1] 10
+		> ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
+		[1] 10 10
+		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,10))
+		> ss(mvar(x), nrow(x), VAR=TRUE)
+		[1] 10 10
+	"
 	if (VAR == FALSE) {
 		if (is.vector(x))
 			n = length(x)
@@ -41,13 +65,21 @@ ss = function (x, n=NA, VAR=FALSE) {
 	return ((n - 1) * x)
 }
 
-# Return the sum of square error of a multidimensional x sample data.
 mss = function (X) {
+	"Return the sum of square error of a multidimensional x sample data.
+
+	Example:
+		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
+		> ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
+		[1] 10 10
+		> mss(x)  # or simply
+		[1] 10 10
+	"
 	return(apply(x, 2, ss))
 }
 
-# Return sum of squares of multidimensional X sample data: (n-1) * Var(X)
 sum_of_squares = function (X) {
+	"Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
 	n = nrow(X) # size
 	VarX = mvar(x)  # variance
 	SS = (n-1) * VarX # sum of square
@@ -58,8 +90,8 @@ sum_of_squares = function (X) {
 	return(result)
 }
 
-# Return total sum of squares of multidimensional X sample data: sum(ss(X))
 total_sum_of_squares = function (X) {
+	"Return total sum of squares of multidimensional X sample data: sum(ss(X))."
 	ss = sum_of_squares(X)
 	result = c()
 	result$size = ss$size
@@ -68,18 +100,18 @@ total_sum_of_squares = function (X) {
 	return(result)
 }
 
-# Return TRUE if s starts with the specified prefix, FALSE otherwise.
 startswith = function (s, prefix) {
+	"Return TRUE if s starts with the specified prefix, FALSE otherwise."
 	return(grepl(paste('^', prefix), s))
 }
 
-# Return TRUE if s ends with the specified suffix, FALSE otherwise.
 endswith = function (s, suffix) {
+	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
 	return(grepl(paste(suffix, '$', sep=''), s))
 }
 
-# Save the output of a function in a png file.
 save.png = function (filename, fn, ...) {
+	"Save the output of a function in a png file."
 	if (!endswith(filename, '.png'))
 		filename = paste(filename, '.png', sep='')
 	png(file=filename)
@@ -87,14 +119,14 @@ save.png = function (filename, fn, ...) {
 	dev.off()
 }
 
-# Create a boxplot and save the output in a png file.
 save.boxplot = function (data, title, ...) {
+	"Create a boxplot and save the output in a png file."
 	filename = paste(PLOTS, title, '.boxplot', sep='')
 	save.png(filename, boxplot, data, main=title , ...)
 }
 
-# Create a plot and save the output in a png file.
 save.plot = function (data, title, ...) {
+	"Create a plot and save the output in a png file."
 	filename = paste(PLOTS, title, '.plot', sep='')
 	save.png(filename, plot, data, main=title, ...)
 }
