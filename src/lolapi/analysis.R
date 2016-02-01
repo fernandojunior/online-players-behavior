@@ -56,11 +56,6 @@ endswith = function (s, suffix) {
 	return(grepl(paste(suffix, '$', sep=''), s))
 }
 
-# Alias for boxplot
-plot.boxplot = function (...) {
-	do.call(boxplot, ...)
-}
-
 # Save the output of a function in a png file.
 save.png = function (filename, fn, ...) {
 	if (!endswith(filename, '.png'))
@@ -73,7 +68,7 @@ save.png = function (filename, fn, ...) {
 # Create a boxplot and save the output in a png file.
 save.boxplot = function (data, title, ...) {
 	filename = paste(BOXPLOTS, title, sep='')
-	save.png(filename, plot.boxplot, data, main=title , ...)
+	save.png(filename, boxplot, data, main=title , ...)
 }
 
 # Create a plot and save the output in a png file.
@@ -130,10 +125,10 @@ attributes_filter = (
 # filtering data to remove participants with large outliers
 data = data[attributes_filter,]
 
-# as data were looked up by participants, some matches were left with less than
+# As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
 
-# number of participants in the matches
+# number of participants by match
 matches_frequency = table(data$matchId)
 
 # matches that do not contain all 10 participants
