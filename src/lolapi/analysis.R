@@ -237,18 +237,6 @@ save.boxplot(data[, 4:25], 'All attributes (pos)', names=c(1:ncol(data)))
 # saving the data processed
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
 
-# Data spliting by attribute type
-# -------------------------------
-
-# info attributes
-data.info = data[, 1:3]
-
-# bool attributes
-data.bool = data[, 4:7]
-
-# numerical attributes
-data.numerical = data[, 8:25]
-
 # Data normalization (z-score)
 # ----------------------------
 
@@ -446,8 +434,7 @@ for(i in c(1:8)) {
 # TODO centers of each partition ... scaled and not scaled
 
 # mean of all attributes (not scaled) grouped by clusters
-tmp = cbind(data.bool, data.numerical)
-tmp = tmp[, c(5, 7:14, 17: 21)]
+tmp = data[, attributes.selection]
 centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
 write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/centers_not_scaled.csv")
 
