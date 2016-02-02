@@ -232,7 +232,7 @@ data = data[attributes_filter,]
 participants_by_match = counter(data$matchId)
 
 # Matches (IDs) that do not contain all 10 participants
-inconsistent_matches = names(participants_by_match)[participants_by_match < 10]
+inconsistent_matches = names(participants_by_match[participants_by_match < 10])
 
 # Removing inconsistent matches from data
 data = data[!(data$matchId %in% inconsistent_matches),]
