@@ -19,14 +19,19 @@ contains = function (l, e) {
 	return(e %in% l)
 }
 
+counter = function (...) {
+	"Alias for table."
+	return(table(...))
+}
+
 index = function (e, l) {
 	"Alias for match."
 	return(match(e, l))
 }
 
-len = function (l) {
+len = function (...) {
 	"Alias for length."
-	return(length(l))
+	return(length(...))
 }
 
 range = function (...) {
@@ -34,9 +39,9 @@ range = function (...) {
 	return(seq.int(...))
 }
 
-type = function (obj) {
+type = function (...) {
 	"Alias for typeof."
-	return(typeof(obj))
+	return(typeof(...))
 }
 
 endswith = function (s, suffix) {
@@ -44,9 +49,9 @@ endswith = function (s, suffix) {
 	return(grepl(format.string('%s$', suffix), s))
 }
 
-format.string = function (fmt, ...) {
+format.string = function (...) {
 	"Alias for sprintf."
-	return(sprintf(fmt, ...))
+	return(sprintf(...))
 }
 
 startswith = function (s, prefix) {
@@ -224,7 +229,7 @@ data = data[attributes_filter,]
 # 10 participants. So, these inconsistent matches need to be removed.
 
 # Number of participants by match id
-participants_by_match = table(data$matchId)
+participants_by_match = counter(data$matchId)
 
 # Matches (IDs) that do not contain all 10 participants
 inconsistent_matches = names(participants_by_match)[participants_by_match < 10]
