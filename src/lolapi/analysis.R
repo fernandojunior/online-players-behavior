@@ -286,10 +286,12 @@ correlations = abs(correlations)  # the signal does not matter
 diag(correlations) = NA  # correlation of a set with itself does not matter
 write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
-# Cleaning correlations data to create a boxplot
-rownames(correlations) = NULL  # removing row headers
-colnames(correlations) = NULL  # removing col headers
-save.boxplot(correlations, main='Attributes correlation')
+# Boxplot to analyze attributes correlation
+save.boxplot(
+	correlations,
+	main='Attributes correlation',
+	names=range(ncol(correlations))
+)
 
 # Top 3 most correlated attributes
 attributes.topcorrelated = c(
