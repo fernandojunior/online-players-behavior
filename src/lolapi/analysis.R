@@ -194,6 +194,7 @@ for (attribute in attributes.integer) {
 }
 
 # defines a value limit for each integer attribute based on the analysis
+# boolean attributes do not need be filtered.
 attributes_filter = (
 	data$Kill < 35 &
 	data$Assists < 40 &
@@ -252,15 +253,19 @@ data.numerical = data[, 8:25]
 # ----------------------------
 
 # Since the data attributes are of different varieties their scales are also
-# different. In order to maintain uniform scalability we scale (z-score) the
-# numerical attributes.
-data.normalized = cbind(data.info, data.bool, scale(data.numerical))
+# different. In order to maintain uniform scalability we normalize the
+# integer attributes using Z-score. Boolean attributes do not need be
+# normalized.
+data.normalized = cbind(
+	data[, attributes.boolean],
+	scale(data[, attributes.integer])
+)
 
 # Correlation analysis
 # --------------------
 
-# correlation between booelean and numerical attributes
-correlations = cor(data.normalized[,4:25])
+# correlation between attributes of normalized data
+correlations = cor(data.normalized)
 correlations = round(correlations, digits=1)  # just to be more presentable
 correlations = abs(correlations)  # the signal does not matter
 write.csv(correlations, file = "analysis/correlations.csv", sep =",")
@@ -269,19 +274,31 @@ write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 rownames(correlations) = NULL  # removing row headers
 colnames(correlations) = NULL  # removing col headers
 diag(correlations) = NA  # the correlation of a set with itself does not matter
-save.boxplot(correlations, 'Attributes correlation')
+save.boxplot(correlations, main='Attributes correlation')
 
 # Attribute selection
 # -------------------
 
-# boolean and numerical attributes
-data.reduzido = data.normalized[, 4:25]
+# selecting the attributes based on correlation analysis
+attribute.selection = c(
+	"Kills",
+	"Deaths",
+	"GoldEarned",
+	"TotalDamageDealt",
+	"MagicDamageDealt",
+	"PhysicalDamageDealt",
+	"TotalDamageDealtToChampions",
+	"TotalDamageTaken",
+	"MinionsKilled",
+	"WardsPlaced",
+	"TowerKills",
+	"LargestMultiKill",
+	"LargestKillingSpree",
+	"LargestCritStrike"
+)
 
-# selecting attributes based on correlation analysis
-data.reduzido = data.reduzido[, c(5, 7:14, 17: 21)]
-
-# alias
-ldata = data.reduzido
+# reducing the dimensionality of the normalized data using attribute selection
+ldata = data.normalized[, attribute.selection]
 
 # K-means analysis
 # ----------------
