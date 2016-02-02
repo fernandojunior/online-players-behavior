@@ -20,8 +20,8 @@ contains = function (l, e) {
 }
 
 index = function (e, l) {
-	"Index of an element e in a list l."
-	return(which(l == e))
+	"Alias for match."
+	return(match(e, l))
 }
 
 len = function (l) {
@@ -265,14 +265,21 @@ write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 # Cleaning correlations data to create a boxplot
 rownames(correlations) = NULL  # removing row headers
 colnames(correlations) = NULL  # removing col headers
-diag(correlations) = NA  # the correlation of a set with itself does not matter
+diag(correlations) = NA  # correlation of a set with itself does not matter
 save.boxplot(correlations, main='Attributes correlation')
+
+# Top 3 attributes most correlated  # TODO function to rank...
+attributes.topcorrelated = c(
+	'GoldEarned',
+	'TotalDamageDealt',
+	'TotalDamageDealtToChampions'
+)
 
 # Attribute selection
 # -------------------
 
 # Selecting the attributes based on correlation analysis
-attribute.selection = c(
+attributes.selection = c(
 	"Kills",
 	"Deaths",
 	"GoldEarned",
@@ -290,7 +297,7 @@ attribute.selection = c(
 )
 
 # Reducing the dimensionality of the normalized data using attribute selection
-ldata = data.normalized[, attribute.selection]
+ldata = data.normalized[, attributes.selection]
 
 # K-means analysis
 # ----------------
@@ -335,29 +342,29 @@ fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
 
 # Saving the fit4
-write.csv(fit4$cluster, file = "analysis/cluster/testes/fit4$cluster.csv")
-write.csv(fit4$centers, file = "analysis/cluster/testes/fit4$centers.csv")
-write.csv(fit4$size, file = "analysis/cluster/testes/fit4$size.csv")
-write.csv(fit4$totss, file = "analysis/cluster/testes/fit4$totss.csv")
-write.csv(fit4$tot.withinss, file = "analysis/cluster/testes/fit4$tot.withinss.csv")
-write.csv(fit4$withinss, file = "analysis/cluster/testes/fit4$withinss.csv")
-write.csv(fit4$betweenss, file = "analysis/cluster/testes/fit4$betweenss.csv")
-write.csv(fit4$iter, file = "analysis/cluster/testes/fit4$iter.csv")
-write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
-write.csv(fit4$withinvar, file = "analysis/cluster/testes/fit4$withinvar.csv")
+write.csv(fit4$cluster, file="analysis/cluster/testes/fit4$cluster.csv")
+write.csv(fit4$centers, file="analysis/cluster/testes/fit4$centers.csv")
+write.csv(fit4$size, file="analysis/cluster/testes/fit4$size.csv")
+write.csv(fit4$totss, file="analysis/cluster/testes/fit4$totss.csv")
+write.csv(fit4$tot.withinss, file="analysis/cluster/testes/fit4$tot.withinss.csv")
+write.csv(fit4$withinss, file="analysis/cluster/testes/fit4$withinss.csv")
+write.csv(fit4$betweenss, file="analysis/cluster/testes/fit4$betweenss.csv")
+write.csv(fit4$iter, file="analysis/cluster/testes/fit4$iter.csv")
+write.csv(fit4$ifault, file="analysis/cluster/testes/fit4$ifault.csv")
+write.csv(fit4$withinvar, file="analysis/cluster/testes/fit4$withinvar.csv")
 
 # Scatterplot of clusterized data
 # -------------------------------
 
-# Clusplot of sampled n==80 data
+# Clusplot of clusterized data (n==80 rows)
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
-# Scatterplot of all attributes # TODO put in csv file
+# Scatterplot of all attributes # TODO put in png file
 plot(ldata, col=fit4$cluster, pch=15)
 
-# Only most correlated attributes # TODO put in csv file
-plot(ldata[, c(3,4,9)], col=fit4$cluster, pch=15)
+# Only most correlated attributes # TODO put in png file
+plot(ldata[, attributes.topcorrelated], col=fit4$cluster, pch=15)
 
 # Associating each participant tuple with its cluster
 ldata2 = cbind(ldata, Cluster=fit4$cluster)
@@ -366,14 +373,14 @@ ldata2 = cbind(ldata, Cluster=fit4$cluster)
 vencedores = ldata2[ldata2$Win == 1,]
 perdedores = ldata2[ldata2$Win == 0,]
 
-# Scatterplot of each partition # TODO put in csv file
-plot(vencedores[, c(3,4,9)], col=vencedores$Cluster, pch=15)
-plot(perdedores[, c(3,4,9)], col=perdedores$Cluster, pch=15)
+# Scatterplot of each partition # TODO put in png file
+plot(vencedores[, attributes.topcorrelated], col=vencedores$Cluster, pch=15)
+plot(perdedores[, attributes.topcorrelated], col=perdedores$Cluster, pch=15)
 
 # 3D scatterplot using PCA of clusterized data
 ----------------------------------------------
 
-# 3D scatterplot of most correlated attributes
+# 3D scatterplot of most correlated attributes # TODO put in png file
 scatterplot3d(
 	prcomp(ldata, center = TRUE)$x[, c(3,4,9)],
 	pch=fit4$cluster,
@@ -381,10 +388,9 @@ scatterplot3d(
 	angle=95,
 	color=fit4$cluster)
 
-# 3D scatterplot of most correlated attributes of winners # TODO put in csv file
+# 3D scatterplot of most correlated attributes of winners # TODO put in png file
 scatterplot3d(
-	prcomp(vencedores[,1:(ncol(vencedores)-1)],
-	center=TRUE)$x[,c(3,4,9)],
+	prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[,c(3,4,9)],
 	pch=vencedores$Cluster,
 	type="h",
 	angle=95,
@@ -392,8 +398,7 @@ scatterplot3d(
 
 # 3D scatterplot of most correlated attributes of losers # TODO put in csv file
 scatterplot3d(
-	prcomp(perdedores[, 1:(ncol(perdedores)-1)],
-	center=TRUE)$x[,c(3,4,9)],
+	prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[,c(3,4,9)],
 	pch=perdedores$Cluster,
 	type="h",
 	angle=95,
