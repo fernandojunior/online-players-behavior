@@ -283,12 +283,12 @@ data.normalized = cbind(
 correlations = cor(data.normalized)
 correlations = round(correlations, digits=1)  # just to be more presentable
 correlations = abs(correlations)  # the signal does not matter
+diag(correlations) = NA  # correlation of a set with itself does not matter
 write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
 # Cleaning correlations data to create a boxplot
 rownames(correlations) = NULL  # removing row headers
 colnames(correlations) = NULL  # removing col headers
-diag(correlations) = NA  # correlation of a set with itself does not matter
 save.boxplot(correlations, main='Attributes correlation')
 
 # Top 3 most correlated attributes
