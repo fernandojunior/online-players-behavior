@@ -291,12 +291,28 @@ colnames(correlations) = NULL  # removing col headers
 diag(correlations) = NA  # correlation of a set with itself does not matter
 save.boxplot(correlations, main='Attributes correlation')
 
-# Top 3 attributes most correlated  # TODO function to rank...
+# Top 3 most correlated attributes
 attributes.topcorrelated = c(
 	'GoldEarned',
 	'TotalDamageDealt',
 	'TotalDamageDealtToChampions'
 )
+
+# TODO
+# Rank of the most correlated attributes based on non-correlations counter and
+# mean of correlations for each attribute.
+
+# correlations counter for each attribute
+qt = apply(correlations, 2, counter)
+
+# non-correlations counter for each attribute
+qt0 = map(function (f) f['0'], qt)
+
+# rounded mean of non-correlations
+mqt0 = round(mean(values(qt0)))
+
+# attributes with non-correlations counter greater then the mean
+names(qt0[qt0 > round(mqt0)])
 
 # Attribute selection
 # -------------------
