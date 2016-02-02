@@ -34,6 +34,17 @@ len = function (...) {
 	return(length(...))
 }
 
+map = function (...) {
+	"Alias for map.
+
+	It has the same behavior of the lapply function.
+	The following commands produce the same thing:
+		> lapply((1:5), function (x) x + 1)
+		> Map(function (x) x + 1, (1:5))
+	"
+	return(Map(...))
+}
+
 range = function (...) {
 	"Alias for seq.int."
 	return(seq.int(...))
@@ -621,3 +632,4 @@ alternative hypothesis: true location shift is not equal to 0
 # http://stackoverflow.com/questions/1567718/getting-a-function-name-as-a-string
 # http://vis.supstat.com/2013/04/plotting-symbols-and-color-palettes/
 # http://stackoverflow.com/questions/1923273/counting-the-number-of-elements-with-the-values-of-x-in-a-vector
+# http://blog.melchua.com/2012/09/07/r-basics-accessing-elements-of-an-object/
