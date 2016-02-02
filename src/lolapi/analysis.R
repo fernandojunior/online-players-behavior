@@ -110,28 +110,31 @@ ss = function (x, n=NA, VAR=FALSE) {
 
 # functions to save plots
 
-save.png = function (filename, fn, ...) {
-	"Save the output of a plot function to a png file.
+save.png = function (f, ...) {
+	"Save the output of a plot function f to a png file.
 
 	Similar to savePlot(type='png').
 	"
-	if (!endswith(filename, '.png'))
-		filename = format.string('%s.png', filename)
+	name = 'Rplot'
+	args = c(...)
+	if (!is.null(args))
+		if (!is.null(args['main']) & !is.na(args['main']))
+			name = args['main']
+	fname = as.character(substitute(f))
+	filename = format.string('%s%s.%s.png', PLOTS, name, fname)
 	png(file=filename)
-	fn(...)
+	f(...)
 	dev.off()
 }
 
-save.boxplot = function (data, title, ...) {
+save.boxplot = function (...) {
 	"Create a boxplot and save the output in a png file."
-	filename = format.string('%s%s.boxplot', PLOTS, title)
-	save.png(filename, boxplot, data, main=title , ...)
+	save.png(boxplot, ...)
 }
 
-save.plot = function (data, title, ...) {
+save.plot = function (...) {
 	"Create a plot and save the output in a png file."
-	filename = format.string('%s%s.plot', PLOTS, title)
-	save.png(filename, plot, data, main=title, ...)
+	save.png(plot, ...)
 }
 
 # deprecated functions
@@ -176,7 +179,7 @@ attributes.numerical = c(attributes.boolean, attributes.integer)
 # analyzing the outliers of all integer attributes using boxplot
 save.boxplot(
 	data[, attributes.integer],
-	'[All] Integer attributes',
+	main='[All] Integer attributes',
 	names=range(len(attributes.integer))
 )
 
@@ -185,11 +188,9 @@ save.boxplot(
 for (attribute in attributes.integer) {
 	i = index(attribute, attributes.integer)
 	title = format.string('[%d] %s', i, attribute)
-
 	values = data[, attribute]
-
-	save.boxplot(values, title)
-	save.plot(values, title)
+	save.plot(values, main=title)
+	save.boxplot(values, main=title)
 }
 
 # defines a value limit for each integer attribute based on the analysis
@@ -298,7 +299,7 @@ for(k in 1 : 50)
     twss[k] = sum(kmeans(ldata, centers = k, algorithm = 'Lloyd')$withinss)
 
 # ploting the test for each possible number of clusters to analyse the knee
-save.plot(tss, "K clusters", type="b", xlab="k", ylab="Total wihtinss")
+save.plot(tss, main="K clusters", type="b", xlab="k", ylab="Total wihtinss")
 
 # What is the best? k==8 or k==11?
 
