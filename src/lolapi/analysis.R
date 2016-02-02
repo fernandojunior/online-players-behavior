@@ -229,10 +229,10 @@ matches_frequency = table(data$matchId)
 inconsistent_matches = names(matches_frequency)[matches_frequency < 10]
 
 # removing inconsistent matches from data
-data = data[!(data$matchId %in% matchs_without_participants()), ]
+data = data[!(data$matchId %in% inconsistent_matches), ]
 
 # analyzing attributes after the tratament of outliers
-save.boxplot(data[, 4:25], 'All attributes (pos)', names=c(1:ncol(data)))
+save.boxplot(data[, 4:25], 'All attributes (pos)', names=range(ncol(data)))
 
 # saving the data processed
 write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
