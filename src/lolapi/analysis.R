@@ -55,6 +55,13 @@ type = function (...) {
 	return(typeof(...))
 }
 
+values = function (x) {
+	"Return only the values of an list or vector x."
+	if (is.list(x))
+		x = unlist(x)
+	return(unname(x))
+}
+
 endswith = function (s, suffix) {
 	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
 	return(grepl(format.string('%s$', suffix), s))
