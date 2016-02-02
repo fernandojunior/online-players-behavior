@@ -166,7 +166,7 @@ total_sum_of_squares = function (X) {
 
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
-# data attributes
+# Data attributes
 attributes = names(data)
 attributes.info = attributes[1:3]
 attributes.boolean = attributes[4:7]
@@ -176,7 +176,8 @@ attributes.numerical = c(attributes.boolean, attributes.integer)
 # Treatment of outliers
 # ---------------------
 
-# analyzing the outliers of all integer attributes using boxplot
+# Boxplot to analyze the outliers of all integer attributes. Boolean attributes
+# do not need be analyzed.
 save.boxplot(
 	data[, attributes.integer],
 	main='[All] Integer attributes',
@@ -193,8 +194,8 @@ for (attribute in attributes.integer) {
 	save.boxplot(values, main=title)
 }
 
-# defines a value limit for each integer attribute based on the analysis
-# boolean attributes do not need be filtered.
+# Filter to define a value limit for each integer attribute based on the
+# analysis
 attributes_filter = (
 	data$Kill < 35 &
 	data$Assists < 40 &
@@ -216,26 +217,29 @@ attributes_filter = (
 	data$TotalHealAmount < 40000
 )
 
-# filtering data to remove participants with large outliers
+# Filtering entire data to remove participants with large outliers
 data = data[attributes_filter,]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
 
-# number of participants by match
-matches_frequency = table(data$matchId)
+# Number of participants by match id
+participants_by_match = table(data$matchId)
 
-# matches that do not contain all 10 participants
-inconsistent_matches = names(matches_frequency)[matches_frequency < 10]
+# Matches (IDs) that do not contain all 10 participants
+inconsistent_matches = names(participants_by_match)[participants_by_match < 10]
 
-# removing inconsistent matches from data
-data = data[!(data$matchId %in% inconsistent_matches), ]
+# Removing inconsistent matches from data
+data = data[!(data$matchId %in% inconsistent_matches),]
 
-# analyzing attributes after the tratament of outliers
-save.boxplot(data[, 4:25], 'All attributes (pos)', names=range(ncol(data)))
+# Boxplot to analyze the integer attributes after the treatments
+save.boxplot(
+	data[, attributes.numerical],
+	main='[All] attributes (pos)',
+	names=range(len(attributes.numerical)))
 
-# saving the data processed
-write.csv(data, file = "data/ranked_matches_2015_no_largeoutliers.csv")
+# Saving the treated data
+write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
 
 # Data normalization (z-score)
 # ----------------------------
@@ -252,13 +256,13 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# correlation between attributes of normalized data
+# Correlation between attributes of normalized data
 correlations = cor(data.normalized)
 correlations = round(correlations, digits=1)  # just to be more presentable
 correlations = abs(correlations)  # the signal does not matter
 write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
-# cleaning correlations data to create a boxplot
+# Cleaning correlations data to create a boxplot
 rownames(correlations) = NULL  # removing row headers
 colnames(correlations) = NULL  # removing col headers
 diag(correlations) = NA  # the correlation of a set with itself does not matter
@@ -267,7 +271,7 @@ save.boxplot(correlations, main='Attributes correlation')
 # Attribute selection
 # -------------------
 
-# selecting the attributes based on correlation analysis
+# Selecting the attributes based on correlation analysis
 attribute.selection = c(
 	"Kills",
 	"Deaths",
@@ -285,7 +289,7 @@ attribute.selection = c(
 	"LargestCritStrike"
 )
 
-# reducing the dimensionality of the normalized data using attribute selection
+# Reducing the dimensionality of the normalized data using attribute selection
 ldata = data.normalized[, attribute.selection]
 
 # K-means analysis
@@ -296,19 +300,19 @@ ldata = data.normalized[, attribute.selection]
 # analyzing the curve of a generated graph from a test (based on k-means)
 # conducted for each possible.
 
-# storing the total within sum of square resultant of k-means test for each k
+# Stores the total within sum of square resultant of k-means test for each k
 twss = c()
 
-# testing k <= 50 clusters
+# Testing k <= 50 clusters
 for(k in 1 : 50)
     twss[k] = sum(kmeans(ldata, centers = k, algorithm = 'Lloyd')$withinss)
 
-# ploting the test for each possible number of clusters to analyse the knee
+# Plot to analyze the knee resultant of the test for each k
 save.plot(tss, main="K clusters", type="b", xlab="k", ylab="Total wihtinss")
 
 # What is the best? k==8 or k==11?
 
-# Extra k-means configurations tests
+# Extra k-means (configurations) tests
 # ----------------------------------
 
 fit = kmeans(ldata, 11, algorithm='Lloyd')
@@ -325,7 +329,12 @@ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
 fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  57.7 %)
 
-# saving the fit4, which has the best trade-off
+# fit4 has the best trade-off
+
+# Variance of each cluster found by fit4
+fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
+
+# Saving the fit4
 write.csv(fit4$cluster, file = "analysis/cluster/testes/fit4$cluster.csv")
 write.csv(fit4$centers, file = "analysis/cluster/testes/fit4$centers.csv")
 write.csv(fit4$size, file = "analysis/cluster/testes/fit4$size.csv")
@@ -335,32 +344,29 @@ write.csv(fit4$withinss, file = "analysis/cluster/testes/fit4$withinss.csv")
 write.csv(fit4$betweenss, file = "analysis/cluster/testes/fit4$betweenss.csv")
 write.csv(fit4$iter, file = "analysis/cluster/testes/fit4$iter.csv")
 write.csv(fit4$ifault, file = "analysis/cluster/testes/fit4$ifault.csv")
-
-# variance of each cluster
-fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
 write.csv(fit4$withinvar, file = "analysis/cluster/testes/fit4$withinvar.csv")
 
-# Scatterplot of clusterized data (fit4)
-# --------------------------------------
+# Scatterplot of clusterized data
+# -------------------------------
 
-# clusplot of sampled n=80 data
+# Clusplot of sampled n==80 data
 clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
-# scatterplot of all attributes # TODO put in csv file
+# Scatterplot of all attributes # TODO put in csv file
 plot(ldata, col=fit4$cluster, pch=15)
 
-# only most correlated attributes # TODO put in csv file
+# Only most correlated attributes # TODO put in csv file
 plot(ldata[, c(3,4,9)], col=fit4$cluster, pch=15)
 
-# associating each participant tuple with its cluster
+# Associating each participant tuple with its cluster
 ldata2 = cbind(ldata, Cluster=fit4$cluster)
 
-# spliting clusterized data between winners and losers
+# Spliting clusterized data between winners and losers
 vencedores = ldata2[ldata2$Win == 1,]
 perdedores = ldata2[ldata2$Win == 0,]
 
-# scatterplot of each partition # TODO put in csv file
+# Scatterplot of each partition # TODO put in csv file
 plot(vencedores[, c(3,4,9)], col=vencedores$Cluster, pch=15)
 plot(perdedores[, c(3,4,9)], col=perdedores$Cluster, pch=15)
 
@@ -396,7 +402,7 @@ scatterplot3d(
 # Summarying partitions
 -----------------------
 
-# within cluster sum of squares
+# Within cluster sum of squares
 withinss = function (data, cluster) {
 	X = data[data$Cluster == cluster, ]
 	tss = total_sum_of_squares(X)
