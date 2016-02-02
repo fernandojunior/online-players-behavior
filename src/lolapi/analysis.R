@@ -377,32 +377,38 @@ perdedores = ldata2[ldata2$Win == 0,]
 plot(vencedores[, attributes.topcorrelated], col=vencedores$Cluster, pch=15)
 plot(perdedores[, attributes.topcorrelated], col=perdedores$Cluster, pch=15)
 
-# 3D scatterplot using PCA of clusterized data
-----------------------------------------------
+# PCA of clusterized data
+--------------------------
+
+# Principal component indices to filter, based on top correlated attributes
+pca_indices = index(attributes.topcorrelated[1:3], names(ldata))
 
 # 3D scatterplot of most correlated attributes # TODO put in png file
 scatterplot3d(
-	prcomp(ldata, center = TRUE)$x[, c(3,4,9)],
+	prcomp(ldata, center=TRUE)$x[, pca_indices],
 	pch=fit4$cluster,
 	type="h",
 	angle=95,
-	color=fit4$cluster)
+	color=fit4$cluster
+)
 
 # 3D scatterplot of most correlated attributes of winners # TODO put in png file
 scatterplot3d(
-	prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[,c(3,4,9)],
+	prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[, pca_indices],
 	pch=vencedores$Cluster,
 	type="h",
 	angle=95,
-	color=vencedores$Cluster)
+	color=vencedores$Cluster
+)
 
 # 3D scatterplot of most correlated attributes of losers # TODO put in csv file
 scatterplot3d(
-	prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[,c(3,4,9)],
+	prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[, pca_indices],
 	pch=perdedores$Cluster,
 	type="h",
 	angle=95,
-	color=perdedores$Cluster)
+	color=perdedores$Cluster
+)
 
 # Summarying partitions
 -----------------------
