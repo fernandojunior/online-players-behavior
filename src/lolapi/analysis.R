@@ -332,21 +332,19 @@ save.boxplot(
 # c(a) in C(A) = {absolute correlations of an attibute a}
 # select(a) = False, if qt0(c) > m(qt0(C)) And m(c) < md(m(C)); True otherwise
 # select(A) = A, if Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C))
-
-# qt(C): Correlations counter for each attribute
-qt = apply(correlations, 2, counter)
+# select(A) = A | if Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C))
 
 # qt0(C): Non-correlations counter for each attribute
-qt0 = map(function (counters) counters['0'], qt)
+qt0 = cor.mcounter(correlations, '0')
 
 # m(qt0(C)): Mean of non-correlations counter
 mqt0 = mean(values(qt0))
 
 # qt0(C) > m(qt0(C)): Attributes with counter > mean of non-correlations counter
-cond1 = names(qt0[qt0 > round(mqt0)])
+cond1 = names(qt0[qt0 > mqt0])
 
 # m(C): mean of correlations of each attribute
-m = apply(correlations, 2, function(x) mean(x[!x %in% NA]))
+m = cor.mmean(correlations)
 
 # md(m(C)): median of means of correlations
 mdm = median(m)
