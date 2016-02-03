@@ -293,33 +293,45 @@ save.boxplot(
 	names=range(ncol(correlations))
 )
 
-# Top 3 most correlated attributes
-attributes.topcorrelated = c(
-	'GoldEarned',
-	'TotalDamageDealt',
-	'TotalDamageDealtToChampions'
-)
-
 # TODO
-# Rank of the most correlated attributes based on non-correlations counter and
-# mean of correlations for each attribute.
+# Automatic attribute selection
+-------------------------------
 
-# correlations counter for each attribute
+# Automatic attribute selection based on the non-correlations counter and mean
+# of correlations for each attribute:
+# c(a) in C(A) = {absolute correlations of an attibute a}
+# select(a) = False, if qt0(c) > m(qt0(C)) And m(c) < md(m(C)); True otherwise
+# select(A) = A, if Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C))
+
+# qt(C): Correlations counter for each attribute
 qt = apply(correlations, 2, counter)
 
-# non-correlations counter for each attribute
-qt0 = map(function (f) f['0'], qt)
+# qt0(C): Non-correlations counter for each attribute
+qt0 = map(function (counters) counters['0'], qt)
 
-# rounded mean of non-correlations
-mqt0 = round(mean(values(qt0)))
+# m(qt0(C)): Mean of non-correlations counter
+mqt0 = mean(values(qt0))
 
-# attributes with non-correlations counter greater then the mean
-names(qt0[qt0 > round(mqt0)])
+# qt0(C) > m(qt0(C)): Attributes with counter > mean of non-correlations counter
+cond1 = names(qt0[qt0 > round(mqt0)])
 
-# Attribute selection
-# -------------------
+# m(C): mean of correlations of each attribute
+m = apply(correlations, 2, function(x) mean(x[!x %in% NA]))
 
-# Selecting the attributes based on correlation analysis
+# md(m(C)): median of means of correlations
+mdm = median(m)
+
+# m(C) < md(m(C)): Attributes with mean < median of means of correlations
+cond2 = names(m[m < mdm])
+
+# Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C): Automatic attribute selection
+corrattrs <- colnames(correlations)  # attributes of the correlations
+attributes.autoselection = corrattrs[!corrattrs %in% intersect(cond1, cond2)]
+
+# Manual attribute selection
+# --------------------------
+
+# Manual selection of the attributes based on correlation analysis
 attributes.selection = c(
 	"Kills",
 	"Deaths",
@@ -335,6 +347,14 @@ attributes.selection = c(
 	"LargestMultiKill",
 	"LargestKillingSpree",
 	"LargestCritStrike"
+)
+
+# Top 3 correlated attributes based on the mean of correlations for each one
+# names(sort(m, decreasing = TRUE)[1:3])
+attributes.topcorrelated = c(
+	'GoldEarned',
+	'TotalDamageDealt',
+	'TotalDamageDealtToChampions'
 )
 
 # Reducing the dimensionality of the normalized data using attribute selection
