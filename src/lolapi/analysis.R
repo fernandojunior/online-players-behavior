@@ -134,31 +134,82 @@ ss = function (x, n=NA, VAR=FALSE) {
 # correlation functions
 
 cor.counter = function (correlations, select=NULL) {
-	"Count the number of items from a list (or vector) of correlations.
+    "Count the number of items from a list (or vector) of correlations.
 
-	Specific item(s) name can be selected.
-	"
-	if (!is.null(select))
-		return(counter(correlations)[select])
-	return(counter(correlations))
+    Specific item(s) name can be selected.
+    "
+    if (!is.null(select))
+        return(counter(correlations)[select])
+    return(counter(correlations))
 }
 
 cor.mcounter = function (mcorrelations, select=NULL) {
-	"Count the number of items for each column of a matrix of correlations.
+    "Count the number of items for each column of a matrix of correlations.
 
-	Specific item(s) name can be selected.
-	"
-	return(apply(mcorrelations, 2, function(col) cor.counter(col, select)))
+    Specific item(s) name can be selected.
+    "
+    return(apply(mcorrelations, 2, function(col) cor.counter(col, select)))
 }
 
 cor.mean = function (correlations) {
-	"Mean of a list or vector of correlations."
-	return(mean(correlations[!correlations %in% NA]))
+    "Mean of a list or vector of correlations."
+    return(mean(correlations[!correlations %in% NA]))
 }
 
 cor.mmean = function (mcorrelations) {
-	"Mean for each column of a matrix of correlations."
-	return(apply(mcorrelations, 2, cor.mean))
+    "Mean for each column of a matrix of correlations."
+    return(apply(mcorrelations, 2, cor.mean))
+}
+
+attribute_selection = function (correlation_matrix) {
+    "Automatic attribute selection of a correlation matrix.
+
+    It is based on the non-correlations counter and mean of correlations for
+    each column (attribute) of the correlation matrix.
+
+    Formalization:
+
+        C = C(A) = {correlation matrix of attributes A}
+
+        A = A(C) = {attributes of a correlation matrix C}
+
+        c(a) in C(A) = {correlations of attibute a}
+
+        select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
+            where 0 = False and 1 = True
+
+        selection(C) = { a in A(C) | select(a)}
+    "
+
+    # A(C): Attributes of the correlation matrix C
+    attributes = colnames(correlation_matrix)
+
+    # qt0(A): Non-correlations counter for each attribute A(C)
+    qt0 = cor.mcounter(correlation_matrix, '0')
+
+    # m(qt0(A)): Mean of qt0
+    mqt0 = mean(values(qt0))
+
+    # m(A): Mean of correlations for each a in A(C)
+    m = cor.mmean(correlation_matrix)
+
+    # md(m(A)): Median of m(A)
+    mdm = median(m)
+
+    select =  function (attribute) {
+        "Return TRUE if attribute must be selected, FALSE otherwise."
+        if (qt0[attribute] > mqt0 & m[attribute] < mdm)
+            return(FALSE)
+        return(TRUE)
+    }
+
+    # Indicates which attributes should be selected
+    filter = values(map(select, attributes))
+
+    # Selecting attributes
+    selection = attributes[filter]
+
+    return(selection)
 }
 
 # functions to save plots
