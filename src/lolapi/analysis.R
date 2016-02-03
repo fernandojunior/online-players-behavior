@@ -131,6 +131,36 @@ ss = function (x, n=NA, VAR=FALSE) {
     return ((n - 1) * x)
 }
 
+# correlation functions
+
+cor.counter = function (correlations, select=NULL) {
+	"Count the number of items from a list (or vector) of correlations.
+
+	Specific item(s) name can be selected.
+	"
+	if (!is.null(select))
+		return(counter(correlations)[select])
+	return(counter(correlations))
+}
+
+cor.mcounter = function (mcorrelations, select=NULL) {
+	"Count the number of items for each column of a matrix of correlations.
+
+	Specific item(s) name can be selected.
+	"
+	return(apply(mcorrelations, 2, function(col) cor.counter(col, select)))
+}
+
+cor.mean = function (correlations) {
+	"Mean of a list or vector of correlations."
+	return(mean(correlations[!correlations %in% NA]))
+}
+
+cor.mmean = function (mcorrelations) {
+	"Mean for each column of a matrix of correlations."
+	return(apply(mcorrelations, 2, cor.mean))
+}
+
 # functions to save plots
 
 save.png = function (f, ...) {
@@ -327,6 +357,15 @@ cond2 = names(m[m < mdm])
 # Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C): Automatic attribute selection
 corrattrs <- colnames(correlations)  # attributes of the correlations
 attributes.autoselection = corrattrs[!corrattrs %in% intersect(cond1, cond2)]
+
+# > attributes.autoselection
+# [1] "Win"                         "Kills"
+# [3] "Deaths"                      "GoldEarned"
+# [5] "TotalDamageDealt"            "PhysicalDamageDealt"
+# [7] "TotalDamageDealtToChampions" "TotalDamageTaken"
+# [9] "MinionsKilled"               "WardsPlaced"
+# [11] "TowerKills"                  "LargestMultiKill"
+# [13] "LargestKillingSpree"         "LargestCritStrike"
 
 # Manual attribute selection
 # --------------------------
