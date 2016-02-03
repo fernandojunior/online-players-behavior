@@ -34,15 +34,29 @@ len = function (...) {
     return(length(...))
 }
 
-map = function (...) {
-    "Alias for map.
+map = function (f, x) {
+    "Apply a function f to a value x.
 
-    It has the same behavior of the lapply function.
-    The following commands produce the same thing:
-        > lapply((1:5), function (x) x + 1)
-        > Map(function (x) x + 1, (1:5))
+    If x is a vector or a list, it applies for each item in x.
+
+    if x is a matrix, it applies for each item, for each column, in x.
+
+    Examples:
+        > map(function (a) a + 1, 1)
+        [1] 2
+        > map(function (a) a + 1, c(1,2,3))
+        [1] 2 3 4
+        > map(function (a) a + 1, rbind(c(1,2), c(1,2)))
+             [,1] [,2]
+        [1,]    2    3
+        [2,]    2    3
     "
-    return(Map(...))
+    if (is.list(x))
+        lapply(x, f)
+    else if (is.vector(x))
+        sapply(x, f)
+    else if (is.matrix(x))
+        apply(x, 2, function (y) map(f, y))
 }
 
 range = function (...) {
@@ -180,9 +194,8 @@ attribute_selection = function (correlation_matrix) {
 
         selection(C) = { a in A(C) | select(a)}
     "
-
-	# Correlation <= 5% is considered non-correlation
-	correlation_matrix = round(correlation_matrix, digits=1)
+    # Correlation <= 5% is considered non-correlation
+    correlation_matrix = round(correlation_matrix, digits=1)
 
     # A(C): Attributes of the correlation matrix C
     attributes = colnames(correlation_matrix)
