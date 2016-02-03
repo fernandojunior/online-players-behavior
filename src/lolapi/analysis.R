@@ -203,10 +203,10 @@ attribute_selection = function (correlation_matrix) {
         return(TRUE)
     }
 
-    # Indicates which attributes should be selected
+    # Applying select for each a in A(C) to indicate which must be selected
     filter = values(map(select, attributes))
 
-    # Selecting attributes
+    # Selecting (filtering) attributes
     selection = attributes[filter]
 
     return(selection)
