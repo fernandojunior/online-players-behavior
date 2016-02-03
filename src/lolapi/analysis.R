@@ -374,38 +374,10 @@ save.boxplot(
     names=range(ncol(correlations))
 )
 
-# TODO
 # Automatic attribute selection
 -------------------------------
 
-# Automatic attribute selection based on the non-correlations counter and mean
-# of correlations for each attribute:
-# c(a) in C(A) = {absolute correlations of an attibute a}
-# select(a) = False, if qt0(c) > m(qt0(C)) And m(c) < md(m(C)); True otherwise
-# select(A) = A, if Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C))
-# select(A) = A | if Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C))
-
-# qt0(C): Non-correlations counter for each attribute
-qt0 = cor.mcounter(correlations, '0')
-
-# m(qt0(C)): Mean of non-correlations counter
-mqt0 = mean(values(qt0))
-
-# qt0(C) > m(qt0(C)): Attributes with counter > mean of non-correlations counter
-cond1 = names(qt0[qt0 > mqt0])
-
-# m(C): mean of correlations of each attribute
-m = cor.mmean(correlations)
-
-# md(m(C)): median of means of correlations
-mdm = median(m)
-
-# m(C) < md(m(C)): Attributes with mean < median of means of correlations
-cond2 = names(m[m < mdm])
-
-# Not qt0(C) > m(qt0(C)) And  m(C) < md(m(C): Automatic attribute selection
-corrattrs <- colnames(correlations)  # attributes of the correlations
-attributes.autoselection = corrattrs[!corrattrs %in% intersect(cond1, cond2)]
+attributes.autoselection = attribute_selection(correlations)
 
 # > attributes.autoselection
 # [1] "Win"                         "Kills"
