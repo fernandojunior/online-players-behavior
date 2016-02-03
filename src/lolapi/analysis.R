@@ -181,6 +181,9 @@ attribute_selection = function (correlation_matrix) {
         selection(C) = { a in A(C) | select(a)}
     "
 
+	# Correlation <= 5% is considered non-correlation
+	correlation_matrix = round(correlation_matrix, digits=1)
+
     # A(C): Attributes of the correlation matrix C
     attributes = colnames(correlation_matrix)
 
@@ -198,8 +201,9 @@ attribute_selection = function (correlation_matrix) {
 
     select =  function (attribute) {
         "Return TRUE if attribute must be selected, FALSE otherwise."
-        if (qt0[attribute] > mqt0 & m[attribute] < mdm)
-            return(FALSE)
+        if (!is.na(qt0[attribute]) & !is.na(m[attribute]))
+            if (qt0[attribute] > mqt0 & m[attribute] < mdm)
+                return(FALSE)
         return(TRUE)
     }
 
