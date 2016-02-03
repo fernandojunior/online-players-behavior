@@ -15,173 +15,173 @@ PLOTS = 'plots/'
 # helper functions
 
 contains = function (l, e) {
-	"Return TRUE if list l contains an element e, FALSE otherwise."
-	return(e %in% l)
+    "Return TRUE if list l contains an element e, FALSE otherwise."
+    return(e %in% l)
 }
 
 counter = function (...) {
-	"Alias for table."
-	return(table(...))
+    "Alias for table."
+    return(table(...))
 }
 
 index = function (e, l) {
-	"Alias for match."
-	return(match(e, l))
+    "Alias for match."
+    return(match(e, l))
 }
 
 len = function (...) {
-	"Alias for length."
-	return(length(...))
+    "Alias for length."
+    return(length(...))
 }
 
 map = function (...) {
-	"Alias for map.
+    "Alias for map.
 
-	It has the same behavior of the lapply function.
-	The following commands produce the same thing:
-		> lapply((1:5), function (x) x + 1)
-		> Map(function (x) x + 1, (1:5))
-	"
-	return(Map(...))
+    It has the same behavior of the lapply function.
+    The following commands produce the same thing:
+        > lapply((1:5), function (x) x + 1)
+        > Map(function (x) x + 1, (1:5))
+    "
+    return(Map(...))
 }
 
 range = function (...) {
-	"Alias for seq.int."
-	return(seq.int(...))
+    "Alias for seq.int."
+    return(seq.int(...))
 }
 
 type = function (...) {
-	"Alias for typeof."
-	return(typeof(...))
+    "Alias for typeof."
+    return(typeof(...))
 }
 
 values = function (x) {
-	"Return only the values of an list or vector x."
-	if (is.list(x))
-		x = unlist(x)
-	return(unname(x))
+    "Return only the values of an list or vector x."
+    if (is.list(x))
+        x = unlist(x)
+    return(unname(x))
 }
 
 endswith = function (s, suffix) {
-	"Return TRUE if s ends with the specified suffix, FALSE otherwise."
-	return(grepl(format.string('%s$', suffix), s))
+    "Return TRUE if s ends with the specified suffix, FALSE otherwise."
+    return(grepl(format.string('%s$', suffix), s))
 }
 
 format.string = function (...) {
-	"Alias for sprintf."
-	return(sprintf(...))
+    "Alias for sprintf."
+    return(sprintf(...))
 }
 
 startswith = function (s, prefix) {
-	"Return TRUE if s starts with the specified prefix, FALSE otherwise."
-	return(grepl(format.string('^%s', prefix), s))
+    "Return TRUE if s starts with the specified prefix, FALSE otherwise."
+    return(grepl(format.string('^%s', prefix), s))
 }
 
 # math functions
 
 mss = function (x) {
-	"Return the sum of square error of a multidimensional x sample data.
+    "Return the sum of square error of a multidimensional x sample data.
 
-	Example:
-		> x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
-		> ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
-		[1] 10 10
-		> mss(x)  # or simply
-		[1] 10 10
-	"
-	return(apply(x, 2, ss))
+    Example:
+        > x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
+        > ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
+        [1] 10 10
+        > mss(x)  # or simply
+        [1] 10 10
+    "
+    return(apply(x, 2, ss))
 }
 
 mvar = function (x) {
-	"Return the variance of a multidimensional x sample data.
+    "Return the variance of a multidimensional x sample data.
 
-	Example:
-		> x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
-		> mvar(x) # variance for each column
-		[1] 2.5 2.5
-	"
-	return(apply(x,2,var))
+    Example:
+        > x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
+        > mvar(x) # variance for each column
+        [1] 2.5 2.5
+    "
+    return(apply(x,2,var))
 }
 
 ss = function (x, n=NA, VAR=FALSE) {
-	"Return the sum of square error of a sample data x: (n - 1) * var(x).
+    "Return the sum of square error of a sample data x: (n - 1) * var(x).
 
-	If VAR == TRUE, x is a [list of] variance of a sample data with n length.
+    If VAR == TRUE, x is a [list of] variance of a sample data with n length.
 
-	Example:
-		> x = c(1, 2, 3, 4, 5)
-		> length(x)
-		[1] 5
-		> var(x)
-		[1] 2.5
-		> ss(x)  # sum of square of x
-		[1] 10
-		> ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
-		[1] 10
-		> ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
-		[1] 10 10
-	"
-	if (VAR == FALSE) {
-		if (is.vector(x))
-			n = length(x)
-		if (is.matrix(x))
-			n = nrow(x)
-		x = var(x)
-	}
-	return ((n - 1) * x)
+    Example:
+        > x = c(1, 2, 3, 4, 5)
+        > length(x)
+        [1] 5
+        > var(x)
+        [1] 2.5
+        > ss(x)  # sum of square of x
+        [1] 10
+        > ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
+        [1] 10
+        > ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
+        [1] 10 10
+    "
+    if (VAR == FALSE) {
+        if (is.vector(x))
+            n = length(x)
+        if (is.matrix(x))
+            n = nrow(x)
+        x = var(x)
+    }
+    return ((n - 1) * x)
 }
 
 # functions to save plots
 
 save.png = function (f, ...) {
-	"Save the output of a plot function f to a png file.
+    "Save the output of a plot function f to a png file.
 
-	Similar to savePlot(type='png').
-	"
-	name = 'Rplot'
-	args = c(...)
-	if (!is.null(args))
-		if (!is.null(args['main']) & !is.na(args['main']))
-			name = args['main']
-	fname = as.character(substitute(f))
-	filename = format.string('%s%s.%s.png', PLOTS, name, fname)
-	png(file=filename)
-	f(...)
-	dev.off()
+    Similar to savePlot(type='png').
+    "
+    name = 'Rplot'
+    args = c(...)
+    if (!is.null(args))
+        if (!is.null(args['main']) & !is.na(args['main']))
+            name = args['main']
+    fname = as.character(substitute(f))
+    filename = format.string('%s%s.%s.png', PLOTS, name, fname)
+    png(file=filename)
+    f(...)
+    dev.off()
 }
 
 save.boxplot = function (...) {
-	"Create a boxplot and save the output in a png file."
-	save.png(boxplot, ...)
+    "Create a boxplot and save the output in a png file."
+    save.png(boxplot, ...)
 }
 
 save.plot = function (...) {
-	"Create a plot and save the output in a png file."
-	save.png(plot, ...)
+    "Create a plot and save the output in a png file."
+    save.png(plot, ...)
 }
 
 # deprecated functions
 
 sum_of_squares = function (X) {
-	"Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
-	n = nrow(X) # size
-	VarX = mvar(x)  # variance
-	SS = (n-1) * VarX # sum of square
-	result = c()
-	result$size = n
-	result$ss = SS
-	result$var = VarX
-	return(result)
+    "Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
+    n = nrow(X) # size
+    VarX = mvar(x)  # variance
+    SS = (n-1) * VarX # sum of square
+    result = c()
+    result$size = n
+    result$ss = SS
+    result$var = VarX
+    return(result)
 }
 
 total_sum_of_squares = function (X) {
-	"Return total sum of squares of multidimensional X sample data: sum(ss(X))."
-	ss = sum_of_squares(X)
-	result = c()
-	result$size = ss$size
-	result$tss = sum(ss$ss)
-	result$tvar = sum(ss$var)
-	return(result)
+    "Return total sum of squares of multidimensional X sample data: sum(ss(X))."
+    ss = sum_of_squares(X)
+    result = c()
+    result$size = ss$size
+    result$tss = sum(ss$ss)
+    result$tvar = sum(ss$var)
+    return(result)
 }
 
 # Load data
@@ -202,42 +202,42 @@ attributes.numerical = c(attributes.boolean, attributes.integer)
 # Boxplot to analyze the outliers of all integer attributes. Boolean attributes
 # do not need be analyzed.
 save.boxplot(
-	data[, attributes.integer],
-	main='[All] Integer attributes',
-	names=range(len(attributes.integer))
+    data[, attributes.integer],
+    main='[All] Integer attributes',
+    names=range(len(attributes.integer))
 )
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attribute in attributes.integer) {
-	i = index(attribute, attributes.integer)
-	title = format.string('[%d] %s', i, attribute)
-	values = data[, attribute]
-	save.plot(values, main=title)
-	save.boxplot(values, main=title)
+    i = index(attribute, attributes.integer)
+    title = format.string('[%d] %s', i, attribute)
+    values = data[, attribute]
+    save.plot(values, main=title)
+    save.boxplot(values, main=title)
 }
 
 # Filter to define a value limit for each integer attribute based on the
 # analysis
 attributes_filter = (
-	data$Kill < 35 &
-	data$Assists < 40 &
-	data$Deaths < 30 &
-	data$GoldEarned < 26250 &
-	data$TotalDamageDealt < 500000 &
-	data$MagicDamageDealt < 350000 &
-	data$PhysicalDamageDealt < 450000 &
-	data$TotalDamageDealtToChampions < 80000 &
-	data$TotalDamageTaken < 80000 &
-	data$MinionsKilled < 400 &
-	data$NeutralMinionsKilled < 125 &
-	data$CrowdControl < 10000 &
-	data$WardsPlaced < 110 &
-	data$TowerKills < 9 &
-	data$LargestMultiKill < 6 &
-	data$LargestKillingSpree < 21 &
-	data$LargestCritStrike < 2500 &
-	data$TotalHealAmount < 40000
+    data$Kill < 35 &
+    data$Assists < 40 &
+    data$Deaths < 30 &
+    data$GoldEarned < 26250 &
+    data$TotalDamageDealt < 500000 &
+    data$MagicDamageDealt < 350000 &
+    data$PhysicalDamageDealt < 450000 &
+    data$TotalDamageDealtToChampions < 80000 &
+    data$TotalDamageTaken < 80000 &
+    data$MinionsKilled < 400 &
+    data$NeutralMinionsKilled < 125 &
+    data$CrowdControl < 10000 &
+    data$WardsPlaced < 110 &
+    data$TowerKills < 9 &
+    data$LargestMultiKill < 6 &
+    data$LargestKillingSpree < 21 &
+    data$LargestCritStrike < 2500 &
+    data$TotalHealAmount < 40000
 )
 
 # Filtering entire data to remove participants with large outliers
@@ -257,9 +257,9 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 
 # Boxplot to analyze the integer attributes after the treatments
 save.boxplot(
-	data[, attributes.numerical],
-	main='[All] attributes (pos)',
-	names=range(len(attributes.numerical)))
+    data[, attributes.numerical],
+    main='[All] attributes (pos)',
+    names=range(len(attributes.numerical)))
 
 # Saving the treated data
 write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
@@ -272,8 +272,8 @@ write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
 # integer attributes using Z-score. Boolean attributes do not need be
 # normalized.
 data.normalized = cbind(
-	data[, attributes.boolean],
-	scale(data[, attributes.integer])
+    data[, attributes.boolean],
+    scale(data[, attributes.integer])
 )
 
 # Correlation analysis
@@ -288,9 +288,9 @@ write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
 # Boxplot to analyze attributes correlation
 save.boxplot(
-	correlations,
-	main='Attributes correlation',
-	names=range(ncol(correlations))
+    correlations,
+    main='Attributes correlation',
+    names=range(ncol(correlations))
 )
 
 # TODO
@@ -333,28 +333,28 @@ attributes.autoselection = corrattrs[!corrattrs %in% intersect(cond1, cond2)]
 
 # Manual selection of the attributes based on correlation analysis
 attributes.selection = c(
-	"Kills",
-	"Deaths",
-	"GoldEarned",
-	"TotalDamageDealt",
-	"MagicDamageDealt",
-	"PhysicalDamageDealt",
-	"TotalDamageDealtToChampions",
-	"TotalDamageTaken",
-	"MinionsKilled",
-	"WardsPlaced",
-	"TowerKills",
-	"LargestMultiKill",
-	"LargestKillingSpree",
-	"LargestCritStrike"
+    "Kills",
+    "Deaths",
+    "GoldEarned",
+    "TotalDamageDealt",
+    "MagicDamageDealt",
+    "PhysicalDamageDealt",
+    "TotalDamageDealtToChampions",
+    "TotalDamageTaken",
+    "MinionsKilled",
+    "WardsPlaced",
+    "TowerKills",
+    "LargestMultiKill",
+    "LargestKillingSpree",
+    "LargestCritStrike"
 )
 
 # Top 3 correlated attributes based on the mean of correlations for each one
 # names(sort(m, decreasing = TRUE)[1:3])
 attributes.topcorrelated = c(
-	'GoldEarned',
-	'TotalDamageDealt',
-	'TotalDamageDealtToChampions'
+    'GoldEarned',
+    'TotalDamageDealt',
+    'TotalDamageDealtToChampions'
 )
 
 # Reducing the dimensionality of the normalized data using attribute selection
@@ -446,29 +446,29 @@ pca_indices = index(attributes.topcorrelated[1:3], names(ldata))
 
 # 3D scatterplot of most correlated attributes # TODO put in png file
 scatterplot3d(
-	prcomp(ldata, center=TRUE)$x[, pca_indices],
-	pch=fit4$cluster,
-	type="h",
-	angle=95,
-	color=fit4$cluster
+    prcomp(ldata, center=TRUE)$x[, pca_indices],
+    pch=fit4$cluster,
+    type="h",
+    angle=95,
+    color=fit4$cluster
 )
 
 # 3D scatterplot of most correlated attributes of winners # TODO put in png file
 scatterplot3d(
-	prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[, pca_indices],
-	pch=vencedores$Cluster,
-	type="h",
-	angle=95,
-	color=vencedores$Cluster
+    prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[, pca_indices],
+    pch=vencedores$Cluster,
+    type="h",
+    angle=95,
+    color=vencedores$Cluster
 )
 
 # 3D scatterplot of most correlated attributes of losers # TODO put in csv file
 scatterplot3d(
-	prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[, pca_indices],
-	pch=perdedores$Cluster,
-	type="h",
-	angle=95,
-	color=perdedores$Cluster
+    prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[, pca_indices],
+    pch=perdedores$Cluster,
+    type="h",
+    angle=95,
+    color=perdedores$Cluster
 )
 
 # Summarying partitions
@@ -476,17 +476,17 @@ scatterplot3d(
 
 # Within cluster sum of squares
 withinss = function (data, cluster) {
-	X = data[data$Cluster == cluster, ]
-	tss = total_sum_of_squares(X)
-	return(c(tss$size, tss$tss, tss$tvar))
+    X = data[data$Cluster == cluster, ]
+    tss = total_sum_of_squares(X)
+    return(c(tss$size, tss$tss, tss$tvar))
 }
 
 vencedores = c('size', 'withinss', 'var')
 perdedores = c('size', 'withinss', 'var')
 
 for(i in c(1:8)) {
-	vencedores = rbind(i=vencedores, withinss(vencedores, i))
-	perdedores = rbind(i=perdedores, withinss(perdedores, i))
+    vencedores = rbind(i=vencedores, withinss(vencedores, i))
+    perdedores = rbind(i=perdedores, withinss(perdedores, i))
 }
 
 # winners output TODO put in csv file
@@ -576,7 +576,7 @@ data.normalized_relative_weight = cbind(
 # dados normalizados pelo peso relativo
 kruskal.test(rowSums(data.normalized_relative_weight), fit4$cluster)
 
-	Kruskal-Wallis rank sum test
+    Kruskal-Wallis rank sum test
 
 data:  rowSums(data.normalized_relative_weight) and fit4$cluster
 Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
@@ -584,7 +584,7 @@ Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
 # dados normalizado z-score
 kruskal.test(rowSums(ldata), fit4$cluster)
 
-	Kruskal-Wallis rank sum test
+    Kruskal-Wallis rank sum test
 
 data:  rowSums(ldata) and fit4$cluster
 Kruskal-Wallis chi-squared = 70036, df = 7, p-value < 2.2e-16
@@ -592,7 +592,7 @@ Kruskal-Wallis chi-squared = 70036, df = 7, p-value < 2.2e-16
 # analisando pela soma dos quadrados
 wilcox.test(fit4$withinss, conf.int=T)
 
-	Wilcoxon signed rank test
+    Wilcoxon signed rank test
 
 data:  fit4$withinss
 V = 36, p-value = 0.007813
@@ -608,7 +608,7 @@ sample estimates:
 x = rowSums(vencedores[ vencedores$Cluster == 1,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 1,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 3275300, p-value = 0.006096
 alternative hypothesis: true location shift is not equal to 0
@@ -616,7 +616,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 2,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 2,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 8345600, p-value = 0.00907
 alternative hypothesis: true location shift is not equal to 0
@@ -624,7 +624,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 3,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 3,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 9178000, p-value = 0.0000000000008951
 alternative hypothesis: true location shift is not equal to 0
@@ -632,7 +632,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 4,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 4,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 30907000, p-value = 0.3918
 alternative hypothesis: true location shift is not equal to 0
@@ -640,7 +640,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 5,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 5,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 14623000, p-value < 0.00000000000000022
 alternative hypothesis: true location shift is not equal to 0
@@ -648,7 +648,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 6,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 6,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 23422000, p-value < 0.00000000000000022
 alternative hypothesis: true location shift is not equal to 0
@@ -656,7 +656,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 7,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 7,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 1088700, p-value = 0.0002433
 alternative hypothesis: true location shift is not equal to 0
@@ -664,7 +664,7 @@ alternative hypothesis: true location shift is not equal to 0
 x = rowSums(vencedores[ vencedores$Cluster == 8,  ][,1:14])
 y = rowSums(perdedores[ perdedores$Cluster == 8,  ][,1:14])
 wilcox.test(x , y, paired=FALSE)
-	Wilcoxon rank sum test with continuity correction
+    Wilcoxon rank sum test with continuity correction
 data:  x and y
 W = 17823000, p-value = 0.002865
 alternative hypothesis: true location shift is not equal to 0
