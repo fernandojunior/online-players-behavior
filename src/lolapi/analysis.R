@@ -175,6 +175,14 @@ cor.mmean = function (mcorrelations) {
     return(apply(mcorrelations, 2, cor.mean))
 }
 
+cor.rank = function (correlation_matrix, decreasing=TRUE) {
+    "Correlation rank of the attributes of a correlation matrix.
+
+    It is based on the mean of correlations for each one.
+    "
+    return(names(sort(cor.mmean(correlations), decreasing=decreasing)))
+}
+
 attribute_selection = function (correlation_matrix) {
     "Automatic attribute selection of a correlation matrix.
 
@@ -383,7 +391,6 @@ data.normalized = cbind(
 
 # Correlation between attributes of normalized data
 correlations = cor(data.normalized)
-correlations = round(correlations, digits=1)  # just to be more presentable
 correlations = abs(correlations)  # the signal does not matter
 diag(correlations) = NA  # correlation of a set with itself does not matter
 write.csv(correlations, file = "analysis/correlations.csv", sep =",")
@@ -431,7 +438,7 @@ attributes.selection = c(
 )
 
 # Top 3 correlated attributes based on the mean of correlations for each one
-# names(sort(m, decreasing = TRUE)[1:3])
+# attributes.topcorrelated = cor.rank[1:3]
 attributes.topcorrelated = c(
     'GoldEarned',
     'TotalDamageDealt',
