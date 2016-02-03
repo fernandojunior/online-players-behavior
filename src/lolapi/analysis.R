@@ -183,11 +183,11 @@ attribute_selection = function (correlation_matrix) {
 
     Formalization:
 
-        C = C(A) = {correlation matrix of attributes A}
+        C = C(X) = {correlation matrix of a data X}
 
-        A = A(C) = {attributes of a correlation matrix C}
+        A = A(X) = A(C) = {attributes of the correlation matrix C}
 
-        c(a) in C(A) = {correlations of attibute a}
+        c(a) in C = {correlations of attibute a}
 
         select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
             where 0 = False and 1 = True
@@ -195,7 +195,11 @@ attribute_selection = function (correlation_matrix) {
         selection(C) = { a in A(C) | select(a)}
     "
     # Correlation <= 5% is considered non-correlation
-    correlation_matrix = round(correlation_matrix, digits=1)
+    # correlation_matrix = round(correlation_matrix, digits=1)  # lazy round
+    correlation_matrix = map(  # hard round
+        function(x) if (!is.na(x) & x <= 0.05) 0 else x,
+        correlation_matrix
+    )
 
     # A(C): Attributes of the correlation matrix C
     attributes = colnames(correlation_matrix)
