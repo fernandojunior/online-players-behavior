@@ -454,14 +454,14 @@ data.reduced = data.normalized[, attributes.selection]
 # analyzing the curve of a generated graph from a test (based on k-means)
 # conducted for each possible.
 
-# Total within sum of square of clusters for each k-means test k <= 50
+# Total within sum of squares of clusters for each k-means test k <= 50
 twss = map(
-    function(k) sum(kmeans(data.reduced, k, algorithm='Lloyd')$withinss),
-    range(50)
+    function(k) kmeans(data.reduced, k, algorithm='Lloyd')$tot.withinss,
+    range(22)
 )
 
 # Plot to analyze the knee of error curve resultant of the test for each k
-save.plot(twss, main="Error curve", type="b", xlab="k", ylab="Total wihtinss")
+save.plot(twss, type="b", main="Error curve", xlab="k", ylab="tot.withinss")
 
 # What is the best? k==8 or k==11?
 
