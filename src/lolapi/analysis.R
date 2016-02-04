@@ -444,7 +444,7 @@ attributes.topcorrelated = cor.rank()[1:3]
 # [3] "TotalDamageDealtToChampions"
 
 # Reducing the dimensionality of the normalized data using attribute selection
-ldata = data.normalized[, attributes.selection]
+data.reduced = data.normalized[, attributes.selection]
 
 # K-means analysis
 # ----------------
@@ -459,28 +459,28 @@ twss = c()
 
 # Testing k <= 50 clusters
 for(k in 1 : 50)
-    twss[k] = sum(kmeans(ldata, centers = k, algorithm = 'Lloyd')$withinss)
+    twss[k] = sum(kmeans(data.reduced, centers = k, algorithm = 'Lloyd')$withinss)
 
 # Plot to analyze the knee resultant of the test for each k
-save.plot(tss, main="K clusters", type="b", xlab="k", ylab="Total wihtinss")
+save.plot(twss, main="K clusters", type="b", xlab="k", ylab="Total wihtinss")
 
 # What is the best? k==8 or k==11?
 
 # Extra k-means (configurations) tests
 # ----------------------------------
 
-fit = kmeans(ldata, 11, algorithm='Lloyd')
+fit = kmeans(data.reduced, 11, algorithm='Lloyd')
 # (between_SS / total_SS =  61.2 %)
 # Warning: did *not* converge in specified number of iterations
 
-fit2 = kmeans(ldata, 11, algorithm='Lloyd', iter.max=150)
+fit2 = kmeans(data.reduced, 11, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  61.9 %)
 
-fit3 = kmeans(ldata, 8, algorithm='Lloyd')
+fit3 = kmeans(data.reduced, 8, algorithm='Lloyd')
 # (between_SS / total_SS =  57.2 %)
 # Warning: did *not* converge in specified number of iterations
 
-fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
+fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  57.7 %)
 
 # fit4 has the best trade-off
@@ -504,17 +504,17 @@ write.csv(fit4$withinvar, file="analysis/cluster/testes/fit4$withinvar.csv")
 # -------------------------------
 
 # Clusplot of clusterized data (n==80 rows)
-clusplot(ldata[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
+clusplot(data.reduced[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
 legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
 
 # Scatterplot of all attributes # TODO put in png file
-plot(ldata, col=fit4$cluster, pch=15)
+plot(data.reduced, col=fit4$cluster, pch=15)
 
 # Only most correlated attributes # TODO put in png file
-plot(ldata[, attributes.topcorrelated], col=fit4$cluster, pch=15)
+plot(data.reduced[, attributes.topcorrelated], col=fit4$cluster, pch=15)
 
 # Associating each participant tuple with its cluster
-ldata2 = cbind(ldata, Cluster=fit4$cluster)
+ldata2 = cbind(data.reduced, Cluster=fit4$cluster)
 
 # Spliting clusterized data between winners and losers
 vencedores = ldata2[ldata2$Win == 1,]
@@ -528,11 +528,11 @@ plot(perdedores[, attributes.topcorrelated], col=perdedores$Cluster, pch=15)
 --------------------------
 
 # Principal component indices to filter, based on top correlated attributes
-pca_indices = index(attributes.topcorrelated[1:3], names(ldata))
+pca_indices = index(attributes.topcorrelated[1:3], names(data.reduced))
 
 # 3D scatterplot of most correlated attributes # TODO put in png file
 scatterplot3d(
-    prcomp(ldata, center=TRUE)$x[, pca_indices],
+    prcomp(data.reduced, center=TRUE)$x[, pca_indices],
     pch=fit4$cluster,
     type="h",
     angle=95,
@@ -668,11 +668,11 @@ data:  rowSums(data.normalized_relative_weight) and fit4$cluster
 Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
 
 # dados normalizado z-score
-kruskal.test(rowSums(ldata), fit4$cluster)
+kruskal.test(rowSums(data.reduced), fit4$cluster)
 
     Kruskal-Wallis rank sum test
 
-data:  rowSums(ldata) and fit4$cluster
+data:  rowSums(data.reduced) and fit4$cluster
 Kruskal-Wallis chi-squared = 70036, df = 7, p-value < 2.2e-16
 
 # analisando pela soma dos quadrados
