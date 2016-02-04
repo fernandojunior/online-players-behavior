@@ -502,9 +502,15 @@ write.csv(fit4$withinvar, file="analysis/cluster/testes/fit4$withinvar.csv")
 # Scatterplot of clusterized data
 # -------------------------------
 
-# Clusplot of clusterized data (n==80 rows)
-clusplot(data.reduced[1:80,], fit4$cluster[1:80], color=TRUE, shade=TRUE, labels=2, lines=0)
-legend("bottomleft", legend = paste("Group", 1:8), pch=1, col=1:8)
+# Clusplot of clusterized data (n=80)
+clusplot(
+    data.reduced[1:80,],
+    fit4$cluster[1:80],
+    labels=4,
+    col.clus=1:8,
+    col.p=fit4$cluster[1:80],
+    lines=0
+)
 
 # Scatterplot of all attributes # TODO put in png file
 plot(data.reduced, col=fit4$cluster, pch=15)
@@ -763,3 +769,4 @@ alternative hypothesis: true location shift is not equal to 0
 # http://vis.supstat.com/2013/04/plotting-symbols-and-color-palettes/
 # http://stackoverflow.com/questions/1923273/counting-the-number-of-elements-with-the-values-of-x-in-a-vector
 # http://blog.melchua.com/2012/09/07/r-basics-accessing-elements-of-an-object/
+# https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/clusplot.default.html
