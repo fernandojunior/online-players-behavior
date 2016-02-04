@@ -438,12 +438,10 @@ attributes.selection = c(
 )
 
 # Top 3 correlated attributes based on the mean of correlations for each one
-# attributes.topcorrelated = cor.rank[1:3]
-attributes.topcorrelated = c(
-    'GoldEarned',
-    'TotalDamageDealt',
-    'TotalDamageDealtToChampions'
-)
+attributes.topcorrelated = cor.rank()[1:3]
+# > attributes.topcorrelated
+# [1] "GoldEarned"                  "TotalDamageDealt"
+# [3] "TotalDamageDealtToChampions"
 
 # Reducing the dimensionality of the normalized data using attribute selection
 ldata = data.normalized[, attributes.selection]
