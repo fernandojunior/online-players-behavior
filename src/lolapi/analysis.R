@@ -493,9 +493,9 @@ fit4$k = len(fit4$size)
 for (component in names(fit4))
     write.csv(fit4[[component]], format.string('data/fit4/%s.csv', component))
 
-# --------------------------
-# Analysis with labeled data
-# --------------------------
+# --------------------------------------------------
+# Analysis of the data labeled by k-means clustering
+# ---------------------------------------------------
 
 # Associating each reduced tuple with its info, win and label attributes
 data.labeled = cbind(
@@ -541,35 +541,48 @@ plot(perdedores[, attributes.topcorrelated], col=perdedores$label)
 # Principal Component Analysis (PCA)
 ------------------------------------
 
-# Principal component indices to filter, based on top correlated attributes
-pca_indices = index(attributes.topcorrelated, names(data.labeled))
+# PCA of labeled data
+data.labeled.pca = prcomp(data.labeled[, attributes.selection], center=TRUE)
 
-# 3D scatterplot of most correlated attributes # TODO put in png file
+# PCA of winners
+vencedores.pca = prcomp(vencedores[, attributes.selection], center=TRUE)
+
+# PCA of losers
+perdedores.pca = prcomp(perdedores[, attributes.selection], center=TRUE)
+
+# Principal components to view
+pca_indices = c(1, 2, 3)
+
+# 3-D visualization of principal components of the labeled data
 scatterplot3d(
-    prcomp(data.labeled[, attributes.selection], center=TRUE)$x[, pca_indices],
+    data.labeled.pca$x[, pca_indices],
     pch=data.labeled$label,
     type="h",
-    angle=95,
+    angle=95,  # 30
     color=data.labeled$label
 )
 
-# 3D scatterplot of most correlated attributes of winners # TODO put in png file
+# 3-D visualization of principal components of winners
 scatterplot3d(
-    prcomp(vencedores[, attributes.selection], center=TRUE)$x[, pca_indices],
+    vencedores.pca$x[, pca_indices],
     pch=vencedores$label,
     type="h",
     angle=95,
     color=vencedores$label
 )
 
-# 3D scatterplot of most correlated attributes of losers # TODO put in csv file
+# 3-D visualization of principal components of losers
 scatterplot3d(
-    prcomp(perdedores[, attributes.selection], center=TRUE)$x[, pca_indices],
+    perdedores.pca$x[, pca_indices],
     pch=perdedores$label,
     type="h",
     angle=95,
     color=perdedores$label
 )
+
+# In general, we can clearly observe the k clusters found in k-means clustering.
+# We can also observe that some clusters are more perceptible than others
+# when the labeled data is splited between winners and losers.
 
 # TODO Summarying partitions
 ----------------------------
