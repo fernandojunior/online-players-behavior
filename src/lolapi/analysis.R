@@ -4,11 +4,13 @@ library("scatterplot3d")  # scatterplot3d
 
 options(scipen=999)
 
+# ---------
 # Constants
 # ---------
 
 PLOTS = 'plots/'
 
+# --------------
 # Some functions
 # --------------
 
@@ -180,7 +182,7 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
 
     It is based on the mean of correlations for each one.
     "
-    return(names(sort(cor.mmean(correlations), decreasing=decreasing)))
+    return(names(sort(cor.mmean(correlation_matrix), decreasing=decreasing)))
 }
 
 attribute_selection = function (correlation_matrix) {
@@ -294,6 +296,7 @@ total_sum_of_squares = function (X) {
     return(result)
 }
 
+# ---------
 # Load data
 # ---------
 
@@ -306,6 +309,7 @@ attributes.boolean = attributes[4:7]
 attributes.integer = attributes[8:25]
 attributes.numerical = c(attributes.boolean, attributes.integer)
 
+# ---------
 # Treatment of outliers
 # ---------------------
 
@@ -374,6 +378,7 @@ save.boxplot(
 # Saving the treated data
 write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
 
+# ----------------------------
 # Data normalization (z-score)
 # ----------------------------
 
@@ -386,6 +391,7 @@ data.normalized = cbind(
     scale(data[, attributes.integer])
 )
 
+# --------------------
 # Correlation analysis
 # --------------------
 
@@ -402,12 +408,12 @@ save.boxplot(
     names=range(ncol(correlations))
 )
 
-# Automatic attribute selection
--------------------------------
+# ------------------------
+# Dimensionality reduction
+--------------------------
 
+# Automatic attribute selection on the correlation matrix
 attributes.autoselection = attribute_selection(correlations)
-
-# > attributes.autoselection
 # [1] "Win"                         "Kills"
 # [3] "Deaths"                      "GoldEarned"
 # [5] "TotalDamageDealt"            "PhysicalDamageDealt"
@@ -416,10 +422,7 @@ attributes.autoselection = attribute_selection(correlations)
 # [11] "TowerKills"                  "LargestMultiKill"
 # [13] "LargestKillingSpree"         "LargestCritStrike"
 
-# Manual attribute selection
-# --------------------------
-
-# Manual selection of the attributes based on correlation analysis
+# Manual attribute selection based on correlation analysis
 attributes.selection = c(
     "Kills",
     "Deaths",
@@ -438,14 +441,14 @@ attributes.selection = c(
 )
 
 # Top 3 correlated attributes based on the mean of correlations for each one
-attributes.topcorrelated = cor.rank()[1:3]
-# > attributes.topcorrelated
+attributes.topcorrelated = cor.rank(correlations)[1:3]
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions"
 
-# Reducing the dimensionality of the normalized data using attribute selection
+# Reducing the dimensionality of the normalized data
 data.reduced = data.normalized[, attributes.selection]
 
+# ----------------
 # K-means analysis
 # ----------------
 
@@ -491,6 +494,10 @@ fit4$k = len(fit4$size)
 # Saving all components of fit4
 for (component in names(fit4))
     write.csv(fit4[[component]], format.string('data/fit4/%s.csv', component))
+
+# -------------------------------
+# Some analysis with labeled data
+# -------------------------------
 
 # Scatterplot of clusterized data
 # -------------------------------
