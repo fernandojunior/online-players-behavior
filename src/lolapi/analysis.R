@@ -581,8 +581,8 @@ scatterplot3d(
 )
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
-# We can also observe that some clusters are more perceptible than others
-# when the labeled data is splited between winners and losers.
+# We can also observe that some clusters are more perceptible than others when
+# the labeled data is splited between winners and losers.
 
 # TODO Summarying partitions
 ----------------------------
