@@ -499,18 +499,25 @@ for (component in names(fit4))
 
 # Associating each reduced tuple with its info, win and label attributes
 data.labeled = cbind(
-    data[attributes.info],
+    data[, attributes.info],
     Win=data[, 'Win'],
     label=fit4$cluster,
     data.reduced
 )
+
+# Spliting labeled data between winners and losers
+vencedores = data.labeled[data.labeled$Win == 1,]
+perdedores = data.labeled[data.labeled$Win == 0,]
+
+# Clusplot analysis
+# -----------------
 
 # A sample with n=80 random rows from labeled data
 data.sampled = data.labeled[sample(range(nrow(data.labeled)), 80),]
 
 # Clusplot of clusterized data (n=80)
 clusplot(
-    data.sampled[attributes.selection],
+    data.sampled[, attributes.selection],
     data.sampled$label,
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
@@ -518,51 +525,50 @@ clusplot(
     lines=0
 )
 
+# Scatter plot analysis
+# ---------------------
+
 # Plot of the labeled data
-plot(data.labeled[attributes.selection], col=data.labeled$label, pch=15)
+plot(data.labeled[, attributes.selection], col=data.labeled$label)
 
-# Only most correlated attributes
-plot(data.labeled[attributes.topcorrelated], col=data.labeled$label, pch=15)
-
-# Spliting labeled data between winners and losers
-vencedores = data.labeled[data.labeled$Win == 1,]
-perdedores = data.labeled[data.labeled$Win == 0,]
+# Only top correlated attributes
+plot(data.labeled[, attributes.topcorrelated], col=data.labeled$label)
 
 # Scatterplot of most correlated attributes for each split
-plot(vencedores[attributes.topcorrelated], col=vencedores$label, pch=15)
-plot(perdedores[attributes.topcorrelated], col=perdedores$label, pch=15)
+plot(vencedores[, attributes.topcorrelated], col=vencedores$label)
+plot(perdedores[, attributes.topcorrelated], col=perdedores$label)
 
-# TODO PCA of clusterized data
-------------------------------
+# Principal Component Analysis (PCA)
+------------------------------------
 
 # Principal component indices to filter, based on top correlated attributes
-pca_indices = index(attributes.topcorrelated[1:3], names(data.reduced))
+pca_indices = index(attributes.topcorrelated, names(data.labeled))
 
 # 3D scatterplot of most correlated attributes # TODO put in png file
 scatterplot3d(
-    prcomp(data.reduced, center=TRUE)$x[, pca_indices],
-    pch=fit4$cluster,
+    prcomp(data.labeled[, attributes.selection], center=TRUE)$x[, pca_indices],
+    pch=data.labeled$label,
     type="h",
     angle=95,
-    color=fit4$cluster
+    color=data.labeled$label
 )
 
 # 3D scatterplot of most correlated attributes of winners # TODO put in png file
 scatterplot3d(
-    prcomp(vencedores[,1:(ncol(vencedores)-1)], center=TRUE)$x[, pca_indices],
-    pch=vencedores$Cluster,
+    prcomp(vencedores[, attributes.selection], center=TRUE)$x[, pca_indices],
+    pch=vencedores$label,
     type="h",
     angle=95,
-    color=vencedores$Cluster
+    color=vencedores$label
 )
 
 # 3D scatterplot of most correlated attributes of losers # TODO put in csv file
 scatterplot3d(
-    prcomp(perdedores[, 1:(ncol(perdedores)-1)], center=TRUE)$x[, pca_indices],
-    pch=perdedores$Cluster,
+    prcomp(perdedores[, attributes.selection], center=TRUE)$x[, pca_indices],
+    pch=perdedores$label,
     type="h",
     angle=95,
-    color=perdedores$Cluster
+    color=perdedores$label
 )
 
 # TODO Summarying partitions
