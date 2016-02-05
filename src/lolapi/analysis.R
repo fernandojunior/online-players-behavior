@@ -309,7 +309,7 @@ attributes.boolean = attributes[4:7]
 attributes.integer = attributes[8:25]
 attributes.numerical = c(attributes.boolean, attributes.integer)
 
-# ---------
+# ---------------------
 # Treatment of outliers
 # ---------------------
 
@@ -495,42 +495,47 @@ fit4$k = len(fit4$size)
 for (component in names(fit4))
     write.csv(fit4[[component]], format.string('data/fit4/%s.csv', component))
 
-# -------------------------------
-# Some analysis with labeled data
-# -------------------------------
+# --------------------------
+# Analysis with labeled data
+# --------------------------
 
-# Scatterplot of clusterized data
-# -------------------------------
+# Associating each reduced tuple with its info, win and label attributes
+data.labeled = cbind(
+    data[attributes.info],
+    Win=data[, 'Win'],
+    label=fit4$cluster,
+    data.reduced
+)
+
+# A sample with n=80 random rows from labeled data
+data.sampled = data.labeled[sample(range(nrow(data.labeled)), 80),]
 
 # Clusplot of clusterized data (n=80)
 clusplot(
-    data.reduced[1:80,],
-    fit4$cluster[1:80],
+    data.sampled[attributes.selection],
+    data.sampled$label,
     labels=4,
-    col.clus=range(fit4$k),
-    col.p=fit4$cluster[1:80],
+    col.clus= sort(unique(data.sampled$label)),
+    col.p=data.sampled$label,
     lines=0
 )
 
-# Scatterplot of all attributes # TODO put in png file
-plot(data.reduced, col=fit4$cluster, pch=15)
+# Plot of the labeled data
+plot(data.labeled[attributes.selection], col=data.labeled$label, pch=15)
 
-# Only most correlated attributes # TODO put in png file
-plot(data.reduced[, attributes.topcorrelated], col=fit4$cluster, pch=15)
+# Only most correlated attributes
+plot(data.labeled[attributes.topcorrelated], col=data.labeled$label, pch=15)
 
-# Associating each participant tuple with its cluster
-ldata2 = cbind(data.reduced, Cluster=fit4$cluster)
+# Spliting labeled data between winners and losers
+vencedores = data.labeled[data.labeled$Win == 1,]
+perdedores = data.labeled[data.labeled$Win == 0,]
 
-# Spliting clusterized data between winners and losers
-vencedores = ldata2[ldata2$Win == 1,]
-perdedores = ldata2[ldata2$Win == 0,]
+# Scatterplot of most correlated attributes for each split
+plot(vencedores[attributes.topcorrelated], col=vencedores$label, pch=15)
+plot(perdedores[attributes.topcorrelated], col=perdedores$label, pch=15)
 
-# Scatterplot of each partition # TODO put in png file
-plot(vencedores[, attributes.topcorrelated], col=vencedores$Cluster, pch=15)
-plot(perdedores[, attributes.topcorrelated], col=perdedores$Cluster, pch=15)
-
-# PCA of clusterized data
---------------------------
+# TODO PCA of clusterized data
+------------------------------
 
 # Principal component indices to filter, based on top correlated attributes
 pca_indices = index(attributes.topcorrelated[1:3], names(data.reduced))
@@ -562,8 +567,8 @@ scatterplot3d(
     color=perdedores$Cluster
 )
 
-# Summarying partitions
------------------------
+# TODO Summarying partitions
+----------------------------
 
 # Within cluster sum of squares
 withinss = function (data, cluster) {
