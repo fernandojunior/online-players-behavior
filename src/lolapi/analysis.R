@@ -324,11 +324,9 @@ save.boxplot(
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attribute in attributes.integer) {
-    i = index(attribute, attributes.integer)
-    title = format.string('[%d] %s', i, attribute)
-    values = data[, attribute]
-    save.plot(values, main=title)
-    save.boxplot(values, main=title)
+    title = format.string('%s', attribute)
+    save.plot(data[, attribute], main=title)
+    save.boxplot(data[, attribute], main=title)
 }
 
 # Filter to define a value limit for each integer attribute based on the
