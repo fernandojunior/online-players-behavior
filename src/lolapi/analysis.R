@@ -449,10 +449,10 @@ data.reduced = data.normalized[, attributes.selection]
 # K-means analysis
 # ----------------
 
-# To find the k number of clusters we can use the method that finds the "knee"
-# of the error curve, which tries to find an appropriate number of clusters
-# analyzing the curve of a generated graph from a test (based on k-means)
-# conducted for each possible.
+# To find the optimal k number of clusters we can use the method that finds the
+# knee of the error curve, which tries to find an appropriate number of
+# clusters analyzing the curve of a generated graph from a test (based on
+# k-means) conducted for each possible.
 
 # Total within sum of squares of clusters for each k-means test k <= 50
 twss = map(
@@ -463,12 +463,10 @@ twss = map(
 # Plot to analyze the knee of error curve resultant of the test for each k
 save.plot(twss, type="b", main="Error curve", xlab="k", ylab="tot.withinss")
 
-# What is the best? k==8 or k==11?
+# Which is the optimal value for k in this case? k=8 or k=11? Let's do some
+# extra tests.
 
-# Extra k-means (configurations) tests
-# ----------------------------------
-
-fit = kmeans(data.reduced, 11, algorithm='Lloyd')
+fit1 = kmeans(data.reduced, 11, algorithm='Lloyd')
 # (between_SS / total_SS =  61.2 %)
 # Warning: did *not* converge in specified number of iterations
 
@@ -482,22 +480,17 @@ fit3 = kmeans(data.reduced, 8, algorithm='Lloyd')
 fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=150)
 # (between_SS / total_SS =  57.7 %)
 
-# fit4 has the best trade-off
+# fit4 has the best trade-off. Let's add some extra components, then save all.
 
-# Variance of each cluster found by fit4
+# Variance for each cluster of fit4
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
 
-# Saving the fit4
-write.csv(fit4$cluster, file="analysis/cluster/testes/fit4$cluster.csv")
-write.csv(fit4$centers, file="analysis/cluster/testes/fit4$centers.csv")
-write.csv(fit4$size, file="analysis/cluster/testes/fit4$size.csv")
-write.csv(fit4$totss, file="analysis/cluster/testes/fit4$totss.csv")
-write.csv(fit4$tot.withinss, file="analysis/cluster/testes/fit4$tot.withinss.csv")
-write.csv(fit4$withinss, file="analysis/cluster/testes/fit4$withinss.csv")
-write.csv(fit4$betweenss, file="analysis/cluster/testes/fit4$betweenss.csv")
-write.csv(fit4$iter, file="analysis/cluster/testes/fit4$iter.csv")
-write.csv(fit4$ifault, file="analysis/cluster/testes/fit4$ifault.csv")
-write.csv(fit4$withinvar, file="analysis/cluster/testes/fit4$withinvar.csv")
+# Number of clusters of fit4
+fit4$k = len(fit4$size)
+
+# Saving all components of fit4
+for (component in names(fit4))
+    write.csv(fit4[[component]], format.string('data/fit4/%s.csv', component))
 
 # Scatterplot of clusterized data
 # -------------------------------
@@ -507,7 +500,7 @@ clusplot(
     data.reduced[1:80,],
     fit4$cluster[1:80],
     labels=4,
-    col.clus=1:8,
+    col.clus=range(fit4$k),
     col.p=fit4$cluster[1:80],
     lines=0
 )
