@@ -304,8 +304,8 @@ data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
 # Data attributes
 attributes = names(data)
-attributes.info = attributes[1:3]
-attributes.boolean = attributes[4:7]
+attributes.info = attributes[1:4]
+attributes.boolean = attributes[5:7]
 attributes.integer = attributes[8:25]
 attributes.numerical = c(attributes.boolean, attributes.integer)
 
@@ -371,7 +371,8 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 save.boxplot(
     data[, attributes.numerical],
     main='[All] attributes (pos)',
-    names=range(len(attributes.numerical)))
+    names=range(len(attributes.numerical))
+)
 
 # Saving the treated data
 write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
@@ -412,13 +413,13 @@ save.boxplot(
 
 # Automatic attribute selection on the correlation matrix
 attributes.autoselection = attribute_selection(correlations)
-# [1] "Win"                         "Kills"
-# [3] "Deaths"                      "GoldEarned"
-# [5] "TotalDamageDealt"            "PhysicalDamageDealt"
-# [7] "TotalDamageDealtToChampions" "TotalDamageTaken"
-# [9] "MinionsKilled"               "WardsPlaced"
-# [11] "TowerKills"                  "LargestMultiKill"
-# [13] "LargestKillingSpree"         "LargestCritStrike"
+# [1] "Kills"                       "Deaths"
+# [3] "GoldEarned"                  "TotalDamageDealt"
+# [5] "PhysicalDamageDealt"         "TotalDamageDealtToChampions"
+# [7] "TotalDamageTaken"            "MinionsKilled"
+# [9] "WardsPlaced"                 "TowerKills"
+# [11] "LargestMultiKill"            "LargestKillingSpree"
+# [13] "LargestCritStrike"
 
 # Manual attribute selection based on correlation analysis
 attributes.selection = c(
@@ -495,15 +496,10 @@ for (component in names(fit4))
 
 # --------------------------------------------------
 # Analysis of the data labeled by k-means clustering
-# ---------------------------------------------------
+# --------------------------------------------------
 
 # Associating each reduced tuple with its info, win and label attributes
-data.labeled = cbind(
-    data[, attributes.info],
-    Win=data[, 'Win'],
-    label=fit4$cluster,
-    data.reduced
-)
+data.labeled = cbind(data[, attributes.info], label=fit4$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
 vencedores = data.labeled[data.labeled$Win == 1,]
