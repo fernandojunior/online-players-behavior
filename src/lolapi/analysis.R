@@ -147,6 +147,27 @@ ss = function (x, n=NA, VAR=FALSE) {
     return ((n - 1) * x)
 }
 
+outlier_thresholds = function (x, factor=1.5) {
+    "Find the lower and upper outlier thresholds of a specific data set x.
+
+    Any point greater than upper threshold or less than lower threshold is
+    considered an outlier.
+
+    A factor is used to determine the upper and lower threshold. The default
+    factor 1.5 (based on Turkey boxplot) indicates that the minimum and maximum
+    ranges of a point is 50% less and greater than IQR, respectively.
+    "
+    quartiles = values(quantile(x)[2:4])
+    first_quartile = quartiles[1]
+    third_quartile = quartiles[3]
+    iqr = third_quartile - first_quartile # same as IQR(x)
+
+    threshold = list()
+    threshold$lower = first_quartile - (iqr * factor)
+    threshold$upper = (iqr * factor) + third_quartile
+    return(threshold)
+}
+
 # correlation functions
 
 cor.counter = function (correlations, select=NULL) {
