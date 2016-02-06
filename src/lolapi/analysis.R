@@ -212,7 +212,7 @@ attribute_selection = function (correlation_matrix) {
     )
 
     # A(C): Attributes of the correlation matrix C
-    attributes = colnames(correlation_matrix)
+    attrs = colnames(correlation_matrix)
 
     # qt0(A): Non-correlations counter for each attribute A(C)
     qt0 = cor.mcounter(correlation_matrix, '0')
@@ -235,10 +235,10 @@ attribute_selection = function (correlation_matrix) {
     }
 
     # Applying select for each a in A(C) to indicate which must be selected
-    filter = values(map(select, attributes))
+    filter = values(map(select, attrs))
 
     # Selecting (filtering) attributes
-    selection = attributes[filter]
+    selection = attrs[filter]
 
     return(selection)
 }
@@ -303,11 +303,11 @@ total_sum_of_squares = function (X) {
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
 
 # Data attributes
-attributes = names(data)
-attributes.info = attributes[1:4]
-attributes.boolean = attributes[5:7]
-attributes.integer = attributes[8:25]
-attributes.numerical = c(attributes.boolean, attributes.integer)
+data.attrs = names(data)
+data.attrs.info = data.attrs[1:4]
+data.attrs.boolean = data.attrs[5:7]
+data.attrs.integer = data.attrs[8:25]
+data.attrs.numerical = c(data.attrs.boolean, data.attrs.integer)
 
 # ---------------------
 # Treatment of outliers
@@ -316,22 +316,22 @@ attributes.numerical = c(attributes.boolean, attributes.integer)
 # Boxplot to analyze the outliers of all integer attributes. Boolean attributes
 # do not need be analyzed.
 save.boxplot(
-    data[, attributes.integer],
-    main='[All] Integer attributes',
-    names=range(len(attributes.integer))
+    data[, data.attrs.integer],
+    main='[All] Integer data.attrs',
+    names=range(len(data.attrs.integer))
 )
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
-for (attribute in attributes.integer) {
-    title = format.string('%s', attribute)
-    save.plot(data[, attribute], main=title)
-    save.boxplot(data[, attribute], main=title)
+for (attr in data.attrs.integer) {
+    title = format.string('%s', attr)
+    save.plot(data[, attr], main=title)
+    save.boxplot(data[, attr], main=title)
 }
 
-# Filter to define a value limit for each integer attribute based on the
-# analysis
-attributes_filter = (
+# Filter with a upper threshold for each integer attribute to remove extreme
+# outliers.
+thresholds = (
     data$Kill < 35 &
     data$Assists < 40 &
     data$Deaths < 30 &
@@ -352,8 +352,8 @@ attributes_filter = (
     data$TotalHealAmount < 40000
 )
 
-# Filtering entire data to remove participants with large outliers
-data = data[attributes_filter,]
+# Filtering entire data to remove rows with extreme outliers
+data = data[thresholds,]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
@@ -369,9 +369,9 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 
 # Boxplot to analyze the integer attributes after the treatments
 save.boxplot(
-    data[, attributes.numerical],
-    main='[All] attributes (pos)',
-    names=range(len(attributes.numerical))
+    data[, data.attrs.integer],
+    main='[All] Integer attributes (after)',
+    names=range(len(data.attrs.numerical))
 )
 
 # Saving the treated data
@@ -386,8 +386,8 @@ write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
 # integer attributes using Z-score. Boolean attributes do not need be
 # normalized.
 data.normalized = cbind(
-    data[, attributes.boolean],
-    scale(data[, attributes.integer])
+    data[, data.attrs.boolean],
+    scale(data[, data.attrs.integer])
 )
 
 # --------------------
@@ -412,7 +412,7 @@ save.boxplot(
 --------------------------
 
 # Automatic attribute selection on the correlation matrix
-attributes.autoselection = attribute_selection(correlations)
+data.attrs.autoselection = attribute_selection(correlations)
 # [1] "Kills"                       "Deaths"
 # [3] "GoldEarned"                  "TotalDamageDealt"
 # [5] "PhysicalDamageDealt"         "TotalDamageDealtToChampions"
@@ -422,7 +422,7 @@ attributes.autoselection = attribute_selection(correlations)
 # [13] "LargestCritStrike"
 
 # Manual attribute selection based on correlation analysis
-attributes.selection = c(
+data.attrs.selection = c(
     "Kills",
     "Deaths",
     "GoldEarned",
@@ -440,12 +440,12 @@ attributes.selection = c(
 )
 
 # Top 3 correlated attributes based on the mean of correlations for each one
-attributes.topcorrelated = cor.rank(correlations)[1:3]
+data.attrs.topcorrelated = cor.rank(correlations)[1:3]
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions"
 
 # Reducing the dimensionality of the normalized data
-data.reduced = data.normalized[, attributes.selection]
+data.reduced = data.normalized[, data.attrs.selection]
 
 # ----------------
 # K-means analysis
@@ -499,7 +499,7 @@ for (component in names(fit4))
 # --------------------------------------------------
 
 # Associating each reduced tuple with its info, win and label attributes
-data.labeled = cbind(data[, attributes.info], label=fit4$cluster, data.reduced)
+data.labeled = cbind(data[, data.attrs.info], label=fit4$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
 vencedores = data.labeled[data.labeled$Win == 1,]
@@ -513,7 +513,7 @@ data.sampled = data.labeled[sample(range(nrow(data.labeled)), 80),]
 
 # Clusplot of clusterized data (n=80)
 clusplot(
-    data.sampled[, attributes.selection],
+    data.sampled[, data.attrs.selection],
     data.sampled$label,
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
@@ -525,26 +525,26 @@ clusplot(
 # ---------------------
 
 # Plot of the labeled data
-plot(data.labeled[, attributes.selection], col=data.labeled$label)
+plot(data.labeled[, data.attrs.selection], col=data.labeled$label)
 
 # Only top correlated attributes
-plot(data.labeled[, attributes.topcorrelated], col=data.labeled$label)
+plot(data.labeled[, data.attrs.topcorrelated], col=data.labeled$label)
 
 # Scatterplot of most correlated attributes for each split
-plot(vencedores[, attributes.topcorrelated], col=vencedores$label)
-plot(perdedores[, attributes.topcorrelated], col=perdedores$label)
+plot(vencedores[, data.attrs.topcorrelated], col=vencedores$label)
+plot(perdedores[, data.attrs.topcorrelated], col=perdedores$label)
 
 # Principal Component Analysis (PCA)
 ------------------------------------
 
 # PCA of labeled data
-data.labeled.pca = prcomp(data.labeled[, attributes.selection], center=TRUE)
+data.labeled.pca = prcomp(data.labeled[, data.attrs.selection], center=TRUE)
 
 # PCA of winners
-vencedores.pca = prcomp(vencedores[, attributes.selection], center=TRUE)
+vencedores.pca = prcomp(vencedores[, data.attrs.selection], center=TRUE)
 
 # PCA of losers
-perdedores.pca = prcomp(perdedores[, attributes.selection], center=TRUE)
+perdedores.pca = prcomp(perdedores[, data.attrs.selection], center=TRUE)
 
 # Principal components to view
 pca_indices = c(1, 2, 3)
@@ -621,7 +621,7 @@ for(i in c(1:8)) {
 # TODO centers of each partition ... scaled and not scaled
 
 # mean of all attributes (not scaled) grouped by clusters
-tmp = data[, attributes.selection]
+tmp = data[, data.attrs.selection]
 centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
 write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/centers_not_scaled.csv")
 
