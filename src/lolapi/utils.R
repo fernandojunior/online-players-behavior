@@ -75,20 +75,20 @@ endswith = function (s, suffix) {
     return(grepl(strf('%s$', suffix), s))
 }
 
-strf = function (...) {
-    "Alias for sprintf."
-    return(sprintf(...))
-}
-
 startswith = function (s, prefix) {
     "Return TRUE if s starts with the specified prefix, FALSE otherwise."
     return(grepl(strf('^%s', prefix), s))
 }
 
+strf = function (...) {
+    "Alias for sprintf."
+    return(sprintf(...))
+}
+
 # math functions
 
 mss = function (x) {
-    "Return the sum of square error of a multidimensional x sample data.
+    "Return the sum of square error of a multidimensional data set x.
 
     Example:
         > x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
@@ -112,9 +112,10 @@ mvar = function (x) {
 }
 
 ss = function (x, n=NA, VAR=FALSE) {
-    "Return the sum of square error of a sample data x: (n - 1) * var(x).
+    "Return the sum of square error of a data set x: (n - 1) * var(x).
 
-    If VAR == TRUE, x is a [list of] variance of a sample data with n length.
+    If VAR == TRUE, x is a variance value (or a list) of a sample data with n
+    length.
 
     Example:
         > x = c(1, 2, 3, 4, 5)
