@@ -406,28 +406,6 @@ thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
 # Boolean vector to indicate which data point x is an extreme outlier or not.
 outliers = apply(data, 1, function(x) is.outlier(x, thresholds))
 
-# Manual definition to indicate extreme outliers
-outliers.manual = (
-    data$Kill > 35 |
-    data$Assists > 40 |
-    data$Deaths > 30 |
-    data$GoldEarned > 26250 |
-    data$TotalDamageDealt > 500000 |
-    data$MagicDamageDealt > 350000 |
-    data$PhysicalDamageDealt > 450000 |
-    data$TotalDamageDealtToChampions > 80000 |
-    data$TotalDamageTaken > 80000 |
-    data$MinionsKilled > 400 |
-    data$NeutralMinionsKilled > 125 |
-    data$CrowdControl > 10000 |
-    data$WardsPlaced > 110 |
-    data$TowerKills > 9 |
-    data$LargestMultiKill > 6 |
-    data$LargestKillingSpree > 21 |
-    data$LargestCritStrike > 2500 |
-    data$TotalHealAmount > 40000
-)
-
 # Filtering entire data to remove extreme outliers
 data = data[!outliers,]
 # > nrow(data)
@@ -515,24 +493,6 @@ data.attrs.selection = attribute_selection(correlations)
 # [7] "MinionsKilled"               "WardsPlaced"
 # [9] "TowerKills"                  "LargestMultiKill"
 # [11] "LargestKillingSpree"         "LargestCritStrike"
-
-# Manual attribute selection
-data.attrs.selection.manual = c(
-    "Kills",
-    "Deaths",  # removed in auto selection
-    "GoldEarned",
-    "TotalDamageDealt",
-    "MagicDamageDealt",  # removed in auto selection
-    "PhysicalDamageDealt",
-    "TotalDamageDealtToChampions",
-    "TotalDamageTaken",
-    "MinionsKilled",
-    "WardsPlaced",
-    "TowerKills",
-    "LargestMultiKill",
-    "LargestKillingSpree",
-    "LargestCritStrike"
-)
 
 # Selection with attributes ranked
 data.attrs.rankedselection = intersect(data.attrs.ranked, data.attrs.selection)
