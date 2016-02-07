@@ -196,22 +196,15 @@ is.outlier = function (x, thresholds) {
 
 # correlation functions
 
-cor.counter = function (correlations, select=NULL) {
-    "Count the number of items from a list (or vector) of correlations.
+cor.counter = function (x) {
+    "Count the number of items from a list or vector of correlations x.
 
-    Specific item(s) name can be selected.
+    If x is a matrix or data frame, count the number of items for each column.
     "
-    if (!is.null(select))
-        return(counter(correlations)[select])
-    return(counter(correlations))
-}
+    if (is.matrix(x) | is.data.frame(x))
+        return(apply(x, 2, cor.counter))
 
-cor.mcounter = function (mcorrelations, select=NULL) {
-    "Count the number of items for each column of a matrix of correlations.
-
-    Specific item(s) name can be selected.
-    "
-    return(apply(mcorrelations, 2, function(col) cor.counter(col, select)))
+    return(counter(x))
 }
 
 cor.mean = function (correlations) {
@@ -261,9 +254,12 @@ attribute_selection = function (correlation_matrix) {
     # A(C): Attributes of the correlation matrix C
     attrs = colnames(correlation_matrix)
 
+    # qt(A): Correlations counter for each attribute A(C)
+    qt = cor.counter(correlation_matrix)
+
     # qt0(A): Non-correlations counter for each attribute A(C)
-    qt0 = cor.mcounter(correlation_matrix, '0')
-    qt0[is.na(qt0)] = 0
+    qt0 = map(function(x) values(qt[[x]]['0']), names(qt))
+    qt0[is.na(qt0)] = 0  # replacing NA values
 
     # m(qt0(A)): Mean of qt0
     mqt0 = mean(values(qt0))
