@@ -80,17 +80,17 @@ values = function (x) {
 
 endswith = function (s, suffix) {
     "Return TRUE if s ends with the specified suffix, FALSE otherwise."
-    return(grepl(format.string('%s$', suffix), s))
+    return(grepl(strf('%s$', suffix), s))
 }
 
-format.string = function (...) {
+strf = function (...) {
     "Alias for sprintf."
     return(sprintf(...))
 }
 
 startswith = function (s, prefix) {
     "Return TRUE if s starts with the specified prefix, FALSE otherwise."
-    return(grepl(format.string('^%s', prefix), s))
+    return(grepl(strf('^%s', prefix), s))
 }
 
 # math functions
@@ -300,7 +300,7 @@ save.png = function (f, ...) {
         if (!is.null(args['main']) & !is.na(args['main']))
             name = args['main']
     fname = as.character(substitute(f))
-    filename = format.string('%s%s.%s.png', PLOTS, name, fname)
+    filename = strf('%s%s.%s.png', PLOTS, name, fname)
     png(file=filename)
     f(...)
     dev.off()
@@ -363,16 +363,15 @@ data.attrs.numerical = c(data.attrs.boolean, data.attrs.integer)
 # do not need be analyzed.
 save.boxplot(
     data[, data.attrs.integer],
-    main='[Outlier] Integer attributes',
+    main='[Outlier] All integer attributes boxplot',
     names=range(len(data.attrs.integer))
 )
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attr in data.attrs.integer) {
-    title = format.string('[Outlier] %s', attr)
-    save.plot(data[, attr], main=title)
-    save.boxplot(data[, attr], main=title)
+    save.plot(data[, attr], main=strf('[Outlier] %s scatterplot', attr))
+    save.boxplot(data[, attr], main=strf('[Outlier] %s boxplot', attr))
 }
 
 # Automatically finding the lower and upper extreme outlier thresholds
@@ -424,14 +423,13 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 # Plots to analyze the integer attributes after the treatments
 save.boxplot(
     data[, data.attrs.integer],
-    main='[Outlier] Integer attributes (after)',
+    main='[Outlier] All integer attributes - after',
     names=range(len(data.attrs.integer))
 )
 
 for (attr in data.attrs.integer) {
-    title = format.string('[Outlier] %s (after)', attr)
-    save.plot(data[, attr], main=title)
-    save.boxplot(data[, attr], main=title)
+    save.plot(data[, attr], main=strf('[Outlier] %s scatterplot - after', attr))
+    save.boxplot(data[, attr], main=strf('[Outlier] %s boxplot - after', attr))
 }
 
 # ----------------------------
@@ -561,7 +559,7 @@ fit4$k = len(fit4$size)
 
 # Saving all components of fit4
 for (component in names(fit4))
-    write.csv(fit4[[component]], format.string('data/fit4/%s.csv', component))
+    write.csv(fit4[[component]], strf('data/fit4/%s.csv', component))
 
 # --------------------------------------------------
 # Analysis of the data labeled by k-means clustering
@@ -648,62 +646,6 @@ scatterplot3d(
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
 # the labeled data is splited between winners and losers.
-
-# TODO Summarying partitions
-----------------------------
-
-# Within cluster sum of squares
-withinss = function (data, cluster) {
-    X = data[data$Cluster == cluster, ]
-    tss = total_sum_of_squares(X)
-    return(c(tss$size, tss$tss, tss$tvar))
-}
-
-vencedores = c('size', 'withinss', 'var')
-perdedores = c('size', 'withinss', 'var')
-
-for(i in c(1:8)) {
-    vencedores = rbind(i=vencedores, withinss(vencedores, i))
-    perdedores = rbind(i=perdedores, withinss(perdedores, i))
-}
-
-# winners output TODO put in csv file
-# 3739 41316.9371603666 11.0532202141163
-# 4281 19268.3432556076 4.50194935878682
-# 5223 49015.2318475736 9.38629487697695
-# 5179 15236.4693924323 2.94253947323915
-# 4035 27864.5755564661 6.90743072792912
-# 3691 18353.4704144465 4.97384022071721
-# 5835 46343.2471402998 7.94364880704487
-# 9667 52208.3269817618 5.40123391079679
-
-# losers output TODO put in csv file
-# 1674 16687.9878413122 9.97488812989375
-# 3772 16583.1388273172 4.39754410695233
-# 3217 25773.5785903237 8.01417244723994
-# 11838 34719.6991407263 2.9331502188668
-# 6453 39535.8716607882 6.12769244587541
-# 10711 51691.7332768328 4.82649236945218
-# 418 2547.04791512543 6.10802857344227
-# 3567 14730.9541129319 4.13094618982947
-
-# TODO centers of each partition ... scaled and not scaled
-
-# mean of all attributes (not scaled) grouped by clusters
-tmp = data[, data.attrs.selection]
-centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
-write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/centers_not_scaled.csv")
-
-# TODO
-# cluster, participants, winners, losers, winrate (w/(w+l))
-# 1 5413 3739 1674 0.6907445039719194
-# 2 8053 4281 3772 0.5316031292685955
-# 3 8440 5223 3217 0.6188388625592417
-# 4 17017 5179 11838 0.304342716107422
-# 5 10488 4035 6453 0.3847254004576659
-# 6 14402 3691 10711 0.25628384946535204
-# 7 6253 5835 418 0.9331520869982408
-# 8 13234 9667 3567 0.7304669789935015
 
 # ----------
 # Hypothesis

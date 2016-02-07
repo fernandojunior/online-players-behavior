@@ -1,51 +1,5 @@
 # Draft and notes...
 
-data = read.csv("data/ranked_matches_2015_ong_features.csv")
-data.categorical = data[,1:3] # apenas atributos categoricos
-data.numerical = data[,4:25] # apenas atributos numericos
-data.numerical.nbool = data.numerical[,5:22] # apenas atributos numericos sem booleanos
-data.numerical.scaled = scale(data.numerical)
-
-# Creates a file with a matrix of attributes correlations
-write_matrix_cor <- function() {
-
-    data.scaled = scale(data.numerical)
-
-    correlations = cor(data.scaled)
-
-	correlations.rounded = round(correlations, digits=1)
-
-	write.csv(correlations.rounded, file = "analysis/correlations.csv", sep =",")
-}
-
-# A matrix scatter plot for graph correlation analysis
-matrix_scatter_plot <- function () {
-	filename = paste("analysis/pairs", ".png", sep="")
-	png(file=filename) # abrindo "cursor"
-	pairs(data.numerical)
-	dev.off() # "fechando" arquivo
-}
-
-# Generates boxplot graph of the matrix correlations
-boxplot_correlations <- function () {
-
-	# Matriz de correlacoes modificado manualmente:
-	# Sem cabecalhos e sem valores nulos (diagonal i==j)
-    data = read.csv('analysis/correlations2.csv', header=FALSE, sep=',')
-
-    # valor absoluto dos dados
-	data.abs = abs(data)
-
-	# gerando boxplot
-	filename = paste("analysis/boxplot_correlations", ".png", sep="")
-	png(file=filename) # abrindo "cursor"
-	boxplot(data.abs)
-	dev.off() # "fechando" arquivo
-
-}
-
-fit = kmeans(data.numerical.scaled, 5) # 5 cluster solution
-
 ##
 
 d = dist(data.numerical.scaled, method = "euclidean") # distance matrix
@@ -53,32 +7,6 @@ d = dist(data.numerical.scaled, method = "euclidean") # distance matrix
 fit = hclust(d, method="ward")
 
 plot(fit) # display dendogram
-
-##  k
-
-mydata = data.numerical.scaled
-
-wss = (nrow(mydata)-1) * sum(apply(mydata,2,var))
-
-for  (i  in  2:50) wss[i] <- sum(kmeans(mydata, centers=i)$withinss)
-
-plot(1:50, wss, type="b", xlab="Number of Clusters",
-     ylab="Within groups sum of squares")
-
-
-
-
-##
-
-x <- data.numerical.scaled
-# run K-Means
-km <- kmeans(x, 3, 15)
-# print components of km
-print(km)
-# plot clusters
-plot(x, col = km$cluster)
-# plot centers
-points(km$centers, col = 1:2, pch = 8)
 
 ##
 
@@ -93,9 +21,6 @@ clus=kmeans(dat, centers=2)
 # Fig 01
 plotcluster(dat, clus$cluster)
 
-clusplot(dat, clus$cluster, color=TRUE, shade=TRUE,
-         labels=2, lines=0)
-
 ## data visualization - how to procedure a pretty plot
 
 library(cluster)
@@ -107,8 +32,6 @@ dissE=daisy(x)
 dE2=dissE^2
 sk2=silhouette(km$cl, dE2)
 plot(sk2)
-
-
 
 ## finding k
 
@@ -141,33 +64,61 @@ These can be considered in a number of ways:
 – Divisive clustering (diana(), mona())
 • Partitioning methods (kmeans(), pam(), clara())
 
-##
+# TODO Summarying partitions
+----------------------------
 
-USArrests = data.numerical.scaled
+# Within cluster sum of squares
+withinss = function (data, cluster) {
+    X = data[data$Cluster == cluster, ]
+    tss = total_sum_of_squares(X)
+    return(c(tss$size, tss$tss, tss$tvar))
+}
 
-US.km <- kmeans(USArrests, centers = 12)
-plot(USArrests, col = US.km$cluster, pch = US.km$cluster) ## not shown
-plot(prcomp(USArrests, center = TRUE)$x[,c(1,2)], col = US.km$cluster, pch = US.km$cluster)
+vencedores = c('size', 'withinss', 'var')
+perdedores = c('size', 'withinss', 'var')
 
-library("scatterplot3d")
+for(i in c(1:8)) {
+    vencedores = rbind(i=vencedores, withinss(vencedores, i))
+    perdedores = rbind(i=perdedores, withinss(perdedores, i))
+}
 
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 55, color = US.km$cluster)
+# winners output TODO put in csv file
+# 3739 41316.9371603666 11.0532202141163
+# 4281 19268.3432556076 4.50194935878682
+# 5223 49015.2318475736 9.38629487697695
+# 5179 15236.4693924323 2.94253947323915
+# 4035 27864.5755564661 6.90743072792912
+# 3691 18353.4704144465 4.97384022071721
+# 5835 46343.2471402998 7.94364880704487
+# 9667 52208.3269817618 5.40123391079679
 
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,5,7)], pch = US.km$cluster, type = "h",
-angle = 95, color = US.km$cluster)
+# losers output TODO put in csv file
+# 1674 16687.9878413122 9.97488812989375
+# 3772 16583.1388273172 4.39754410695233
+# 3217 25773.5785903237 8.01417244723994
+# 11838 34719.6991407263 2.9331502188668
+# 6453 39535.8716607882 6.12769244587541
+# 10711 51691.7332768328 4.82649236945218
+# 418 2547.04791512543 6.10802857344227
+# 3567 14730.9541129319 4.13094618982947
 
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 95, color = US.km$cluster)
+# TODO centers of each partition ... scaled and not scaled
 
+# mean of all attributes (not scaled) grouped by clusters
+tmp = data[, data.attrs.selection]
+centers_not_scaled = aggregate(. ~ Cluster, tmp, mean)
+write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/cluster/testes/fit4/centers_not_scaled.csv")
 
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,6,9)], pch = US.km$cluster, type = "h", angle = 95, color = US.km$cluster)
-
-
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(8,9,12)], pch = US.km$cluster, type = "h", angle = 95, color = US.km$cluster)
-
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 190, color = US.km$cluster)
-
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 90+90+90+90+90+2, color = US.km$cluster)
-
+# TODO
+# cluster, participants, winners, losers, winrate (w/(w+l))
+# 1 5413 3739 1674 0.6907445039719194
+# 2 8053 4281 3772 0.5316031292685955
+# 3 8440 5223 3217 0.6188388625592417
+# 4 17017 5179 11838 0.304342716107422
+# 5 10488 4035 6453 0.3847254004576659
+# 6 14402 3691 10711 0.25628384946535204
+# 7 6253 5835 418 0.9331520869982408
+# 8 13234 9667 3567 0.7304669789935015
 
 
 
