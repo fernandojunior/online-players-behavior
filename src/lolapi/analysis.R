@@ -147,6 +147,8 @@ ss = function (x, n=NA, VAR=FALSE) {
     return ((n - 1) * x)
 }
 
+# outlier functions
+
 outlier_thresholds = function (x, factor=1.5) {
     "Find the lower and upper outlier thresholds of a specific data set x.
 
@@ -160,13 +162,13 @@ outlier_thresholds = function (x, factor=1.5) {
     if x is a matrix or data frame, for each column in x.
     "
     if (is.matrix(x))
-        return(do.call(rbind,
+        return(t(do.call(rbind,
             apply(x, 2, function(y) outlier_thresholds(y, factor)
-        )))
+        ))))
     if (is.data.frame(x))
-        return(do.call(rbind.data.frame,
+        return(t(do.call(rbind.data.frame,
             apply(x, 2, function(y) outlier_thresholds(y, factor)
-        )))
+        ))))
 
     quartiles = values(quantile(x)[2:4])
     first_quartile = quartiles[1]
@@ -177,6 +179,19 @@ outlier_thresholds = function (x, factor=1.5) {
     threshold$lower = first_quartile - (iqr * factor)
     threshold$upper = (iqr * factor) + third_quartile
     return(threshold)
+}
+
+is.outlier = function (x, thresholds) {
+    "Return TRUE if x is an outlier, FALSE otherwise.
+
+    It's based on lower and upper thresholds.
+
+    x point can be multivariate. In this case, the thresholds also must be."
+    if(is.list(x) | is.vector(x))  # x is multivariate
+        x = x[colnames(thresholds)]
+    if (any(x < thresholds['lower', ]) | any(x > thresholds['upper', ]))
+        return(TRUE)
+    return(FALSE)
 }
 
 # correlation functions
@@ -361,31 +376,57 @@ for (attr in data.attrs.integer) {
     save.boxplot(data[, attr], main=title)
 }
 
-# Filter based on the upper threshold for each integer attribute to remove
-# extreme outliers.
-thresholds = (
-    data$Kill < 35 &
-    data$Assists < 40 &
-    data$Deaths < 30 &
-    data$GoldEarned < 26250 &
-    data$TotalDamageDealt < 500000 &
-    data$MagicDamageDealt < 350000 &
-    data$PhysicalDamageDealt < 450000 &
-    data$TotalDamageDealtToChampions < 80000 &
-    data$TotalDamageTaken < 80000 &
-    data$MinionsKilled < 400 &
-    data$NeutralMinionsKilled < 125 &
-    data$CrowdControl < 10000 &
-    data$WardsPlaced < 110 &
-    data$TowerKills < 9 &
-    data$LargestMultiKill < 6 &
-    data$LargestKillingSpree < 21 &
-    data$LargestCritStrike < 2500 &
-    data$TotalHealAmount < 40000
+# Automatically finding the lower and upper extreme outlier thresholds
+# (IQR factor = 3) for each integer attribute
+thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
+# > t(thresholds)
+#                                  lower    upper
+# Kills                           -19.00     30.0
+# Assists                         -19.00     37.0
+# Deaths                          -11.00     24.0
+# GoldEarned                    -7465.00  29957.0
+# TotalDamageDealt            -229216.25 433109.8
+# MagicDamageDealt            -112411.75 169991.0
+# PhysicalDamageDealt         -260943.50 380499.8
+# TotalDamageDealtToChampions  -33290.00  66089.0
+# TotalDamageTaken             -25844.25  69949.0
+# MinionsKilled                  -347.00    556.0
+# NeutralMinionsKilled            -59.00     81.0
+# CrowdControl                  -1023.00   1567.0
+# WardsPlaced                     -17.00     32.0
+# TowerKills                       -3.00      4.0
+# LargestMultiKill                 -2.00      5.0
+# LargestKillingSpree             -12.00     16.0
+# LargestCritStrike             -1653.00   2204.0
+# TotalHealAmount               -7896.00  11865.0
+
+# Boolean vector to indicate which data point x is an extreme outlier or not.
+outliers.auto = apply(data, 1, function(x) is.outlier(x, thresholds))
+
+# Manual definition to indicate extreme outliers
+outliers.manual = (
+    data$Kill > 35 |
+    data$Assists > 40 |
+    data$Deaths > 30 |
+    data$GoldEarned > 26250 |
+    data$TotalDamageDealt > 500000 |
+    data$MagicDamageDealt > 350000 |
+    data$PhysicalDamageDealt > 450000 |
+    data$TotalDamageDealtToChampions > 80000 |
+    data$TotalDamageTaken > 80000 |
+    data$MinionsKilled > 400 |
+    data$NeutralMinionsKilled > 125 |
+    data$CrowdControl > 10000 |
+    data$WardsPlaced > 110 |
+    data$TowerKills > 9 |
+    data$LargestMultiKill > 6 |
+    data$LargestKillingSpree > 21 |
+    data$LargestCritStrike > 2500 |
+    data$TotalHealAmount > 40000
 )
 
-# Filtering entire data to remove rows with extreme outliers
-data = data[thresholds,]
+# Filtering entire data to remove extreme outliers
+data = data[!outliers.auto,]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
