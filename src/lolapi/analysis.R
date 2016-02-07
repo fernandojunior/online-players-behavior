@@ -160,9 +160,13 @@ outlier_thresholds = function (x, factor=1.5) {
     if x is a matrix or data frame, for each column in x.
     "
     if (is.matrix(x))
-        return(do.call(rbind, apply(x, 2, outlier_thresholds)))
+        return(do.call(rbind,
+            apply(x, 2, function(y) outlier_thresholds(y, factor)
+        )))
     if (is.data.frame(x))
-        return(do.call(rbind.data.frame, apply(x, 2, outlier_thresholds)))
+        return(do.call(rbind.data.frame,
+            apply(x, 2, function(y) outlier_thresholds(y, factor)
+        )))
 
     quartiles = values(quantile(x)[2:4])
     first_quartile = quartiles[1]
