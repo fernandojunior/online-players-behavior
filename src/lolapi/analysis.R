@@ -156,7 +156,14 @@ outlier_thresholds = function (x, factor=1.5) {
     A factor is used to determine the upper and lower threshold. The default
     factor 1.5 (based on Turkey boxplot) indicates that the minimum and maximum
     ranges of a point is 50% less and greater than IQR, respectively.
+
+    if x is a matrix or data frame, for each column in x.
     "
+    if (is.matrix(x))
+        return(do.call(rbind, apply(x, 2, outlier_thresholds)))
+    if (is.data.frame(x))
+        return(do.call(rbind.data.frame, apply(x, 2, outlier_thresholds)))
+
     quartiles = values(quantile(x)[2:4])
     first_quartile = quartiles[1]
     third_quartile = quartiles[3]
@@ -350,8 +357,8 @@ for (attr in data.attrs.integer) {
     save.boxplot(data[, attr], main=title)
 }
 
-# Filter with a upper threshold for each integer attribute to remove extreme
-# outliers.
+# Filter based on the upper threshold for each integer attribute to remove
+# extreme outliers.
 thresholds = (
     data$Kill < 35 &
     data$Assists < 40 &
