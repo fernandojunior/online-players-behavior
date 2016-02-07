@@ -518,6 +518,12 @@ twss = map(
 save.plot(twss, main="[K-means] Error curve", xlab="k", ylab="tot.withinss")
 
 # Which is the optimal k value in this case? k={4, 5, 6, 7, 8, 9}?
+# Let's analyse using the sum of square rate decreased from the total after
+# partitioning the data into k clusters:
+# total_SS = sum(ss(data))
+# tot.withinss = sum(k-means(data, k)$withinss)
+# between_SS = tot.withinss - total_SS
+# between_SS / totalss
 
 fit0 = kmeans(data.reduced, 4, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  48.3 %)
@@ -530,22 +536,22 @@ fit2 = kmeans(data.reduced, 6, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  56.7 %)
 # fit2 - fit1 = 3.2 %
 
-fit3 = kmeans(data.reduced, 7, algorithm='Lloyd')
+fit3 = kmeans(data.reduced, 7, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  59.1 %)
 # fit3 - fit2 = 2.4 %
 
-fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=150)
+fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  60.7 %)
 # fit4 - fit3 = 1.6 %
 
-fit5 = kmeans(data.reduced, 9, algorithm='Lloyd', iter.max=150)
+fit5 = kmeans(data.reduced, 9, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  62.2 %)
 # fit5 - fit4 = 1.5 %
 
 # fit4 has the best trade-off:
 plot(c(4:8), c(5.2, 3.2, 2.4, 1.6, 1.5), xlab='fit', ylab='fit[i] - fit[i-1]')
 
-# Let's add some extra components to fit4, then save.
+# Let's add some extra components to fit4, then save it.
 
 # Variance for each cluster of fit4
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
