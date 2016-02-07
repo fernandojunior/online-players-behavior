@@ -463,7 +463,7 @@ save.boxplot(
     names=range(ncol(correlations))
 )
 
-# Attributes ranked by the mean of correlations for each one
+# Correlation matrix attributes ranked by the mean of correlations for each one
 data.attrs.ranked = cor.rank(correlations)
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions" "Kills"
