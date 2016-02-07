@@ -1,5 +1,0 @@
-$ fit3 = kmeans(ldata, 8, algorithm='Lloyd')
-Within cluster sum of squares by cluster:
-[1] 53279.95 76643.98 71778.78 57813.17 60659.66 71077.72 43080.52 65368.84
- (between_SS / total_SS =  57.2 %)
-Warning: did *not* converge in specified number of iterations
