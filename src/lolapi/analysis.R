@@ -1,6 +1,6 @@
-library("car")
+library('car')
 library(cluster)  # for clusplot
-library("scatterplot3d")  # scatterplot3d
+library('scatterplot3d')  # scatterplot3d
 source('utils.R')
 
 options(scipen=999)
@@ -9,7 +9,7 @@ options(scipen=999)
 # Load data
 # ---------
 
-data = read.csv("data/ranked_matches_2015_ong_features.csv")
+data = read.csv('data/ranked_matches_2015_ong_features.csv')
 # > nrow(data)
 # [1] 85470
 
@@ -178,7 +178,7 @@ twss = map(
 )
 
 # Plot to analyze the knee of error curve resultant of the test for each k
-save.plot(twss, main="[K-means] Error curve", xlab="k", ylab="tot.withinss")
+save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
 
 # Which is the optimal k value in this case? k={4, 5, 6, 7, 8, 9}?
 # Let's analyse using the sum of square rate decreased from the total after
@@ -285,7 +285,7 @@ pca_indices = c(1, 2, 3)
 scatterplot3d(
     data.labeled.pca$x[, pca_indices],
     pch=data.labeled$label,
-    type="h",
+    type='h',
     angle=95,  # 30
     color=data.labeled$label
 )
@@ -294,7 +294,7 @@ scatterplot3d(
 scatterplot3d(
     vencedores.pca$x[, pca_indices],
     pch=vencedores$label,
-    type="h",
+    type='h',
     angle=95,
     color=vencedores$label
 )
@@ -303,7 +303,7 @@ scatterplot3d(
 scatterplot3d(
     perdedores.pca$x[, pca_indices],
     pch=perdedores$label,
-    type="h",
+    type='h',
     angle=95,
     color=perdedores$label
 )
