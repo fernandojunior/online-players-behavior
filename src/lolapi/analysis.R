@@ -171,7 +171,7 @@ data.reduced = data.normalized[, data.attrs.selection]
 # clusters analyzing the curve of a generated graph from a test (based on
 # k-means) conducted for each possible.
 
-# Total within sum of squares of clusters for each k-means test k <= 20
+# Total within sum of squares of clusters for each k-means test k={1, ..., 50}
 twss = map(
     function(k) kmeans(data.reduced, k, algorithm='Lloyd')$tot.withinss,
     range(50)
@@ -230,7 +230,7 @@ for (component in names(fit4))
 # Analysis of the data labeled by k-means clustering
 # --------------------------------------------------
 
-# Associating each reduced tuple with its info, win and label attributes
+# Associating each reduced data point with its info and label attributes
 data.labeled = cbind(data[, data.attrs.info], label=fit4$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
