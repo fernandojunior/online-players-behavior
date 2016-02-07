@@ -1,4 +1,0 @@
-$ fit4 = kmeans(ldata, 8, algorithm='Lloyd', iter.max=150)
-Within cluster sum of squares by cluster:
-[1] 60130.90 37933.61 77757.83 54942.01 69418.22 72916.62 49453.31 70414.75
- (between_SS / total_SS =  57.7 %)
