@@ -18,18 +18,18 @@ write_matrix_cor <- function() {
 	write.csv(correlations.rounded, file = "analysis/correlations.csv", sep =",")
 }
 
-# A matrix scatter plot for graph correlation analysis 
+# A matrix scatter plot for graph correlation analysis
 matrix_scatter_plot <- function () {
 	filename = paste("analysis/pairs", ".png", sep="")
-	png(file=filename) # abrindo "cursor"  
+	png(file=filename) # abrindo "cursor"
 	pairs(data.numerical)
-	dev.off() # "fechando" arquivo	
+	dev.off() # "fechando" arquivo
 }
 
 # Generates boxplot graph of the matrix correlations
 boxplot_correlations <- function () {
 
-	# Matriz de correlacoes modificado manualmente: 
+	# Matriz de correlacoes modificado manualmente:
 	# Sem cabecalhos e sem valores nulos (diagonal i==j)
     data = read.csv('analysis/correlations2.csv', header=FALSE, sep=',')
 
@@ -38,9 +38,9 @@ boxplot_correlations <- function () {
 
 	# gerando boxplot
 	filename = paste("analysis/boxplot_correlations", ".png", sep="")
-	png(file=filename) # abrindo "cursor"  
+	png(file=filename) # abrindo "cursor"
 	boxplot(data.abs)
-	dev.off() # "fechando" arquivo	
+	dev.off() # "fechando" arquivo
 
 }
 
@@ -68,7 +68,7 @@ plot(1:50, wss, type="b", xlab="Number of Clusters",
 
 
 
-## 
+##
 
 x <- data.numerical.scaled
 # run K-Means
@@ -93,7 +93,7 @@ clus=kmeans(dat, centers=2)
 # Fig 01
 plotcluster(dat, clus$cluster)
 
-clusplot(dat, clus$cluster, color=TRUE, shade=TRUE, 
+clusplot(dat, clus$cluster, color=TRUE, shade=TRUE,
          labels=2, lines=0)
 
 ## data visualization - how to procedure a pretty plot
@@ -103,7 +103,7 @@ library(cluster)
 x= data.numerical.scaled[1:3000,]
 
 km=kmeans(x,2)
-dissE=daisy(x) 
+dissE=daisy(x)
 dE2=dissE^2
 sk2=silhouette(km$cl, dE2)
 plot(sk2)
@@ -141,7 +141,7 @@ These can be considered in a number of ways:
 – Divisive clustering (diana(), mona())
 • Partitioning methods (kmeans(), pam(), clara())
 
-## 
+##
 
 USArrests = data.numerical.scaled
 
@@ -153,7 +153,7 @@ library("scatterplot3d")
 
 scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 55, color = US.km$cluster)
 
-scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,5,7)], pch = US.km$cluster, type = "h", 
+scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,5,7)], pch = US.km$cluster, type = "h",
 angle = 95, color = US.km$cluster)
 
 scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 95, color = US.km$cluster)
@@ -168,3 +168,57 @@ scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster
 
 scatterplot3d(prcomp(USArrests, center = TRUE)$x[,c(1,2,3)], pch = US.km$cluster, type = "h", angle = 90+90+90+90+90+2, color = US.km$cluster)
 
+
+
+
+# H1-0
+# normalized relative weight and normalized principal Eigen vector [Kardi Teknomo]
+
+data.normalized_relative_weight = data[,4:25]
+data.normalized_relative_weight = cbind(data.normalized_relative_weight[,c(1,5)], data.normalized_relative_weight[,7:14], data.normalized_relative_weight[,17:21])
+data.normalized_relative_weight = data.normalized_relative_weight[,2:ncol(data.normalized_relative_weight)]
+
+data.normalized_relative_weight = data.matrix(data.normalized_relative_weight)
+data.normalized_relative_weight = data.normalized_relative_weight / sum(data.normalized_relative_weight)
+
+ttt = data.normalized_relative_weight + 0.0
+cbind(
+   ttt[,1]/sum(ttt[,1]),
+   ttt[,2]/sum(ttt[,2]),
+   ttt[,3]/sum(ttt[,3]),
+   ttt[,4]/sum(ttt[,4]),
+   ttt[,5]/sum(ttt[,5]),
+   ttt[,6]/sum(ttt[,6]),
+   ttt[,7]/sum(ttt[,7]),
+   ttt[,8]/sum(ttt[,8]),
+   ttt[,9]/sum(ttt[,9]),
+   ttt[,10]/sum(ttt[,10]),
+   ttt[,11]/sum(ttt[,11]),
+   ttt[,12]/sum(ttt[,12]),
+   ttt[,13]/sum(ttt[,13]),
+   ttt[,14]/sum(ttt[,14])
+)
+
+data.normalized_relative_weight = cbind(
+   ttt[,1]/sum(ttt[,1]),
+   ttt[,2]/sum(ttt[,2]),
+   ttt[,3]/sum(ttt[,3]),
+   ttt[,4]/sum(ttt[,4]),
+   ttt[,5]/sum(ttt[,5]),
+   ttt[,6]/sum(ttt[,6]),
+   ttt[,7]/sum(ttt[,7]),
+   ttt[,8]/sum(ttt[,8]),
+   ttt[,9]/sum(ttt[,9]),
+   ttt[,10]/sum(ttt[,10]),
+   ttt[,11]/sum(ttt[,11]),
+   ttt[,12]/sum(ttt[,12]),
+   ttt[,13]/sum(ttt[,13]),
+   ttt[,14]/sum(ttt[,14])
+)
+
+# dados normalizados pelo peso relativo
+kruskal.test(rowSums(data.normalized_relative_weight), fit4$cluster)
+    Kruskal-Wallis rank sum test
+
+data:  rowSums(data.normalized_relative_weight) and fit4$cluster
+Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16

@@ -263,6 +263,7 @@ attribute_selection = function (correlation_matrix) {
 
     # qt0(A): Non-correlations counter for each attribute A(C)
     qt0 = cor.mcounter(correlation_matrix, '0')
+    qt0[is.na(qt0)] = 0
 
     # m(qt0(A)): Mean of qt0
     mqt0 = mean(values(qt0))
@@ -348,6 +349,8 @@ total_sum_of_squares = function (X) {
 # ---------
 
 data = read.csv("data/ranked_matches_2015_ong_features.csv")
+# > nrow(data)
+# [1] 85470
 
 # Data attributes
 data.attrs = names(data)
@@ -364,14 +367,14 @@ data.attrs.numerical = c(data.attrs.boolean, data.attrs.integer)
 # do not need be analyzed.
 save.boxplot(
     data[, data.attrs.integer],
-    main='[All] Integer data.attrs',
+    main='[Outlier] Integer attributes',
     names=range(len(data.attrs.integer))
 )
 
 # As we can see from the above plot that some attributes has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (attr in data.attrs.integer) {
-    title = format.string('%s', attr)
+    title = format.string('[Outlier] %s', attr)
     save.plot(data[, attr], main=title)
     save.boxplot(data[, attr], main=title)
 }
@@ -401,7 +404,7 @@ thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
 # TotalHealAmount               -7896.00  11865.0
 
 # Boolean vector to indicate which data point x is an extreme outlier or not.
-outliers.auto = apply(data, 1, function(x) is.outlier(x, thresholds))
+outliers = apply(data, 1, function(x) is.outlier(x, thresholds))
 
 # Manual definition to indicate extreme outliers
 outliers.manual = (
@@ -426,7 +429,9 @@ outliers.manual = (
 )
 
 # Filtering entire data to remove extreme outliers
-data = data[!outliers.auto,]
+data = data[!outliers,]
+# > nrow(data)
+# [1] 74656
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
@@ -439,16 +444,21 @@ inconsistent_matches = names(participants_by_match[participants_by_match < 10])
 
 # Removing inconsistent matches from data
 data = data[!(data$matchId %in% inconsistent_matches),]
+# > nrow(data)
+# [1] 35140
 
-# Boxplot to analyze the integer attributes after the treatments
+# Plots to analyze the integer attributes after the treatments
 save.boxplot(
     data[, data.attrs.integer],
-    main='[All] Integer attributes (after)',
-    names=range(len(data.attrs.numerical))
+    main='[Outlier] Integer attributes (after)',
+    names=range(len(data.attrs.integer))
 )
 
-# Saving the treated data
-write.csv(data, file="data/ranked_matches_2015_no_largeoutliers.csv")
+for (attr in data.attrs.integer) {
+    title = format.string('[Outlier] %s (after)', attr)
+    save.plot(data[, attr], main=title)
+    save.boxplot(data[, attr], main=title)
+}
 
 # ----------------------------
 # Data normalization (z-score)
@@ -471,12 +481,11 @@ data.normalized = cbind(
 correlations = cor(data.normalized)
 correlations = abs(correlations)  # the signal does not matter
 diag(correlations) = NA  # correlation of a set with itself does not matter
-write.csv(correlations, file = "analysis/correlations.csv", sep =",")
 
 # Boxplot to analyze attributes correlation
 save.boxplot(
     correlations,
-    main='Attributes correlation',
+    main='[Correlation] Bolean and integer attributes',
     names=range(ncol(correlations))
 )
 
@@ -484,23 +493,22 @@ save.boxplot(
 # Dimensionality reduction
 --------------------------
 
-# Automatic attribute selection on the correlation matrix
-data.attrs.autoselection = attribute_selection(correlations)
-# [1] "Kills"                       "Deaths"
-# [3] "GoldEarned"                  "TotalDamageDealt"
-# [5] "PhysicalDamageDealt"         "TotalDamageDealtToChampions"
-# [7] "TotalDamageTaken"            "MinionsKilled"
-# [9] "WardsPlaced"                 "TowerKills"
-# [11] "LargestMultiKill"            "LargestKillingSpree"
-# [13] "LargestCritStrike"
+# Automatic attribute selection based on the correlation matrix
+data.attrs.selection = attribute_selection(correlations)
+# [1] "Kills"                       "GoldEarned"
+# [3] "TotalDamageDealt"            "PhysicalDamageDealt"
+# [5] "TotalDamageDealtToChampions" "TotalDamageTaken"
+# [7] "MinionsKilled"               "WardsPlaced"
+# [9] "TowerKills"                  "LargestMultiKill"
+# [11] "LargestKillingSpree"         "LargestCritStrike"
 
-# Manual attribute selection based on correlation analysis
-data.attrs.selection = c(
+# Manual attribute selection
+data.attrs.selection.manual = c(
     "Kills",
-    "Deaths",
+    "Deaths",  # removed in auto selection
     "GoldEarned",
     "TotalDamageDealt",
-    "MagicDamageDealt",
+    "MagicDamageDealt",  # removed in auto selection
     "PhysicalDamageDealt",
     "TotalDamageDealtToChampions",
     "TotalDamageTaken",
@@ -529,33 +537,44 @@ data.reduced = data.normalized[, data.attrs.selection]
 # clusters analyzing the curve of a generated graph from a test (based on
 # k-means) conducted for each possible.
 
-# Total within sum of squares of clusters for each k-means test k <= 50
+# Total within sum of squares of clusters for each k-means test k <= 20
 twss = map(
     function(k) kmeans(data.reduced, k, algorithm='Lloyd')$tot.withinss,
-    range(22)
+    range(50)
 )
 
 # Plot to analyze the knee of error curve resultant of the test for each k
-save.plot(twss, type="b", main="Error curve", xlab="k", ylab="tot.withinss")
+save.plot(twss, main="[K-means] Error curve", xlab="k", ylab="tot.withinss")
 
-# Which is the optimal value for k in this case? k=8 or k=11? Let's do some
-# extra tests.
+# Which is the optimal k value in this case? k={4, 5, 6, 7, 8, 9}?
 
-fit1 = kmeans(data.reduced, 11, algorithm='Lloyd')
-# (between_SS / total_SS =  61.2 %)
-# Warning: did *not* converge in specified number of iterations
+fit0 = kmeans(data.reduced, 4, algorithm='Lloyd', iter.max=200)
+# (between_SS / total_SS =  48.3 %)
 
-fit2 = kmeans(data.reduced, 11, algorithm='Lloyd', iter.max=150)
-# (between_SS / total_SS =  61.9 %)
+fit1 = kmeans(data.reduced, 5, algorithm='Lloyd', iter.max=200)
+# (between_SS / total_SS =  53.5 %)
+# fit1 - fit0 = 5.2 %
 
-fit3 = kmeans(data.reduced, 8, algorithm='Lloyd')
-# (between_SS / total_SS =  57.2 %)
-# Warning: did *not* converge in specified number of iterations
+fit2 = kmeans(data.reduced, 6, algorithm='Lloyd', iter.max=200)
+# (between_SS / total_SS =  56.7 %)
+# fit2 - fit1 = 3.2 %
+
+fit3 = kmeans(data.reduced, 7, algorithm='Lloyd')
+# (between_SS / total_SS =  59.1 %)
+# fit3 - fit2 = 2.4 %
 
 fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=150)
-# (between_SS / total_SS =  57.7 %)
+# (between_SS / total_SS =  60.7 %)
+# fit4 - fit3 = 1.6 %
 
-# fit4 has the best trade-off. Let's add some extra components, then save all.
+fit5 = kmeans(data.reduced, 9, algorithm='Lloyd', iter.max=150)
+# (between_SS / total_SS =  62.2 %)
+# fit5 - fit4 = 1.5 %
+
+# fit4 has the best trade-off:
+plot(c(4:8), c(5.2, 3.2, 2.4, 1.6, 1.5), xlab='fit', ylab='fit[i] - fit[i-1]')
+
+# Let's add some extra components to fit4, then save.
 
 # Variance for each cluster of fit4
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
@@ -709,148 +728,87 @@ write.csv(centers_not_scaled[, c(2:ncol(centers_not_scaled))], file = "analysis/
 # 7 6253 5835 418 0.9331520869982408
 # 8 13234 9667 3567 0.7304669789935015
 
-### H1-0: Não existe diferença entre as distribuições dos clusters encontrados no modelo de aprendizagem
+# ----------
+# Hypothesis
+# ----------
 
-# normalized relative weight and normalized principal Eigen vector [Kardi Teknomo]
+# H1-0: Não existe diferença entre as distribuições dos clusters encontrados no
+# modelo de aprendizagem
 
-data.normalized_relative_weight = data[,4:25]
-data.normalized_relative_weight = cbind(data.normalized_relative_weight[,c(1,5)], data.normalized_relative_weight[,7:14], data.normalized_relative_weight[,17:21])
-data.normalized_relative_weight = data.normalized_relative_weight[,2:ncol(data.normalized_relative_weight)]
-
-data.normalized_relative_weight = data.matrix(data.normalized_relative_weight)
-data.normalized_relative_weight = data.normalized_relative_weight / sum(data.normalized_relative_weight)
-
-ttt = data.normalized_relative_weight + 0.0
-cbind(
-   ttt[,1]/sum(ttt[,1]),
-   ttt[,2]/sum(ttt[,2]),
-   ttt[,3]/sum(ttt[,3]),
-   ttt[,4]/sum(ttt[,4]),
-   ttt[,5]/sum(ttt[,5]),
-   ttt[,6]/sum(ttt[,6]),
-   ttt[,7]/sum(ttt[,7]),
-   ttt[,8]/sum(ttt[,8]),
-   ttt[,9]/sum(ttt[,9]),
-   ttt[,10]/sum(ttt[,10]),
-   ttt[,11]/sum(ttt[,11]),
-   ttt[,12]/sum(ttt[,12]),
-   ttt[,13]/sum(ttt[,13]),
-   ttt[,14]/sum(ttt[,14])
-)
-
-data.normalized_relative_weight = cbind(
-   ttt[,1]/sum(ttt[,1]),
-   ttt[,2]/sum(ttt[,2]),
-   ttt[,3]/sum(ttt[,3]),
-   ttt[,4]/sum(ttt[,4]),
-   ttt[,5]/sum(ttt[,5]),
-   ttt[,6]/sum(ttt[,6]),
-   ttt[,7]/sum(ttt[,7]),
-   ttt[,8]/sum(ttt[,8]),
-   ttt[,9]/sum(ttt[,9]),
-   ttt[,10]/sum(ttt[,10]),
-   ttt[,11]/sum(ttt[,11]),
-   ttt[,12]/sum(ttt[,12]),
-   ttt[,13]/sum(ttt[,13]),
-   ttt[,14]/sum(ttt[,14])
-)
-
-# dados normalizados pelo peso relativo
-kruskal.test(rowSums(data.normalized_relative_weight), fit4$cluster)
-
-    Kruskal-Wallis rank sum test
-
-data:  rowSums(data.normalized_relative_weight) and fit4$cluster
-Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
-
-# dados normalizado z-score
+# dados normalizados z-score
 kruskal.test(rowSums(data.reduced), fit4$cluster)
+# Kruskal-Wallis rank sum test
+# Kruskal-Wallis chi-squared = 30223, df = 7, p-value < 2.2e-16
 
-    Kruskal-Wallis rank sum test
+# analisando o tamanho de cada cluster: não existe diferença?
+wilcox.test(fit4$size, conf.int=T)
+# Wilcoxon signed rank test
+# V = 36, p-value = 0.007813
+# alternative hypothesis: true location is not equal to 0
+# 95 percent confidence interval:
+# 49032.26 73588.02
+# sample estimates:
+# (pseudo)median
+#      62429.24
 
-data:  rowSums(data.reduced) and fit4$cluster
-Kruskal-Wallis chi-squared = 70036, df = 7, p-value < 2.2e-16
+# H2-0: Para cada cluster encontrado, não existe diferença entre as medianas
+# dos jogadores vitoriosos e perdedores
 
-# analisando pela soma dos quadrados
-wilcox.test(fit4$withinss, conf.int=T)
-
-    Wilcoxon signed rank test
-
-data:  fit4$withinss
-V = 36, p-value = 0.007813
-alternative hypothesis: true location is not equal to 0
-95 percent confidence interval:
- 49032.26 73588.02
-sample estimates:
-(pseudo)median
-      62429.24
-
-### H1-1: Para cada cluster encontrado, existe diferença entre as medianas dos jogadores vitoriosos e perdedores
-
-x = rowSums(vencedores[ vencedores$Cluster == 1,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 1,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 1, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 1, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 3275300, p-value = 0.006096
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 3452800, p-value < 2.2e-16
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 2,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 2,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 2, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 2, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 8345600, p-value = 0.00907
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 399230, p-value = 0.02427
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 3,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 3,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 3, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 3, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 9178000, p-value = 0.0000000000008951
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 6572200, p-value < 2.2e-16
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 4,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 4,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 4, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 4, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 30907000, p-value = 0.3918
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 1983800, p-value < 2.2e-16
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 5,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 5,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 5, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 5, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 14623000, p-value < 0.00000000000000022
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 5152600, p-value = 5.074e-16
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 6,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 6,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 6, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 6, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 23422000, p-value < 0.00000000000000022
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 1006300, p-value = 1.915e-10
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 7,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 7,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 7, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 7, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 1088700, p-value = 0.0002433
-alternative hypothesis: true location shift is not equal to 0
+# Wilcoxon rank sum test with continuity correction
+# W = 828060, p-value < 2.2e-16
+# alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$Cluster == 8,  ][,1:14])
-y = rowSums(perdedores[ perdedores$Cluster == 8,  ][,1:14])
+x = rowSums(vencedores[ vencedores$label == 8, data.attrs.selection])
+y = rowSums(perdedores[ perdedores$label == 8, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
-    Wilcoxon rank sum test with continuity correction
-data:  x and y
-W = 17823000, p-value = 0.002865
-alternative hypothesis: true location shift is not equal to 0
-
+# Wilcoxon rank sum test with continuity correction
+# W = 2654500, p-value < 2.2e-16
+# alternative hypothesis: true location shift is not equal to 0
 
 # References
 # [Kardi Teknomo] Kardi Teknomo. ANALYTIC HIERARCHY PROCESS (AHP) TUTORIAL. https://docs.google.com/file/d/0BxYU82vErc8xYS1PendBeHlpSkk/edit?usp=sharing
