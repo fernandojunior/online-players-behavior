@@ -477,7 +477,7 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# Correlation between attributes of normalized data
+# Correlation matrix of normalized data attributes
 correlations = cor(data.normalized)
 correlations = abs(correlations)  # the signal does not matter
 diag(correlations) = NA  # correlation of a set with itself does not matter
@@ -489,9 +489,23 @@ save.boxplot(
     names=range(ncol(correlations))
 )
 
+# Attributes ranked by the mean of correlations for each one
+data.attrs.ranked = cor.rank(correlations)
+# [1] "GoldEarned"                  "TotalDamageDealt"
+# [3] "TotalDamageDealtToChampions" "Kills"
+# [5] "PhysicalDamageDealt"         "MinionsKilled"
+# [7] "LargestKillingSpree"         "LargestMultiKill"
+# [9] "LargestCritStrike"           "TowerKills"
+# [11] "TotalDamageTaken"            "Assists"
+# [13] "MagicDamageDealt"            "CrowdControl"
+# [15] "WardsPlaced"                 "NeutralMinionsKilled"
+# [17] "Deaths"                      "FirstTower"
+# [19] "TotalHealAmount"             "FirstBlood"
+# [21] "FirstTowerAssist"
+
 # ------------------------
 # Dimensionality reduction
---------------------------
+# ------------------------
 
 # Automatic attribute selection based on the correlation matrix
 data.attrs.selection = attribute_selection(correlations)
@@ -520,12 +534,13 @@ data.attrs.selection.manual = c(
     "LargestCritStrike"
 )
 
-# Top 3 correlated attributes based on the mean of correlations for each one
-data.attrs.topcorrelated = cor.rank(correlations)[1:3]
-# [1] "GoldEarned"                  "TotalDamageDealt"
-# [3] "TotalDamageDealtToChampions"
+# Selection with attributes ranked
+data.attrs.rankedselection = intersect(data.attrs.ranked, data.attrs.selection)
 
-# Reducing the dimensionality of the normalized data
+# Top 3 most correled attributes of the selection
+data.attrs.topselection = data.attrs.rankedselection[1:3]
+
+# Reducing the dimensionality of the normalized data with selected attributes
 data.reduced = data.normalized[, data.attrs.selection]
 
 # ----------------
@@ -620,11 +635,11 @@ clusplot(
 plot(data.labeled[, data.attrs.selection], col=data.labeled$label)
 
 # Only top correlated attributes
-plot(data.labeled[, data.attrs.topcorrelated], col=data.labeled$label)
+plot(data.labeled[, data.attrs.topselection], col=data.labeled$label)
 
 # Scatterplot of most correlated attributes for each split
-plot(vencedores[, data.attrs.topcorrelated], col=vencedores$label)
-plot(perdedores[, data.attrs.topcorrelated], col=perdedores$label)
+plot(vencedores[, data.attrs.topselection], col=vencedores$label)
+plot(perdedores[, data.attrs.topselection], col=perdedores$label)
 
 # Principal Component Analysis (PCA)
 ------------------------------------
