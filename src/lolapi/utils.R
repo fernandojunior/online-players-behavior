@@ -24,9 +24,9 @@ len = function (...) {
 map = function (f, x) {
     "Apply a function f to a value x.
 
-    If x is a vector or a list, it applies for each item in x.
+    If x is a vector or a list, it applies for each item.
 
-    if x is a matrix, it applies for each item, for each column, in x.
+    if x is a matrix or data frame, it applies for each item, for each column.
 
     Examples:
         > map(function (a) a + 1, 1)
@@ -42,7 +42,7 @@ map = function (f, x) {
         lapply(x, f)
     else if (is.vector(x))
         sapply(x, f)
-    else if (is.matrix(x))
+    else if (is.matrix(x) | is.data.frame(x))
         apply(x, 2, function (y) map(f, y))
 }
 
