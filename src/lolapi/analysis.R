@@ -207,14 +207,14 @@ cor.counter = function (x) {
     return(counter(x))
 }
 
-cor.mean = function (correlations) {
-    "Mean of a list or vector of correlations."
-    return(mean(correlations[!correlations %in% NA]))
-}
+cor.mean = function (x) {
+    "Mean of a list or vector of correlations x.
 
-cor.mmean = function (mcorrelations) {
-    "Mean for each column of a matrix of correlations."
-    return(apply(mcorrelations, 2, cor.mean))
+    If x is a matrix or data frame, calculate the mean for each column.
+    "
+    if (is.matrix(x) | is.data.frame(x))
+        return(apply(x, 2, cor.mean))
+    return(mean(x[!x %in% NA]))
 }
 
 cor.rank = function (correlation_matrix, decreasing=TRUE) {
@@ -265,7 +265,7 @@ attribute_selection = function (correlation_matrix) {
     mqt0 = mean(values(qt0))
 
     # m(A): Mean of correlations for each a in A(C)
-    m = cor.mmean(correlation_matrix)
+    m = cor.mean(correlation_matrix)
 
     # md(m(A)): Median of m(A)
     mdm = median(m)
