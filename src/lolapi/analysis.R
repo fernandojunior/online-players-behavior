@@ -9,7 +9,7 @@ options(scipen=999)
 # Load data
 # ---------
 
-data = read.csv('data/ranked_matches_2015_ong_features.csv')
+data = read.csv('data/data.csv')
 # > nrow(data)
 # [1] 85470
 
