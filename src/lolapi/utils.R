@@ -6,11 +6,6 @@ PLOTS = 'plots/'
 
 # helper functions
 
-contains = function (l, e) {
-    "Return TRUE if list l contains an element e, FALSE otherwise."
-    return(e %in% l)
-}
-
 counter = function (...) {
     "Alias for table."
     return(table(...))
