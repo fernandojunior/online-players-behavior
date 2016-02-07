@@ -47,7 +47,7 @@ map = function (f, x) {
 }
 
 range = function (...) {
-    "Alias for seq.int."
+    "Alias for seq.int. Override the built-in funtion."
     return(seq.int(...))
 }
 
@@ -57,9 +57,14 @@ type = function (...) {
 }
 
 values = function (x) {
-    "Return only the values of an list or vector x."
+    "Return only the values of x.
+
+    x can be a list, vector, matrix or data frame.
+    "
     if (is.list(x))
         x = unlist(x)
+    if (is.data.frame(x))
+        x = data.matrix(x)
     return(unname(x))
 }
 
