@@ -46,6 +46,16 @@ map = function (f, x) {
         apply(x, 2, function (y) map(f, y))
 }
 
+rowmap = function (f, x) {
+    "Apply a function f for each row in a matrix or data frame x."
+    return(apply(x, 1, f))
+}
+
+colmap = function (f, x) {
+    "Apply a function f for each column in a matrix or data frame x."
+    return(apply(x, 2, f))
+}
+
 range = function (...) {
     "Alias for seq.int. Override the built-in funtion."
     return(seq.int(...))
@@ -174,17 +184,18 @@ outlier_thresholds = function (x, factor=1.5) {
     return(threshold)
 }
 
-is.outlier = function (x, thresholds) {
+is.outlier = function (x, lower, upper) {
     "Return TRUE if x is an outlier, FALSE otherwise.
 
     It's based on lower and upper thresholds.
 
-    x point can be multivariate. In this case, the thresholds also must be.
-    TODO improve...
+    x point can be multivariate (a list or vector). In this case, the
+    thresholds also must be.
     "
-    if(is.list(x) | is.vector(x))  # x is multivariate
+    thresholds = rbind(lower, upper)
+    if(length(x) > 0 & !is.null(colnames(thresholds)))  # x is multivariate
         x = x[colnames(thresholds)]
-    if (any(x < thresholds['lower', ]) | any(x > thresholds['upper', ]))
+    if (any(x < thresholds['lower',]) | any(x > thresholds['upper',]))
         return(TRUE)
     return(FALSE)
 }

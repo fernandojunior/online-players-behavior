@@ -42,7 +42,6 @@ for (attr in data.attrs.integer) {
 # Automatically finding the lower and upper extreme outlier thresholds
 # (IQR factor = 3) for each integer attribute
 thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
-# > t(thresholds)
 #                                  lower    upper
 # Kills                           -19.00     30.0
 # Assists                         -19.00     37.0
@@ -64,7 +63,10 @@ thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
 # TotalHealAmount               -7896.00  11865.0
 
 # Boolean vector to indicate which data point x is an extreme outlier or not.
-outliers = apply(data, 1, function(x) is.outlier(x, thresholds))
+outliers = rowmap(
+    function(x) is.outlier(x, thresholds['lower', ], thresholds['upper', ]),
+    data
+)
 
 # Filtering entire data to remove extreme outliers
 data = data[!outliers,]
