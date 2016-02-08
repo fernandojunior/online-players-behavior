@@ -1,5 +1,5 @@
 library('cluster')  # for clusplot
-library('scatterplot3d')  # scatterplot3d
+library('scatterplot3d')  # for scatterplot3d
 source('utils.R')
 
 options(scipen=999)
@@ -396,13 +396,3 @@ wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 2654500, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
-
-# References
-# [Kardi Teknomo] Kardi Teknomo. ANALYTIC HIERARCHY PROCESS (AHP) TUTORIAL. https://docs.google.com/file/d/0BxYU82vErc8xYS1PendBeHlpSkk/edit?usp=sharing
-# http://stats.stackexchange.com/questions/49521/how-to-find-variance-between-multidimensional-points
-# http://www.edureka.co/blog/clustering-on-bank-data-using-r/
-# http://stackoverflow.com/questions/1567718/getting-a-function-name-as-a-string
-# http://vis.supstat.com/2013/04/plotting-symbols-and-color-palettes/
-# http://stackoverflow.com/questions/1923273/counting-the-number-of-elements-with-the-values-of-x-in-a-vector
-# http://blog.melchua.com/2012/09/07/r-basics-accessing-elements-of-an-object/
-# https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/clusplot.default.html
