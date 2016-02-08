@@ -116,7 +116,7 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# Absolute correlation matrix (>= 0) of normalized data attributes
+# Absolute correlation matrix of normalized data attributes
 correlations = abs(cor(data.normalized))
 diag(correlations) = NA  # correlation of a set with itself does not matter
 
