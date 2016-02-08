@@ -191,7 +191,6 @@ bssrd = map(
     function(k) betweenss.rate(fit[k,]) - betweenss.rate(fit[k - 1,]),
     range(5, 9)
 )
-# [1] 0.051 0.032 0.024 0.016 0.015
 
 # Plot to visualuze the between-cluster SSE rate differences
 save.plot(
@@ -207,7 +206,7 @@ save.plot(
 fit = fits[8,]
 
 # Between-cluster SSE rate
-fit$betweenss.rate = fit$betweenss / fit$totss
+fit$betweenss.rate = betweenss.rate(fit)
 
 # Number of clusters
 fit$k = len(fit$size)
