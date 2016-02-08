@@ -1,5 +1,4 @@
-library('car')
-library(cluster)  # for clusplot
+library('cluster')  # for clusplot
 library('scatterplot3d')  # scatterplot3d
 source('utils.R')
 
