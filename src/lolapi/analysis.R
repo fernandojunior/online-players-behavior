@@ -17,7 +17,6 @@ data.attrs = names(data)
 data.attrs.info = data.attrs[1:4]
 data.attrs.boolean = data.attrs[5:7]
 data.attrs.integer = data.attrs[8:25]
-data.attrs.numerical = union(data.attrs.boolean, data.attrs.integer)
 
 # ---------------------
 # Treatment of outliers
