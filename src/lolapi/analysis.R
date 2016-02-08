@@ -185,18 +185,13 @@ twss = rowmap(function(fit) fit$tot.withinss, fits)
 save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
 
 # Which is the optimal fit in this case for k = {5, ..., 9}? Let's analyse the
-# between-cluster SSE rate difference for each one.
-# totss = sum(ss(data))
-# tot.withinss = sum(k-means(data, k)$withinss)
-# betweenss = tot.withinss - totss
-# betweenss.rate = betweenss / totss
-betweenss.rate = function (k) {
-    "Total SSE rate minimized from the data after partitioning in k clusters."
-    return(fits[k,]$betweenss / fits[k,]$totss)
-}
+# between-cluster SSE rate (betweenss / totss) difference for each one.
 
 # Between-cluster SSE rate differences for each k = {5, ..., 9} k-means fit
-bssrd = map(function(k) betweenss.rate(k) - betweenss.rate(k - 1), range(5, 9))
+bssrd = map(
+    function(k) betweenss.rate(fit[k,]) - betweenss.rate(fit[k - 1,]),
+    range(5, 9)
+)
 # > round(bssrd, digits=3)
 # [1] 0.051 0.032 0.024 0.016 0.015
 
