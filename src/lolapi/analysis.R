@@ -192,8 +192,15 @@ bssrd = map(
     function(k) betweenss.rate(fit[k,]) - betweenss.rate(fit[k - 1,]),
     range(5, 9)
 )
-# > round(bssrd, digits=3)
 # [1] 0.051 0.032 0.024 0.016 0.015
+
+# Plot to visualuze the between-cluster SSE rate differences
+save.plot(
+    range(5, 9),
+    bssrd,
+    main='[K-means] Between-cluster SSE rate differences',
+    xlab='k fit'
+)
 
 # Analysing the between-cluster SSE rate differences, the k=8 fit seems to have
 # the best trade-off, as the rate difference does not vary so much after it.
