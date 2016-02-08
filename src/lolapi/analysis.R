@@ -17,7 +17,7 @@ data.attrs = names(data)
 data.attrs.info = data.attrs[1:4]
 data.attrs.boolean = data.attrs[5:7]
 data.attrs.integer = data.attrs[8:25]
-data.attrs.numerical = c(data.attrs.boolean, data.attrs.integer)
+data.attrs.numerical = union(data.attrs.boolean, data.attrs.integer)
 
 # ---------------------
 # Treatment of outliers
@@ -116,9 +116,8 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# Correlation matrix of normalized data attributes
-correlations = cor(data.normalized)
-correlations = abs(correlations)  # the signal does not matter
+# Absolute correlation matrix (>= 0) of normalized data attributes
+correlations = abs(cor(data.normalized))
 diag(correlations) = NA  # correlation of a set with itself does not matter
 
 # Boxplot to analyze attributes correlation
@@ -183,46 +182,48 @@ twss = map(
 save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
 
 # Which is the optimal k value in this case? k={4, 5, 6, 7, 8, 9}?
-# Let's analyse using the sum of square rate decreased from the total after
-# partitioning the data into k clusters:
-# total_SS = sum(ss(data))
+# Let's analyse the total sum of square error rate minimized (between-cluster
+# sum of square error rate) from the data after partitioning into k clusters:
+# totss = sum(ss(data))
 # tot.withinss = sum(k-means(data, k)$withinss)
-# between_SS = tot.withinss - total_SS
-# between_SS / totalss
+# betweenss = tot.withinss - totss
+# betweenss.rate = betweenss / totss
 
 fit0 = kmeans(data.reduced, 4, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  48.3 %)
 
 fit1 = kmeans(data.reduced, 5, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  53.5 %)
-# fit1 - fit0 = 5.2 %
+# betweenss.rate(k=5) - betweenss.rate(k=5 - 1) = 5.2 %
 
 fit2 = kmeans(data.reduced, 6, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  56.7 %)
-# fit2 - fit1 = 3.2 %
+# betweenss.rate(k=6) - betweenss.rate(k=6 - 1) = 3.2 %
 
 fit3 = kmeans(data.reduced, 7, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  59.1 %)
-# fit3 - fit2 = 2.4 %
+# betweenss.rate(k=7) - betweenss.rate(k=7 - 1) = 2.4 %
 
 fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  60.7 %)
-# fit4 - fit3 = 1.6 %
+# betweenss.rate(k=8) - betweenss.rate(k=8 - 1) = 1.6 %
 
 fit5 = kmeans(data.reduced, 9, algorithm='Lloyd', iter.max=200)
 # (between_SS / total_SS =  62.2 %)
-# fit5 - fit4 = 1.5 %
+# betweenss.rate(k=9) - betweenss.rate(k=9 - 1) = 1.5 %
 
-# fit4 has the best trade-off:
-plot(c(4:8), c(5.2, 3.2, 2.4, 1.6, 1.5), xlab='fit', ylab='fit[i] - fit[i-1]')
-
-# Let's add some extra components to fit4, then save it.
+# Analysing the between SSE rate differences, k=8 (fit4) seems to have the best
+# trade-off, as the rate difference does not vary so much after it. Let's add
+# some extra components to fit4, then save it.
 
 # Variance for each cluster of fit4
 fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
 
 # Number of clusters of fit4
 fit4$k = len(fit4$size)
+
+# between-cluster sum of square error rate
+fit4$betweenss.rate = fit4$betweenss / fit4$totss
 
 # Saving all components of fit4
 for (component in names(fit4))
@@ -281,7 +282,7 @@ vencedores.pca = prcomp(vencedores[, data.attrs.selection], center=TRUE)
 perdedores.pca = prcomp(perdedores[, data.attrs.selection], center=TRUE)
 
 # Principal components to view
-pca_indices = c(1, 2, 3)
+pca_indices = range(3)
 
 # 3-D visualization of principal components of the labeled data
 scatterplot3d(
