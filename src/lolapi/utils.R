@@ -298,6 +298,21 @@ save.plot = function (...) {
     save.png(plot, ...)
 }
 
+# k-means functions
+
+betweenss.rate = function (fit) {
+    "Between-cluster Sum of Square Error rate of a k-means fit. It represents
+    the total SSE rate minimized from the data after partitioning in k clusters.
+
+    Same as:
+        totss = sum(ss(data))
+        tot.withinss = sum(k-means(data, k)$withinss)
+        betweenss = tot.withinss - totss
+        betweenss.rate = betweenss / totss
+    "
+    return(fit$betweenss / fit$totss)
+}
+
 # deprecated functions
 
 sum_of_squares = function (X) {
