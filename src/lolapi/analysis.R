@@ -41,6 +41,7 @@ for (attr in data.attrs.integer) {
 # Automatically finding the lower and upper extreme outlier thresholds
 # (IQR factor = 3) for each integer attribute
 thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
+# > t(thresholds)
 #                                  lower    upper
 # Kills                           -19.00     30.0
 # Assists                         -19.00     37.0
