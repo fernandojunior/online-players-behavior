@@ -97,30 +97,6 @@ strf = function (...) {
 
 # math functions
 
-mss = function (x) {
-    "Return the sum of square error of a multidimensional data set x.
-
-    Example:
-        > x = cbind(c(1, 2, 3, 4, 5), c(1, 2, 3, 4, 5))
-        > ss(mvar(x), nrow(x), VAR=TRUE)  # sum of square error for each column
-        [1] 10 10
-        > mss(x)  # or simply
-        [1] 10 10
-    "
-    return(apply(x, 2, ss))
-}
-
-mvar = function (x) {
-    "Return the variance of a multidimensional x sample data.
-
-    Example:
-        > x = cbind(c(1,2,3,4,5), c(1,2,3,4,5))
-        > mvar(x) # variance for each column
-        [1] 2.5 2.5
-    "
-    return(apply(x,2,var))
-}
-
 ss = function (x, n=NA, VAR=FALSE) {
     "Return the sum of square error of a data set x: (n - 1) * var(x).
 
@@ -327,7 +303,7 @@ save.plot = function (...) {
 sum_of_squares = function (X) {
     "Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
     n = nrow(X) # size
-    VarX = mvar(x)  # variance
+    VarX = colmap(var, x)  # variance
     SS = (n-1) * VarX # sum of square
     result = c()
     result$size = n
