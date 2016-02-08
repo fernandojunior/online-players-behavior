@@ -169,72 +169,61 @@ data.reduced = data.normalized[, data.attrs.selection]
 
 # To find the optimal k number of clusters we can use the method that finds the
 # knee of the error curve, which tries to find an appropriate number of
-# clusters analyzing the curve of a generated graph from a test (based on
+# clusters analyzing the curve of a generated graph from a clustering (based on
 # k-means) conducted for each possible.
 
-# Total within sum of squares of clusters for each k-means test k={1, ..., 50}
-twss = map(
-    function(k) kmeans(data.reduced, k, algorithm='Lloyd')$tot.withinss,
+# k-means clustering (fit) for each k = {1, ..., 50} number of clusters
+fits = t(map(
+    function(k) kmeans(data.reduced, k, algorithm='Lloyd', iter.max=200),
     range(50)
-)
+))
 
-# Plot to analyze the knee of error curve resultant of the test for each k
+# Total within-cluster Sum of Square Error (SSE or SS) for each k-means fit
+twss = rowmap(function(fit) fit$tot.withinss, fits)
+
+# Plot to analyze the knee of error curve resultant of k-means fits
 save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
 
-# Which is the optimal k value in this case? k={4, 5, 6, 7, 8, 9}?
-# Let's analyse the total sum of square error rate minimized (between-cluster
-# sum of square error rate) from the data after partitioning into k clusters:
+# Which is the optimal fit in this case for k = {5, ..., 9}? Let's analyse the
+# between-cluster SSE rate difference for each one.
 # totss = sum(ss(data))
 # tot.withinss = sum(k-means(data, k)$withinss)
 # betweenss = tot.withinss - totss
 # betweenss.rate = betweenss / totss
+betweenss.rate = function (k) {
+    "Total SSE rate minimized from the data after partitioning in k clusters."
+    return(fits[k,]$betweenss / fits[k,]$totss)
+}
 
-fit0 = kmeans(data.reduced, 4, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  48.3 %)
+# Between-cluster SSE rate differences for each k = {5, ..., 9} k-means fit
+bssrd = map(function(k) betweenss.rate(k) - betweenss.rate(k - 1), range(5, 9))
+# > round(bssrd, digits=3)
+# [1] 0.051 0.032 0.024 0.016 0.015
 
-fit1 = kmeans(data.reduced, 5, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  53.5 %)
-# betweenss.rate(k=5) - betweenss.rate(k=5 - 1) = 5.2 %
+# Analysing the between-cluster SSE rate differences, the k=8 fit seems to have
+# the best trade-off, as the rate difference does not vary so much after it.
+# Let's add some extra components and save it.
+fit = fits[8,]
 
-fit2 = kmeans(data.reduced, 6, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  56.7 %)
-# betweenss.rate(k=6) - betweenss.rate(k=6 - 1) = 3.2 %
+# Between-cluster SSE rate
+fit$betweenss.rate = fit$betweenss / fit$totss
 
-fit3 = kmeans(data.reduced, 7, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  59.1 %)
-# betweenss.rate(k=7) - betweenss.rate(k=7 - 1) = 2.4 %
+# Number of clusters
+fit$k = len(fit$size)
 
-fit4 = kmeans(data.reduced, 8, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  60.7 %)
-# betweenss.rate(k=8) - betweenss.rate(k=8 - 1) = 1.6 %
+# Variance for each cluster
+fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 
-fit5 = kmeans(data.reduced, 9, algorithm='Lloyd', iter.max=200)
-# (between_SS / total_SS =  62.2 %)
-# betweenss.rate(k=9) - betweenss.rate(k=9 - 1) = 1.5 %
-
-# Analysing the between SSE rate differences, k=8 (fit4) seems to have the best
-# trade-off, as the rate difference does not vary so much after it. Let's add
-# some extra components to fit4, then save it.
-
-# Variance for each cluster of fit4
-fit4$withinvar = 1 / (fit4$size - 1) * fit4$withinss
-
-# Number of clusters of fit4
-fit4$k = len(fit4$size)
-
-# between-cluster sum of square error rate
-fit4$betweenss.rate = fit4$betweenss / fit4$totss
-
-# Saving all components of fit4
-for (component in names(fit4))
-    write.csv(fit4[[component]], strf('data/fit4/%s.csv', component))
+# Saving all components
+for (component in names(fit))
+    write.csv(fit[[component]], strf('data/fit/%s.csv', component))
 
 # --------------------------------------------------
 # Analysis of the data labeled by k-means clustering
 # --------------------------------------------------
 
 # Associating each reduced data point with its info and label attributes
-data.labeled = cbind(data[, data.attrs.info], label=fit4$cluster, data.reduced)
+data.labeled = cbind(data[, data.attrs.info], label=fit$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
 vencedores = data.labeled[data.labeled$Win == 1,]
@@ -323,12 +312,12 @@ scatterplot3d(
 # modelo de aprendizagem
 
 # dados normalizados z-score
-kruskal.test(rowSums(data.reduced), fit4$cluster)
+kruskal.test(rowSums(data.reduced), fit$cluster)
 # Kruskal-Wallis rank sum test
 # Kruskal-Wallis chi-squared = 30223, df = 7, p-value < 2.2e-16
 
 # analisando o tamanho de cada cluster: não existe diferença?
-wilcox.test(fit4$size, conf.int=T)
+wilcox.test(fit$size, conf.int=T)
 # Wilcoxon signed rank test
 # V = 36, p-value = 0.007813
 # alternative hypothesis: true location is not equal to 0
