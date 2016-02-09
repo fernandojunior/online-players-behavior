@@ -207,6 +207,40 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
     return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
+cor.mtest = function(x, ...) {
+    "Peform a cor.test between paired features of a multivariate data set x."
+    features = names(x)
+    n = length(features)
+
+    basematrix = matrix(NA, n, n)
+    colnames(basematrix) = rownames(basematrix) = features
+
+    res = list()
+    res$estimates = res$p.values = basematrix
+    diag(res$estimates) = 1
+    diag(res$p.values) = 0
+
+    if (method == 'person') {
+        res$conf.int = list()
+        res$conf.int$lower = res$conf.int$upper = basematrix
+        diag(res$conf.int$lower) = diag(res$conf.int$upper) = 1
+    }
+
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp = cor.test(x[, i], x[, j], ...)
+            res$estimates[i, j] = res$estimates[j, i] = tmp$estimate
+            res$p.values[i, j] = res$p.values[j, i] = tmp$p.value
+            if ('conf.int' %in% names(tmp)) {
+                res$conf.int$lower[i, j] = res$conf.int$lower[j, i] = tmp$conf.int[1]
+                res$conf.int$upper[i, j] = res$conf.int$upper[j, i] = tmp$conf.int[2]
+            }
+        }
+    }
+
+    return(res)
+}
+
 attribute_selection = function (correlation_matrix) {
     "Automatic attribute selection of a correlation matrix.
 
