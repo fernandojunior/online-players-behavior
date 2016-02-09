@@ -131,9 +131,9 @@ plot(
 cor.plot(
     correlations$estimates,
     p.mat=correlations$p.values,
-    sig.level=0.05
+    sig.level=0.05,
     method='number',
-    order='alphabet',
+    order='alphabet'
 ) # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
 
 # Boxplot to analyze the correlation matrix. The absolute values are used,
