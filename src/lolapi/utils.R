@@ -243,9 +243,9 @@ cor.mtest = function(x, ...) {
 
 cor.plot = function (x, ...) {
     "Alias for corrplot."
-    if (!require("gplots")) {
-        install.packages("gplots", dependencies=TRUE)
-        library(gplots)
+    if (!require('corrplot')) {
+        install.packages('corrplot', dependencies=TRUE)
+        library('corrplot')
     }
 
     if (all(is.na(diag(x))))
