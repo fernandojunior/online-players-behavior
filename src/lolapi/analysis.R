@@ -218,7 +218,7 @@ save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
 
 # Between-cluster SSE rate differences for each k = {5, ..., 9} k-means fit
 bssrd = map(
-    function(k) betweenss.rate(fit[k,]) - betweenss.rate(fit[k - 1,]),
+    function(k) betweenss.rate(fits[k,]) - betweenss.rate(fits[k - 1,]),
     range(5, 9)
 )
 
