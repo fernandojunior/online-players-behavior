@@ -248,22 +248,22 @@ fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 for (component in names(fit))
     write.csv(fit[[component]], strf('data/fit/%s.csv', component))
 
-# --------------------------------------------------
-# Analysis of the data labeled by k-means clustering
-# --------------------------------------------------
+# --------------------------
+# Analysis with labeled data
+# --------------------------
 
 # Associating each reduced data point with its info and label attributes
-data.labeled = cbind(data[, data.attrs.info], label=fit$cluster, data.reduced)
+labeled = cbind(data[, data.attrs.info], label=fit$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
-vencedores = data.labeled[data.labeled$Win == 1,]
-perdedores = data.labeled[data.labeled$Win == 0,]
+winners = labeled[labeled$Win == 1,]
+losers = labeled[labeled$Win == 0,]
 
 # Clusplot analysis
 # -----------------
 
 # A sample with n=80 random rows from labeled data
-data.sampled = data.labeled[sample(range(nrow(data.labeled)), 80),]
+data.sampled = labeled[sample(range(nrow(labeled)), 80),]
 
 # Clusplot of clusterized data (n=80)
 clusplot(
@@ -279,56 +279,38 @@ clusplot(
 # ---------------------
 
 # Plot of the labeled data
-plot(data.labeled[, data.attrs.selection], col=data.labeled$label)
+plot(labeled[, data.attrs.selection], col=labeled$label)
 
 # Only top correlated attributes
-plot(data.labeled[, data.attrs.topselection], col=data.labeled$label)
+plot(labeled[, data.attrs.topselection], col=labeled$label)
 
 # Scatterplot of most correlated attributes for each split
-plot(vencedores[, data.attrs.topselection], col=vencedores$label)
-plot(perdedores[, data.attrs.topselection], col=perdedores$label)
+plot(winners[, data.attrs.topselection], col=winners$label)
+plot(losers[, data.attrs.topselection], col=losers$label)
 
 # Principal Component Analysis (PCA)
 ------------------------------------
 
 # PCA of labeled data
-data.labeled.pca = prcomp(data.labeled[, data.attrs.selection], center=TRUE)
+labeled.pca = prcomp(labeled[, data.attrs.selection], center=TRUE)
 
 # PCA of winners
-vencedores.pca = prcomp(vencedores[, data.attrs.selection], center=TRUE)
+winners.pca = prcomp(winners[, data.attrs.selection], center=TRUE)
 
 # PCA of losers
-perdedores.pca = prcomp(perdedores[, data.attrs.selection], center=TRUE)
+losers.pca = prcomp(losers[, data.attrs.selection], center=TRUE)
 
 # Principal components to view
 pca_indices = range(3)
 
 # 3-D visualization of principal components of the labeled data
-scatterplot3d(
-    data.labeled.pca$x[, pca_indices],
-    pch=data.labeled$label,
-    type='h',
-    angle=95,  # 30
-    color=data.labeled$label
-)
+scatterplot3d(labeled.pca$x[, pca_indices], color=labeled$label, angle=95)
 
 # 3-D visualization of principal components of winners
-scatterplot3d(
-    vencedores.pca$x[, pca_indices],
-    pch=vencedores$label,
-    type='h',
-    angle=95,
-    color=vencedores$label
-)
+scatterplot3d(winners.pca$x[, pca_indices], color=winners$label, angle=95)
 
 # 3-D visualization of principal components of losers
-scatterplot3d(
-    perdedores.pca$x[, pca_indices],
-    pch=perdedores$label,
-    type='h',
-    angle=95,
-    color=perdedores$label
-)
+scatterplot3d(losers.pca$x[, pca_indices], color=losers$label, angle=95)
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
@@ -338,16 +320,14 @@ scatterplot3d(
 # Hypothesis
 # ----------
 
-# H1-0: Não existe diferença entre as distribuições dos clusters encontrados no
-# modelo de aprendizagem
+# H1-0: Não existe diferença entre as distribuições dos clusters encontrados
 
-# dados normalizados z-score
-kruskal.test(rowSums(data.reduced), fit$cluster)
+kruskal.test(rowSums(labeled[, data.attrs.selection]), labeled$label)
 # Kruskal-Wallis rank sum test
 # Kruskal-Wallis chi-squared = 30223, df = 7, p-value < 2.2e-16
 
-# analisando o tamanho de cada cluster: não existe diferença?
-wilcox.test(fit$size, conf.int=T)
+# Não existe diferença entre a quantidade de pontos dos clusters
+wilcox.test(counter(labeled$label), conf.int=T)
 # Wilcoxon signed rank test
 # V = 36, p-value = 0.007813
 # alternative hypothesis: true location is not equal to 0
@@ -357,60 +337,66 @@ wilcox.test(fit$size, conf.int=T)
 # (pseudo)median
 #      62429.24
 
-# H2-0: Para cada cluster encontrado, não existe diferença entre as medianas
+# H2-0: Não existe diferença entre as medianas dos jogadores vitoriosos e perdedores
+x = rowSums(winners[, data.attrs.selection])
+y = rowSums(losers[, data.attrs.selection])
+wilcox.test(x , y, paired=FALSE)
+
+
+# H2'-0: Para cada cluster encontrado, não existe diferença entre as medianas
 # dos jogadores vitoriosos e perdedores
 
-x = rowSums(vencedores[ vencedores$label == 1, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 1, data.attrs.selection])
+x = rowSums(winners[winners$label == 1, data.attrs.selection])
+y = rowSums(losers[ losers$label == 1, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 3452800, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 2, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 2, data.attrs.selection])
+x = rowSums(winners[ winners$label == 2, data.attrs.selection])
+y = rowSums(losers[ losers$label == 2, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 399230, p-value = 0.02427
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 3, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 3, data.attrs.selection])
+x = rowSums(winners[ winners$label == 3, data.attrs.selection])
+y = rowSums(losers[ losers$label == 3, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 6572200, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 4, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 4, data.attrs.selection])
+x = rowSums(winners[ winners$label == 4, data.attrs.selection])
+y = rowSums(losers[ losers$label == 4, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 1983800, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 5, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 5, data.attrs.selection])
+x = rowSums(winners[ winners$label == 5, data.attrs.selection])
+y = rowSums(losers[ losers$label == 5, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 5152600, p-value = 5.074e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 6, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 6, data.attrs.selection])
+x = rowSums(winners[ winners$label == 6, data.attrs.selection])
+y = rowSums(losers[ losers$label == 6, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 1006300, p-value = 1.915e-10
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 7, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 7, data.attrs.selection])
+x = rowSums(winners[ winners$label == 7, data.attrs.selection])
+y = rowSums(losers[ losers$label == 7, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 828060, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(vencedores[ vencedores$label == 8, data.attrs.selection])
-y = rowSums(perdedores[ perdedores$label == 8, data.attrs.selection])
+x = rowSums(winners[ winners$label == 8, data.attrs.selection])
+y = rowSums(losers[ losers$label == 8, data.attrs.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 2654500, p-value < 2.2e-16
