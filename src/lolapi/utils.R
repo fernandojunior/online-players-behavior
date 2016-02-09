@@ -217,7 +217,12 @@ cor.mtest = function(x, ...) {
 
     res = list()
     res$estimates = res$p.values = basematrix
-    diag(res$estimates) = 1
+
+    # A correlation of the diagonal correlation matrix is a correlation of a data
+    # attribute with itself. So, the diagonal must be NA to prevent wrong
+    # behaviors as in dendrogram and box plots.
+    diag(res$estimates) = NA
+
     diag(res$p.values) = 0
 
     if (method == 'person') {

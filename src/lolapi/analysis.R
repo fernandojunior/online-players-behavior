@@ -119,11 +119,6 @@ data.normalized = cbind(
 # require the attributes follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
 
-# A correlation of the diagonal correlation matrix is a correlation of a data
-# attribute with itself. So, the diagonal must be NA to prevent wrong behaviors
-# as in dendrogram and box plots.
-diag(correlations$estimates) = NA
-
 # Cluster dendogram to analyze the affinity of each attribute based on the
 # correlation matrix
 plot(
@@ -150,7 +145,7 @@ save.boxplot(
 )
 
 # Correlation matrix attributes ranked by the mean of correlations for each one
-data.attrs.ranked = cor.rank(correlations$estimates)
+data.attrs.ranked = cor.rank(abs(correlations$estimates))
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions" "Kills"
 # [5] "PhysicalDamageDealt"         "MinionsKilled"
@@ -167,20 +162,32 @@ data.attrs.ranked = cor.rank(correlations$estimates)
 # Dimensionality reduction
 # ------------------------
 
-# Automatic attribute selection based on the correlation matrix
-data.attrs.selection = attribute_selection(correlations$estimates)
-# [1] "Kills"                       "GoldEarned"
-# [3] "TotalDamageDealt"            "PhysicalDamageDealt"
-# [5] "TotalDamageDealtToChampions" "TotalDamageTaken"
-# [7] "MinionsKilled"               "WardsPlaced"
-# [9] "TowerKills"                  "LargestMultiKill"
-# [11] "LargestKillingSpree"         "LargestCritStrike"
+# Based on correlation analysis, the following are redundant attributes and
+# attributes with many correlation p.values greater than the significance level
+data.attrs.unselect = c(
+    'TotalDamageDealt',
+    'TotalDamageDealtToChampions',
+    'LargestMultiKill',
+    'LargestKillingSpree',
+    'FirstTowerAssist',
+    'FirstBlood',
+    'FirstTower'
+)
+# Explanation for redundants:
+# TotalDamageDealt = PhysicalDamageDealt + MagicDamageDealt
+# (GoldErned, TotalDamageDealtToChampions), TotalDamageDealt
+# (Kills, LargestMultiKill), LargestKillingSpree
 
-# Selection with attributes ranked
-data.attrs.rankedselection = intersect(data.attrs.ranked, data.attrs.selection)
+# Filtering unwanted attributes. The selection is already ranked
+data.attrs.selection = setdiff(data.attrs.ranked, data.attrs.unselect)
+# [1] "GoldEarned"           "Kills"                "PhysicalDamageDealt"
+# [4] "MinionsKilled"        "TotalDamageTaken"     "TowerKills"
+# [7] "LargestCritStrike"    "NeutralMinionsKilled" "Assists"
+# [10] "CrowdControl"         "MagicDamageDealt"     "WardsPlaced"
+# [13] "TotalHealAmount"      "Deaths"
 
 # Top 3 most correled attributes of the selection
-data.attrs.topselection = data.attrs.rankedselection[1:3]
+data.attrs.topselection = data.attrs.selection[1:3]
 
 # Reducing the dimensionality of the normalized data with selected attributes
 data.reduced = data.normalized[, data.attrs.selection]
