@@ -121,6 +121,11 @@ data.normalized = cbind(
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
 diag(correlations$estimates) = NA  # setting cor(x, x) = NA
 
+# Cluster dendogram to analyze the affinity of each attribute based on the
+# correlation matrix
+plot(hclust(dist(correlations$estimates)), main='[Correlation] Affinity of the attributes')
+# https://rpubs.com/gaston/dendrograms
+
 # Boxplot to analyze attributes correlation
 save.boxplot(
     correlations$estimates,
