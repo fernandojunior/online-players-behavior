@@ -119,9 +119,9 @@ data.normalized = cbind(
 # require the attributes follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
 
-# A digonal correlation is a correlation of an attribute with itself. So, The
-# diagonal of a correlation matrix must be NA to prevent wrong behaviors as
-# in dendrogram and box plots.
+# A correlation of the diagonal correlation matrix is a correlation of a data
+# attribute with itself. So, the diagonal must be NA to prevent wrong behaviors
+# as in dendrogram and box plots.
 diag(correlations$estimates) = NA
 
 # Cluster dendogram to analyze the affinity of each attribute based on the
