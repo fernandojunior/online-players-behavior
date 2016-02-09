@@ -204,7 +204,7 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
 
     It is based on the mean of correlations for each one.
     "
-    return(names(sort(cor.mmean(correlation_matrix), decreasing=decreasing)))
+    return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
 attribute_selection = function (correlation_matrix) {
