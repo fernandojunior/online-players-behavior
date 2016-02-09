@@ -115,20 +115,22 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# Absolute correlation matrix of normalized data attributes using Spearman
-# method, which does not require that the attributes follow a normal
-# distribuition or a linear correlation.
+# Correlation matrix of normalized data using Spearman method, which does not
+# require the attributes follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
-diag(correlations$estimates) = NA  # setting cor(x, x) = NA
+diag(correlations$estimates) = NA  # preventing unwanted behaviors
 
 # Cluster dendogram to analyze the affinity of each attribute based on the
 # correlation matrix
-plot(hclust(dist(correlations$estimates)), main='[Correlation] Affinity of the attributes')
-# https://rpubs.com/gaston/dendrograms
+plot(
+    hclust(dist(correlations$estimates)),
+    main='[Correlation] Affinity of the attributes'
+) # https://rpubs.com/gaston/dendrograms
 
-# Boxplot to analyze attributes correlation
+# Boxplot to analyze the correlation matrix. The absolute values are used,
+# because in this case the correlation direction does not matter.
 save.boxplot(
-    correlations$estimates,
+    abs(correlations$estimates),
     main='[Correlation] Bolean and integer attributes',
     names=range(ncol(correlations$estimates))
 )
