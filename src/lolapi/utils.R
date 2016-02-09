@@ -225,7 +225,7 @@ cor.mtest = function(x, ...) {
 
     diag(res$p.values) = 0
 
-    if (method == 'person') {
+    if (c(...)['method'] == 'person') {
         res$conf.int = list()
         res$conf.int$lower = res$conf.int$upper = basematrix
         diag(res$conf.int$lower) = diag(res$conf.int$upper) = 1
