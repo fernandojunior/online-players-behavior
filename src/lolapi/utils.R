@@ -241,6 +241,20 @@ cor.mtest = function(x, ...) {
     return(res)
 }
 
+cor.plot = function (x, ...) {
+    "Alias for corrplot."
+    if (!require("gplots")) {
+        install.packages("gplots", dependencies=TRUE)
+        library(gplots)
+    }
+
+    if (all(is.na(diag(x))))
+        diag(x) = 1
+
+    corrplot(x, ...)
+
+}
+
 attribute_selection = function (correlation_matrix) {
     "Automatic attribute selection of a correlation matrix.
 

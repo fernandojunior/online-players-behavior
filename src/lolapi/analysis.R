@@ -118,7 +118,11 @@ data.normalized = cbind(
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the attributes follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
-diag(correlations$estimates) = NA  # preventing unwanted behaviors
+
+# A digonal correlation is a correlation of an attribute with itself. So, The
+# diagonal of a correlation matrix must be NA to prevent wrong behaviors as
+# in dendrogram and box plots.
+diag(correlations$estimates) = NA
 
 # Cluster dendogram to analyze the affinity of each attribute based on the
 # correlation matrix
@@ -126,6 +130,16 @@ plot(
     hclust(dist(correlations$estimates)),
     main='[Correlation] Affinity of the attributes'
 ) # https://rpubs.com/gaston/dendrograms
+
+# Plot to analyze the correlation matrix indicating correlations with p.values
+# greater than significance level at 0.05
+cor.plot(
+    correlations$estimates,
+    p.mat=correlations$p.values,
+    sig.level=0.05
+    method='number',
+    order='alphabet',
+) # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
 
 # Boxplot to analyze the correlation matrix. The absolute values are used,
 # because in this case the correlation direction does not matter.
