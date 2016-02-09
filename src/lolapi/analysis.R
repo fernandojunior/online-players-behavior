@@ -115,19 +115,21 @@ data.normalized = cbind(
 # Correlation analysis
 # --------------------
 
-# Absolute correlation matrix of normalized data attributes
-correlations = abs(cor(data.normalized))
-diag(correlations) = NA  # correlation of a set with itself does not matter
+# Absolute correlation matrix of normalized data attributes using Spearman
+# method, which does not require that the attributes follow a normal
+# distribuition or a linear correlation.
+correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
+diag(correlations$estimates) = NA  # setting cor(x, x) = NA
 
 # Boxplot to analyze attributes correlation
 save.boxplot(
-    correlations,
+    correlations$estimates,
     main='[Correlation] Bolean and integer attributes',
-    names=range(ncol(correlations))
+    names=range(ncol(correlations$estimates))
 )
 
 # Correlation matrix attributes ranked by the mean of correlations for each one
-data.attrs.ranked = cor.rank(correlations)
+data.attrs.ranked = cor.rank(correlations$estimates)
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions" "Kills"
 # [5] "PhysicalDamageDealt"         "MinionsKilled"
@@ -145,7 +147,7 @@ data.attrs.ranked = cor.rank(correlations)
 # ------------------------
 
 # Automatic attribute selection based on the correlation matrix
-data.attrs.selection = attribute_selection(correlations)
+data.attrs.selection = attribute_selection(correlations$estimates)
 # [1] "Kills"                       "GoldEarned"
 # [3] "TotalDamageDealt"            "PhysicalDamageDealt"
 # [5] "TotalDamageDealtToChampions" "TotalDamageTaken"
