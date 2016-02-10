@@ -8,38 +8,41 @@ options(scipen=999)
 # Load data
 # ---------
 
+# A data set with n = 85470 points/tuples/rows, where a point p represents a
+# feature vector of a participant in a specific match. Each match has only 10
+# participants.
 data = read.csv('data/data.csv')
 # > nrow(data)
 # [1] 85470
 
-# Data attributes
-data.attrs = names(data)
-data.attrs.info = data.attrs[1:4]
-data.attrs.boolean = data.attrs[5:7]
-data.attrs.integer = data.attrs[8:25]
+# Data features
+features = names(data)
+features.info = features[1:4]
+features.boolean = features[5:7]
+features.integer = features[8:25]
 
 # ---------------------
 # Treatment of outliers
 # ---------------------
 
-# Boxplot to analyze the outliers of all integer attributes. Boolean attributes
-# do not need be analyzed.
+# Boxplot to analyze the outliers of all integer features. Boolean features do
+# not need be analyzed.
 save.boxplot(
-    data[, data.attrs.integer],
-    main='[Outlier] All integer attributes boxplot',
-    names=range(len(data.attrs.integer))
+    data[, features.integer],
+    main='[Outlier] All integer features boxplot',
+    names=range(len(features.integer))
 )
 
-# As we can see from the above plot that some attributes has outliers in the
+# As we can see from the above plot that some features has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
-for (attr in data.attrs.integer) {
-    save.plot(data[, attr], main=strf('[Outlier] %s scatterplot', attr))
-    save.boxplot(data[, attr], main=strf('[Outlier] %s boxplot', attr))
+for (feature in features.integer) {
+    save.plot(data[, feature], main=strf('[Outlier] %s Plot 1', feature))
+    save.boxplot(data[, feature], main=strf('[Outlier] %s Boxplot 1', feature))
 }
 
 # Automatically finding the lower and upper extreme outlier thresholds
-# (IQR factor = 3) for each integer attribute
-thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
+# for each integer feature. IQR factor = 3.
+thresholds = outlier_thresholds(data[, features.integer], factor=3)
 # > t(thresholds)
 #                                  lower    upper
 # Kills                           -19.00     30.0
@@ -61,9 +64,9 @@ thresholds = outlier_thresholds(data[, data.attrs.integer], factor=3)
 # LargestCritStrike             -1653.00   2204.0
 # TotalHealAmount               -7896.00  11865.0
 
-# Boolean vector to indicate which data point x is an extreme outlier or not.
+# Boolean vector to indicate which data point is an extreme outlier or not.
 outliers = rowmap(
-    function(x) is.outlier(x, thresholds['lower', ], thresholds['upper', ]),
+    function(point) is.outlier(point, thresholds['lower',], thresholds['upper',]),
     data
 )
 
@@ -75,7 +78,7 @@ data = data[!outliers,]
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
 
-# Number of participants by match id
+# Number of participants by match ID
 participants_by_match = counter(data$matchId)
 
 # Matches (IDs) that do not contain all 10 participants
@@ -86,29 +89,28 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 # > nrow(data)
 # [1] 35140
 
-# Plots to analyze the integer attributes after the treatments
+# Plots to analyze the integer features after the treatments
 save.boxplot(
-    data[, data.attrs.integer],
-    main='[Outlier] All integer attributes - after',
-    names=range(len(data.attrs.integer))
+    data[, features.integer],
+    main='[Outlier] All integer features - after',
+    names=range(len(features.integer))
 )
 
-for (attr in data.attrs.integer) {
-    save.plot(data[, attr], main=strf('[Outlier] %s scatterplot - after', attr))
-    save.boxplot(data[, attr], main=strf('[Outlier] %s boxplot - after', attr))
+for (feature in features.integer) {
+    save.plot(data[, feature], main=strf('[Outlier] %s Plot 2', feature))
+    save.boxplot(data[, feature], main=strf('[Outlier] %s Boxplot 2', feature))
 }
 
 # ----------------------------
 # Data normalization (z-score)
 # ----------------------------
 
-# Since the data attributes are of different varieties their scales are also
+# Since the features are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the
-# integer attributes using Z-score. Boolean attributes do not need be
-# normalized.
+# integer features using Z-score. Boolean features do not need be normalized.
 data.normalized = cbind(
-    data[, data.attrs.boolean],
-    scale(data[, data.attrs.integer])
+    data[, features.boolean],
+    scale(data[, features.integer])
 )
 
 # --------------------
@@ -116,36 +118,37 @@ data.normalized = cbind(
 # --------------------
 
 # Correlation matrix of normalized data using Spearman method, which does not
-# require the attributes follow a normal distribuition or linear correlation.
+# require the features follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
 
-# Cluster dendogram to analyze the affinity of each attribute based on the
-# correlation matrix
+# Boxplot to analyze the correlation matrix. The absolute values are used,
+# because the correlation direction does not matter in this case.
+save.boxplot(
+    abs(correlations$estimates),
+    main='[Correlation] Features Boxplot',
+    names=range(ncol(correlations$estimates))
+)
+
+# Cluster dendrogram plot to analyze the affinity of each attribute based on
+# the correlation matrix.
 plot(
     hclust(dist(correlations$estimates)),
-    main='[Correlation] Affinity of the attributes'
+    main='[Correlation] Features Dendrogram'
 ) # https://rpubs.com/gaston/dendrograms
 
-# Plot to analyze the correlation matrix indicating correlations with p.values
-# greater than significance level at 0.05
+# Heatmap plot of the correlation matrix. p.values greater than significance
+# level at 0.05 are indicated.
 cor.plot(
     correlations$estimates,
+    main='[Correlation] Features Heatmap'
     p.mat=correlations$p.values,
     sig.level=0.05,
     method='number',
     order='alphabet'
 ) # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
 
-# Boxplot to analyze the correlation matrix. The absolute values are used,
-# because in this case the correlation direction does not matter.
-save.boxplot(
-    abs(correlations$estimates),
-    main='[Correlation] Bolean and integer attributes',
-    names=range(ncol(correlations$estimates))
-)
-
-# Correlation matrix attributes ranked by the mean of correlations for each one
-data.attrs.ranked = cor.rank(abs(correlations$estimates))
+# Correlation matrix features ranked by the mean of correlations for each one
+features.ranked = cor.rank(abs(correlations$estimates))
 # [1] "GoldEarned"                  "TotalDamageDealt"
 # [3] "TotalDamageDealtToChampions" "Kills"
 # [5] "PhysicalDamageDealt"         "MinionsKilled"
@@ -162,9 +165,9 @@ data.attrs.ranked = cor.rank(abs(correlations$estimates))
 # Dimensionality reduction
 # ------------------------
 
-# Based on correlation analysis, the following are redundant attributes and
-# attributes with many correlation p.values greater than the significance level
-data.attrs.unselect = c(
+# Based on correlation analysis, the following are redundant features and
+# features with many correlation p.values greater than the significance level
+features.unselect = c(
     'TotalDamageDealt',
     'TotalDamageDealtToChampions',
     'LargestMultiKill',
@@ -178,19 +181,19 @@ data.attrs.unselect = c(
 # (GoldErned, TotalDamageDealtToChampions), TotalDamageDealt
 # (Kills, LargestMultiKill), LargestKillingSpree
 
-# Filtering unwanted attributes. The selection is already ranked
-data.attrs.selection = setdiff(data.attrs.ranked, data.attrs.unselect)
+# Ranked feature selection.
+features.selection = setdiff(features.ranked, features.unselect)
 # [1] "GoldEarned"           "Kills"                "PhysicalDamageDealt"
 # [4] "MinionsKilled"        "TotalDamageTaken"     "TowerKills"
 # [7] "LargestCritStrike"    "NeutralMinionsKilled" "Assists"
 # [10] "CrowdControl"         "MagicDamageDealt"     "WardsPlaced"
 # [13] "TotalHealAmount"      "Deaths"
 
-# Top 3 most correled attributes of the selection
-data.attrs.topselection = data.attrs.selection[1:3]
+# Top 3 hightly correled features of the selection
+features.topselection = features.selection[1:3]
 
-# Reducing the dimensionality of the normalized data with selected attributes
-data.reduced = data.normalized[, data.attrs.selection]
+# Reducing the dimensionality of the normalized data with selected features
+data.reduced = data.normalized[, features.selection]
 
 # ----------------
 # K-means analysis
@@ -201,7 +204,7 @@ data.reduced = data.normalized[, data.attrs.selection]
 # clusters analyzing the curve of a generated graph from a clustering (based on
 # k-means) conducted for each possible.
 
-# k-means clustering (fit) for each k = {1, ..., 50} number of clusters
+# k-means clustering for each k = {1, ..., 50} number of clusters
 fits = t(map(
     function(k) kmeans(data.reduced, k, algorithm='Lloyd', iter.max=200),
     range(50)
@@ -230,9 +233,9 @@ save.plot(
     xlab='k fit'
 )
 
-# Analysing the between-cluster SSE rate differences, the k=8 fit seems to have
-# the best trade-off, as the rate difference does not vary so much after it.
-# Let's add some extra components and save it.
+# Analysing the between-cluster SSE rate differences, the k = 8 fit seems to
+# have the best trade-off, as the rate difference does not vary so much after
+# it. Let's add some extra components and save it.
 fit = fits[8,]
 
 # Between-cluster SSE rate
@@ -252,8 +255,8 @@ for (component in names(fit))
 # Analysis with labeled data
 # --------------------------
 
-# Associating each reduced data point with its info and label attributes
-labeled = cbind(data[, data.attrs.info], label=fit$cluster, data.reduced)
+# Associating each reduced data point with its info and label features
+labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
 winners = labeled[labeled$Win == 1,]
@@ -262,12 +265,12 @@ losers = labeled[labeled$Win == 0,]
 # Clusplot analysis
 # -----------------
 
-# A sample with n=80 random rows from labeled data
+# A sample with n = 80 random points from labeled data
 data.sampled = labeled[sample(range(nrow(labeled)), 80),]
 
-# Clusplot of clusterized data (n=80)
+# Clusplot of sampled data
 clusplot(
-    data.sampled[, data.attrs.selection],
+    data.sampled[, features.selection],
     data.sampled$label,
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
@@ -278,29 +281,29 @@ clusplot(
 # Scatter plot analysis
 # ---------------------
 
-# Plot of the labeled data
-plot(labeled[, data.attrs.selection], col=labeled$label)
+# Plot of labeled data
+plot(labeled[, features.selection], col=labeled$label)
 
-# Only top correlated attributes
-plot(labeled[, data.attrs.topselection], col=labeled$label)
+# Only the top correlated features
+plot(labeled[, features.topselection, col=labeled$label)
 
-# Scatterplot of most correlated attributes for each split
-plot(winners[, data.attrs.topselection], col=winners$label)
-plot(losers[, data.attrs.topselection], col=losers$label)
+# Plot of the top correlated features for each split
+plot(winners[, features.topselection], col=winners$label)
+plot(losers[, features.topselection], col=losers$label)
 
 # Principal Component Analysis (PCA)
 ------------------------------------
 
 # PCA of labeled data
-labeled.pca = prcomp(labeled[, data.attrs.selection], center=TRUE)
+labeled.pca = prcomp(labeled[, features.selection], center=TRUE)
 
-# PCA of winners
-winners.pca = prcomp(winners[, data.attrs.selection], center=TRUE)
+# PCA of winners split
+winners.pca = prcomp(winners[, features.selection], center=TRUE)
 
-# PCA of losers
-losers.pca = prcomp(losers[, data.attrs.selection], center=TRUE)
+# PCA of losers split
+losers.pca = prcomp(losers[, features.selection], center=TRUE)
 
-# Principal components to view
+# Selecting principal components to view
 pca_indices = range(3)
 
 # 3-D visualization of principal components of the labeled data
@@ -322,7 +325,7 @@ scatterplot3d(losers.pca$x[, pca_indices], color=losers$label, angle=95)
 
 # H1-0: Não existe diferença entre as distribuições dos clusters encontrados
 
-kruskal.test(rowSums(labeled[, data.attrs.selection]), labeled$label)
+kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 # Kruskal-Wallis rank sum test
 # Kruskal-Wallis chi-squared = 30223, df = 7, p-value < 2.2e-16
 
@@ -338,65 +341,65 @@ wilcox.test(counter(labeled$label), conf.int=T)
 #      62429.24
 
 # H2-0: Não existe diferença entre as medianas dos jogadores vitoriosos e perdedores
-x = rowSums(winners[, data.attrs.selection])
-y = rowSums(losers[, data.attrs.selection])
+x = rowSums(winners[, features.selection])
+y = rowSums(losers[, features.selection])
 wilcox.test(x , y, paired=FALSE)
 
 
 # H2'-0: Para cada cluster encontrado, não existe diferença entre as medianas
 # dos jogadores vitoriosos e perdedores
 
-x = rowSums(winners[winners$label == 1, data.attrs.selection])
-y = rowSums(losers[ losers$label == 1, data.attrs.selection])
+x = rowSums(winners[winners$label == 1, features.selection])
+y = rowSums(losers[ losers$label == 1, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 3452800, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 2, data.attrs.selection])
-y = rowSums(losers[ losers$label == 2, data.attrs.selection])
+x = rowSums(winners[ winners$label == 2, features.selection])
+y = rowSums(losers[ losers$label == 2, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 399230, p-value = 0.02427
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 3, data.attrs.selection])
-y = rowSums(losers[ losers$label == 3, data.attrs.selection])
+x = rowSums(winners[ winners$label == 3, features.selection])
+y = rowSums(losers[ losers$label == 3, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 6572200, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 4, data.attrs.selection])
-y = rowSums(losers[ losers$label == 4, data.attrs.selection])
+x = rowSums(winners[ winners$label == 4, features.selection])
+y = rowSums(losers[ losers$label == 4, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 1983800, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 5, data.attrs.selection])
-y = rowSums(losers[ losers$label == 5, data.attrs.selection])
+x = rowSums(winners[ winners$label == 5, features.selection])
+y = rowSums(losers[ losers$label == 5, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 5152600, p-value = 5.074e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 6, data.attrs.selection])
-y = rowSums(losers[ losers$label == 6, data.attrs.selection])
+x = rowSums(winners[ winners$label == 6, features.selection])
+y = rowSums(losers[ losers$label == 6, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 1006300, p-value = 1.915e-10
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 7, data.attrs.selection])
-y = rowSums(losers[ losers$label == 7, data.attrs.selection])
+x = rowSums(winners[ winners$label == 7, features.selection])
+y = rowSums(losers[ losers$label == 7, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 828060, p-value < 2.2e-16
 # alternative hypothesis: true location shift is not equal to 0
 
-x = rowSums(winners[ winners$label == 8, data.attrs.selection])
-y = rowSums(losers[ losers$label == 8, data.attrs.selection])
+x = rowSums(winners[ winners$label == 8, features.selection])
+y = rowSums(losers[ losers$label == 8, features.selection])
 wilcox.test(x , y, paired=FALSE)
 # Wilcoxon rank sum test with continuity correction
 # W = 2654500, p-value < 2.2e-16
