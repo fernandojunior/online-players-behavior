@@ -29,15 +29,15 @@ features.integer = features[8:25]
 # not need be analyzed.
 save.boxplot(
     data[, features.integer],
-    main='[Outlier] All integer features boxplot',
+    main='[Outlier] All integer features boxplot 1',
     names=range(len(features.integer))
 )
 
 # As we can see from the above plot that some features has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
 for (feature in features.integer) {
-    save.plot(data[, feature], main=strf('[Outlier] %s Plot 1', feature))
-    save.boxplot(data[, feature], main=strf('[Outlier] %s Boxplot 1', feature))
+    save.plot(data[, feature], main=strf('[Outlier] %s plot 1', feature))
+    save.boxplot(data[, feature], main=strf('[Outlier] %s boxplot 1', feature))
 }
 
 # Automatically finding the lower and upper extreme outlier thresholds
@@ -92,13 +92,13 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 # Plots to analyze the integer features after the treatments
 save.boxplot(
     data[, features.integer],
-    main='[Outlier] All integer features - after',
+    main='[Outlier] All integer features boxplot 2',
     names=range(len(features.integer))
 )
 
 for (feature in features.integer) {
-    save.plot(data[, feature], main=strf('[Outlier] %s Plot 2', feature))
-    save.boxplot(data[, feature], main=strf('[Outlier] %s Boxplot 2', feature))
+    save.plot(data[, feature], main=strf('[Outlier] %s plot 2', feature))
+    save.boxplot(data[, feature], main=strf('[Outlier] %s boxplot 2', feature))
 }
 
 # ----------------------------
@@ -125,7 +125,7 @@ correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
 # because the correlation direction does not matter in this case.
 save.boxplot(
     abs(correlations$estimates),
-    main='[Correlation] Features Boxplot',
+    main='[Correlation] Features boxplot',
     names=range(ncol(correlations$estimates))
 )
 
@@ -140,7 +140,7 @@ plot(
 # level at 0.05 are indicated.
 cor.plot(
     correlations$estimates,
-    main='[Correlation] Features Heatmap'
+    main='[Correlation] Features heatmap'
     p.mat=correlations$p.values,
     sig.level=0.05,
     method='number',
