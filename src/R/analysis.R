@@ -74,9 +74,9 @@ thresholds = outlier_thresholds(data[, features.integer], factor=3)
 # largestCriticalStrike         -1653.00   2204.0
 # totalHeal                     -7896.00  11865.0
 
-# Boolean vector to indicate which data point is an extreme outlier or not.
+# Boolean vector to indicate which data point p is an extreme outlier or not.
 outliers = rowmap(
-    function(point) is.outlier(point, thresholds['lower',], thresholds['upper',]),
+    function(p) is.outlier(p, thresholds['lower',], thresholds['upper',]),
     data
 )
 
@@ -141,13 +141,15 @@ save.boxplot(
 
 # Cluster dendrogram plot to analyze the affinity of each attribute based on
 # the correlation matrix.
+# https://rpubs.com/gaston/dendrograms
 save.plot(
     hclust(dist(correlations$estimates)),
     main='[Correlation] Features Dendrogram'
-) # https://rpubs.com/gaston/dendrograms
+)
 
 # Heatmap plot of the correlation matrix. p.values greater than significance
 # level at 0.05 are indicated.
+# https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
 save.cor.plot(
     correlations$estimates,
     main='[Correlation] Features heatmap',
@@ -155,7 +157,7 @@ save.cor.plot(
     sig.level=0.05,
     method='number',
     order='alphabet'
-) # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+)
 
 # Correlation matrix features ranked by the mean of correlations for each one
 features.ranked = cor.rank(abs(correlations$estimates))
@@ -204,22 +206,23 @@ features.topselection = features.selection[1:3]
 # Reducing the dimensionality of the normalized data with selected features
 data.reduced = data.normalized[, features.selection]
 
-# ----------------
-# K-means analysis
-# ----------------
+# ------------------------
+# Learning model (K-means)
+# ------------------------
 
-# To find the optimal k number of clusters we can use the method that finds the
-# knee of the error curve, which tries to find an appropriate number of
-# clusters analyzing the curve of a generated graph from a clustering (based on
-# k-means) conducted for each possible.
+# K-means clustering model aims to partition the data into k clusters, so as to
+# minimize the sum of squared error (SSE or SS). To find the optimal k we can
+# use the the knee of the error curve method, which tries to find an appropriate
+# number of clusters analyzing the curve of a generated graph from a clustering
+# conducted for each possible.
 
-# k-means clustering for each k = {1, ..., 50} number of clusters
+# K-means clustering model/fit for each k = {1, ..., 50} number of clusters
 fits = t(map(
     function(k) kmeans(data.reduced, k, algorithm='Lloyd', iter.max=200),
     range(50)
 ))
 
-# Total within-cluster Sum of Square Error (SSE or SS) for each k-means fit
+# Total within-cluster SSE for each k-means fit
 twss = rowmap(function(fit) fit$tot.withinss, fits)
 
 # Plot to analyze the knee of error curve resultant of k-means fits
@@ -260,16 +263,74 @@ fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 for (component in names(fit))
     write.csv(fit[[component]], strf('../data/fit/%s.csv', component))
 
-# --------------------------
-# Analysis with labeled data
-# --------------------------
-
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
 winners = labeled[labeled$winner == 1,]
 losers = labeled[labeled$winner == 0,]
+
+# ----------------------------------------------------
+# Statistical analysis of the results (Non-parametric)
+# ----------------------------------------------------
+
+# Hypothesis 1. H1-0: There is no difference between the distributions of the
+# clusters found in the learning model; H1-1 There is difference between the
+# distributions of the clusters found in the learning model. Test:
+# Kruskal-Wallis rank sum test
+
+kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
+# Alternative hypothesis true: p.value < 0.05
+
+# Hypothesis 2. H2-0: For each cluster found in the learning model there is no
+# difference between the medians of the winning players and losing players;
+# (H2-1) for each cluster found there is difference between the medians of the
+# winning players and losing players. Test: Wilcoxon rank sum test with
+# continuity correction
+
+x = rowSums(winners[winners$label == 1, features.selection])
+y = rowSums(losers[ losers$label == 1, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 2, features.selection])
+y = rowSums(losers[ losers$label == 2, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 3, features.selection])
+y = rowSums(losers[ losers$label == 3, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 4, features.selection])
+y = rowSums(losers[ losers$label == 4, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 5, features.selection])
+y = rowSums(losers[ losers$label == 5, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 6, features.selection])
+y = rowSums(losers[ losers$label == 6, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 7, features.selection])
+y = rowSums(losers[ losers$label == 7, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+x = rowSums(winners[ winners$label == 8, features.selection])
+y = rowSums(losers[ losers$label == 8, features.selection])
+wilcox.test(x , y, paired=FALSE)
+# Alternative hypothesis true: p.value < 0.05
+
+# --------------------------
+# Labeled data visualization
+# --------------------------
 
 # Clusplot analysis
 # -----------------
@@ -294,21 +355,21 @@ save.clusplot(
 # Plot of labeled data. Only the top selected features
 save.plot(
     labeled[, features.topselection],
-    main='[Analysis] Scatter plot',
+    main='[Visualization] Scatter plot',
     col=labeled$label
 )
 
 # Only winners
 save.plot(
     winners[, features.topselection],
-    main='[Analysis] Scatter plot - winners',
+    main='[Visualization] Scatter plot - winners',
     col=winners$label
 )
 
 # Only losers
 save.plot(
     losers[, features.topselection],
-    main='[Analysis] Scatter plot - losers',
+    main='[Visualization] Scatter plot - losers',
     col=losers$label
 )
 
@@ -330,7 +391,7 @@ pca_indices = range(3)
 # 3-D visualization of principal components of the labeled data
 save.scatterplot3d(
     labeled.pca$x[, pca_indices],
-    main='[Analysis] PCA',
+    main='[Visualization] PCA',
     color=labeled$label,
     angle=95
 )
@@ -338,7 +399,7 @@ save.scatterplot3d(
 # 3-D visualization of principal components of winners
 save.scatterplot3d(
     winners.pca$x[, pca_indices],
-    main='[Analysis] PCA - winners',
+    main='[Visualization] PCA - winners',
     color=winners$label,
     angle=95
 )
@@ -346,7 +407,7 @@ save.scatterplot3d(
 # 3-D visualization of principal components of losers
 save.scatterplot3d(
     losers.pca$x[, pca_indices],
-    main='[Analysis] PCA - losers',
+    main='[Visualization] PCA - losers',
     color=losers$label,
     angle=95
 )
@@ -354,89 +415,3 @@ save.scatterplot3d(
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
 # the labeled data is splited between winners and losers.
-
-# ----------
-# Hypothesis
-# ----------
-
-# H1-0: Não existe diferença entre as distribuições dos clusters encontrados
-
-kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
-# Kruskal-Wallis rank sum test
-# Kruskal-Wallis chi-squared = 30223, df = 7, p-value < 2.2e-16
-
-# Não existe diferença entre a quantidade de pontos dos clusters
-wilcox.test(counter(labeled$label), conf.int=T)
-# Wilcoxon signed rank test
-# V = 36, p-value = 0.007813
-# alternative hypothesis: true location is not equal to 0
-# 95 percent confidence interval:
-# 49032.26 73588.02
-# sample estimates:
-# (pseudo)median
-#      62429.24
-
-# H2-0: Não existe diferença entre as medianas dos jogadores vitoriosos e perdedores
-x = rowSums(winners[, features.selection])
-y = rowSums(losers[, features.selection])
-wilcox.test(x , y, paired=FALSE)
-
-
-# H2'-0: Para cada cluster encontrado, não existe diferença entre as medianas
-# dos jogadores vitoriosos e perdedores
-
-x = rowSums(winners[winners$label == 1, features.selection])
-y = rowSums(losers[ losers$label == 1, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 3452800, p-value < 2.2e-16
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 2, features.selection])
-y = rowSums(losers[ losers$label == 2, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 399230, p-value = 0.02427
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 3, features.selection])
-y = rowSums(losers[ losers$label == 3, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 6572200, p-value < 2.2e-16
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 4, features.selection])
-y = rowSums(losers[ losers$label == 4, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 1983800, p-value < 2.2e-16
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 5, features.selection])
-y = rowSums(losers[ losers$label == 5, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 5152600, p-value = 5.074e-16
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 6, features.selection])
-y = rowSums(losers[ losers$label == 6, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 1006300, p-value = 1.915e-10
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 7, features.selection])
-y = rowSums(losers[ losers$label == 7, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 828060, p-value < 2.2e-16
-# alternative hypothesis: true location shift is not equal to 0
-
-x = rowSums(winners[ winners$label == 8, features.selection])
-y = rowSums(losers[ losers$label == 8, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Wilcoxon rank sum test with continuity correction
-# W = 2654500, p-value < 2.2e-16
-# alternative hypothesis: true location shift is not equal to 0
