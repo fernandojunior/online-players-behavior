@@ -296,7 +296,7 @@ clusplot(
 plot(labeled[, features.selection], col=labeled$label)
 
 # Only the top correlated features
-plot(labeled[, features.topselection, col=labeled$label)
+plot(labeled[, features.topselection], col=labeled$label)
 
 # Plot of the top correlated features for each split
 plot(winners[, features.topselection], col=winners$label)
