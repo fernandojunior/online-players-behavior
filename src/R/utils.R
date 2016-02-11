@@ -2,7 +2,7 @@
 # Constants
 # ---------
 
-PLOT_DIR = 'plots/'
+PLOT_DIR = '../plots/'
 
 # helper functions
 
@@ -339,6 +339,7 @@ save.png = function (f, ...) {
     png(file=filename)
     f(...)
     dev.off()
+    print(strf('Saved at %s', filename))
 }
 
 save.boxplot = function (...) {
