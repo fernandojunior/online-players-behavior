@@ -274,8 +274,6 @@ losers = labeled[labeled$winner == 0,]
 # Statistical analysis of the results (Non-parametric)
 # ----------------------------------------------------
 
-hypothesis = list()
-
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
 # distributions of the clusters found in the learning model. Test:
