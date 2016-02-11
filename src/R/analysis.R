@@ -367,7 +367,7 @@ save.scatterplot3d(
     labeled.pca$x[, pca_indices],
     main='[Visualization] PCA',
     color=labeled$label,
-    angle=30
+    angle=95
 )
 
 # 3-D visualization of principal components of winners
@@ -375,7 +375,7 @@ save.scatterplot3d(
     winners.pca$x[, pca_indices],
     main='[Visualization] PCA - winners',
     color=winners$label,
-    angle=30
+    angle=95
 )
 
 # 3-D visualization of principal components of losers
@@ -383,7 +383,7 @@ save.scatterplot3d(
     losers.pca$x[, pca_indices],
     main='[Visualization] PCA - losers',
     color=losers$label,
-    angle=30
+    angle=95
 )
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
