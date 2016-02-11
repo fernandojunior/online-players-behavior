@@ -1,5 +1,4 @@
 *.pyc
 API_KEY
 env/
-src/lolapi/dump/
 TODO
