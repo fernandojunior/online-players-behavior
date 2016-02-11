@@ -1,54 +1,61 @@
 '''
 Raw  matches from LOL API using RiotWatcher.
-
-Match filter:
-    season: SEASON2015
-    region: BR
-    queueType: RANKED_SOLO_5x5 (matchMode: CLASSIC, participants: 10)
 '''
-
+import os
+import os.path
+import time
+import logging
 import json
-from riotwatcher import RiotWatcher, BRAZIL
+from riotwatcher.riotwatcher import RiotWatcher, BRAZIL, LoLException
 import config
 
-api = RiotWatcher(key=config.API_KEY, default_region=BRAZIL)
+# Minimal log setting
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-starting_match_id = config.STARTING_MATCH_ID  # first match to dump
+
+def last_match():
+    '''
+    Returns last dumped match ID from DUMP_DIR
+    '''
+    matches = [m for m in os.listdir(config.DUMP_DIR) if m.endswith('.json')]
+
+    if len(matches) == 0:
+        return None
+
+    return max([int(m.split('.')[0]) for m in matches])
+
+# LOL api wrapper
+wrapper = RiotWatcher(key=config.API_KEY, default_region=BRAZIL)
+
+# First match to be dumped
+starting_match_id = last_match() if last_match() else config.STARTING_MATCH_ID
 
 n_matches = 10000  # total matches to dump
-
-
-def is_season_2015(match):
-    return match['season'] == 'SEASON2015'
-
-
-def is_br(match):
-    return match['region'] == 'BR'
-
-
-def is_ranked_solo_5x5(match):
-    return match['queueType'] == 'RANKED_SOLO_5x5'
-
-
-def is_valid(match):
-    return is_season_2015(match) and is_br(match) and is_ranked_solo_5x5(match)
-
-
 counter = 0  # total matches dumped
 i = 0  # matches iterator
+
 while counter < n_matches:
-    try:  # TODO get_match might have a connection time-out
+    try:
+        match_id = starting_match_id + i  # next match to dump
+        filename = '%s%d%s' % (config.DUMP_DIR, match_id, ".json")
 
-        match_id = i + starting_match_id
-        print(match_id)
-        match = api.get_match(match_id=match_id)
+        if os.path.isfile(filename):
+            logger.info('%s: Match already exists.', match_id)
+            continue
 
-        if is_valid(match):
-            print(True)
-            with open(config.DUMP_DIR + str(match_id) + '.json', 'w+') as f:
-                json.dump(match, f)
-            counter += 1
-            print(counter)
-    except:
-        pass
-    i += 1
+        match = wrapper.get_match(match_id=match_id)
+
+        with open(filename, 'w') as f:
+            json.dump(match, f)
+            logger.info('%s: Match saved.', match_id)
+
+        counter += 1
+
+    except LoLException as e:
+        logger.info('LoLException Error: %s: %s', match_id, e)
+        if str(e) == 'Too many requests':
+            logger.info('Sleeping way...')
+            time.sleep(10)   # connection time-out for get_match
+    finally:
+        i += 1
