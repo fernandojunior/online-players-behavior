@@ -9,10 +9,6 @@ import json
 from riotwatcher.riotwatcher import RiotWatcher, BRAZIL, LoLException
 import config
 
-# Minimal log setting
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 def last_match():
     '''
@@ -24,6 +20,10 @@ def last_match():
         return None
 
     return max([int(m.split('.')[0]) for m in matches])
+
+# Minimal log setting
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # LOL api wrapper
 wrapper = RiotWatcher(key=config.API_KEY, default_region=BRAZIL)

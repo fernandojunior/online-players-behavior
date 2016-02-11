@@ -1,5 +1,5 @@
 '''
-Parse matches in json format to a cvs file.
+Parse a set of matches in json format to a cvs file.
 
 The matches are looked up by participants. Only 22 statistical attributes of
 participants selected by ONG et al. (2015) are considered. No transformation is
@@ -8,7 +8,7 @@ performed on the data as normalization/standardization.
 import json
 import os
 from datetime import datetime
-from config import DUMP_DIR, DATA_DIR
+from config import DUMP_DIR, DATA_DIR, MATCH_FILTER
 
 
 def parse(value):
@@ -35,7 +35,18 @@ def load_match(filename):
     Load a specific match in json format.
     '''
     with open(filename) as f:  # open match
-        return json.load(f)  # read match
+        return json.load(f)  # load match
+
+
+def filter(match):
+    '''
+    Verifies if a match corresponds to the MATCH_FILTER
+    '''
+    for key, value in MATCH_FILTER.items():
+        if match[key] != value:
+            return False
+    return True
+
 
 filename = 'data.%s.csv' % datetime.now().strftime('%Y%m%d.%H%M%S')
 csvfile = open(DATA_DIR + filename, 'w+')
@@ -82,21 +93,24 @@ headers = ','.join('\"%s\"' % header for header in info_attrs + stats_attrs)
 csvfile.write(headers)
 csvfile.write('\n')
 
-for f in os.listdir(DUMP_DIR):  # list matches
+for f in os.listdir(DUMP_DIR):  # match files
 
     if not f.endswith('.json'):
         continue
 
-    data = load_match(DUMP_DIR+f)
+    match = load_match(DUMP_DIR+f)
+
+    if not filter(match):
+        continue
 
     # looking up by participants
-    for i, participant in enumerate(data['participants']):
+    for i, participant in enumerate(match['participants']):
 
         # general info values
         info = [
-            data['matchId'],
-            data['matchCreation'],
-            data['participantIdentities'][i]['player']['summonerId'],
+            match['matchId'],
+            match['matchCreation'],
+            match['participantIdentities'][i]['player']['summonerId'],
             participant['championId']
         ]
 
