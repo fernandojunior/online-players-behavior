@@ -290,7 +290,6 @@ save.plot(1, h1$p.value, main='[Hypothesis] H1', xlab='h1', ylab='p.value')
 # winning players and losing players. Test: Wilcoxon rank sum test with
 # continuity correction
 
-
 h2.p.values = map(
     function (k) {
         x = rowSums(winners[winners$label == k, features.selection])
