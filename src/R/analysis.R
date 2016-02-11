@@ -17,9 +17,21 @@ data = read.csv('../data/data.csv')
 
 # Data features
 features = names(data)
-features.info = features[1:4]
-features.boolean = features[5:7]
-features.integer = features[8:25]
+features.info = features[1:5]
+# [1] "matchId"       "matchCreation" "summonerId"    "championId"
+# [5] "winner"
+features.boolean = features[6:8]
+# [1] "firstBloodKill"   "firstTowerKill"   "firstTowerAssist"
+features.integer = features[9:26]
+# [1] "kills"                       "assists"
+# [3] "deaths"                      "goldEarned"
+# [5] "totalDamageDealt"            "magicDamageDealt"
+# [7] "physicalDamageDealt"         "totalDamageDealtToChampions"
+# [9] "totalDamageTaken"            "minionsKilled"
+# [11] "neutralMinionsKilled"        "totalTimeCrowdControlDealt"
+# [13] "wardsPlaced"                 "towerKills"
+# [15] "largestMultiKill"            "largestKillingSpree"
+# [17] "largestCriticalStrike"       "totalHeal"
 
 # ---------------------
 # Treatment of outliers
@@ -44,25 +56,25 @@ for (feature in features.integer) {
 # for each integer feature. IQR factor = 3.
 thresholds = outlier_thresholds(data[, features.integer], factor=3)
 # > t(thresholds)
-#                                  lower    upper
-# Kills                           -19.00     30.0
-# Assists                         -19.00     37.0
-# Deaths                          -11.00     24.0
-# GoldEarned                    -7465.00  29957.0
-# TotalDamageDealt            -229216.25 433109.8
-# MagicDamageDealt            -112411.75 169991.0
-# PhysicalDamageDealt         -260943.50 380499.8
-# TotalDamageDealtToChampions  -33290.00  66089.0
-# TotalDamageTaken             -25844.25  69949.0
-# MinionsKilled                  -347.00    556.0
-# NeutralMinionsKilled            -59.00     81.0
-# CrowdControl                  -1023.00   1567.0
-# WardsPlaced                     -17.00     32.0
-# TowerKills                       -3.00      4.0
-# LargestMultiKill                 -2.00      5.0
-# LargestKillingSpree             -12.00     16.0
-# LargestCritStrike             -1653.00   2204.0
-# TotalHealAmount               -7896.00  11865.0
+# lower    upper
+# kills                           -19.00     30.0
+# assists                         -19.00     37.0
+# deaths                          -11.00     24.0
+# goldEarned                    -7465.00  29957.0
+# totalDamageDealt            -229216.25 433109.8
+# magicDamageDealt            -112411.75 169991.0
+# physicalDamageDealt         -260943.50 380499.8
+# totalDamageDealtToChampions  -33290.00  66089.0
+# totalDamageTaken             -25844.25  69949.0
+# minionsKilled                  -347.00    556.0
+# neutralMinionsKilled            -59.00     81.0
+# totalTimeCrowdControlDealt    -1023.00   1567.0
+# wardsPlaced                     -17.00     32.0
+# towerKills                       -3.00      4.0
+# largestMultiKill                 -2.00      5.0
+# largestKillingSpree             -12.00     16.0
+# largestCriticalStrike         -1653.00   2204.0
+# totalHeal                     -7896.00  11865.0
 
 # Boolean vector to indicate which data point is an extreme outlier or not.
 outliers = rowmap(
@@ -140,7 +152,7 @@ plot(
 # level at 0.05 are indicated.
 cor.plot(
     correlations$estimates,
-    main='[Correlation] Features heatmap'
+    main='[Correlation] Features heatmap',
     p.mat=correlations$p.values,
     sig.level=0.05,
     method='number',
@@ -149,45 +161,44 @@ cor.plot(
 
 # Correlation matrix features ranked by the mean of correlations for each one
 features.ranked = cor.rank(abs(correlations$estimates))
-# [1] "GoldEarned"                  "TotalDamageDealt"
-# [3] "TotalDamageDealtToChampions" "Kills"
-# [5] "PhysicalDamageDealt"         "MinionsKilled"
-# [7] "LargestKillingSpree"         "LargestMultiKill"
-# [9] "LargestCritStrike"           "TowerKills"
-# [11] "TotalDamageTaken"            "Assists"
-# [13] "MagicDamageDealt"            "CrowdControl"
-# [15] "WardsPlaced"                 "NeutralMinionsKilled"
-# [17] "Deaths"                      "FirstTower"
-# [19] "TotalHealAmount"             "FirstBlood"
-# [21] "FirstTowerAssist"
+# [1] "goldEarned"                  "totalDamageDealt"
+# [3] "totalDamageDealtToChampions" "kills"
+# [5] "physicalDamageDealt"         "largestKillingSpree"
+# [7] "minionsKilled"               "largestMultiKill"
+# [9] "totalDamageTaken"            "towerKills"
+# [11] "largestCriticalStrike"       "neutralMinionsKilled"
+# [13] "assists"                     "totalTimeCrowdControlDealt"
+# [15] "magicDamageDealt"            "wardsPlaced"
+# [17] "totalHeal"                   "deaths"
+# [19] "firstTowerKill"              "firstBloodKill"
+# [21] "firstTowerAssist"
 
 # ------------------------
 # Dimensionality reduction
 # ------------------------
 
-# Based on correlation analysis, the following are redundant features and
-# features with many correlation p.values greater than the significance level
+# The features with high affinity (dendogram plot) and high correlation
+# (heatmap plot) > 0.7 are redundants. The following are redundant features and
+# features with many correlation p.values greater than the significance level.
 features.unselect = c(
-    'TotalDamageDealt',
-    'TotalDamageDealtToChampions',
-    'LargestMultiKill',
-    'LargestKillingSpree',
-    'FirstTowerAssist',
-    'FirstBlood',
-    'FirstTower'
+    'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
+    'totalDamageDealtToChampions',  # (goldErned, totalDamageDealtToChampions)
+    'largestMultiKill',  # (Kills, LargestMultiKill)
+    'largestKillingSpree',  # (Kills, LargestMultiKill), LargestKillingSpree
+    'firstTowerAssist',  # 5 correlations > sig. level
+    'firstBloodKill',  # 4 correlations > sig. level
+    'firstTowerKill'  #  2 correlations > sig. level
 )
-# Explanation for redundants:
-# TotalDamageDealt = PhysicalDamageDealt + MagicDamageDealt
-# (GoldErned, TotalDamageDealtToChampions), TotalDamageDealt
-# (Kills, LargestMultiKill), LargestKillingSpree
 
 # Ranked feature selection.
 features.selection = setdiff(features.ranked, features.unselect)
-# [1] "GoldEarned"           "Kills"                "PhysicalDamageDealt"
-# [4] "MinionsKilled"        "TotalDamageTaken"     "TowerKills"
-# [7] "LargestCritStrike"    "NeutralMinionsKilled" "Assists"
-# [10] "CrowdControl"         "MagicDamageDealt"     "WardsPlaced"
-# [13] "TotalHealAmount"      "Deaths"
+# [1] "goldEarned"                 "kills"
+# [3] "physicalDamageDealt"        "minionsKilled"
+# [5] "totalDamageTaken"           "towerKills"
+# [7] "largestCriticalStrike"      "neutralMinionsKilled"
+# [9] "assists"                    "totalTimeCrowdControlDealt"
+# [11] "magicDamageDealt"           "wardsPlaced"
+# [13] "totalHeal"                  "deaths"
 
 # Top 3 hightly correled features of the selection
 features.topselection = features.selection[1:3]
@@ -259,8 +270,8 @@ for (component in names(fit))
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
-winners = labeled[labeled$Win == 1,]
-losers = labeled[labeled$Win == 0,]
+winners = labeled[labeled$winner == 1,]
+losers = labeled[labeled$winner == 0,]
 
 # Clusplot analysis
 # -----------------
