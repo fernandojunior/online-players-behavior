@@ -11,7 +11,7 @@ options(scipen=999)
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('data/data.csv')
+data = read.csv('../data/data.csv')
 # > nrow(data)
 # [1] 85470
 
@@ -249,7 +249,7 @@ fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 
 # Saving all components
 for (component in names(fit))
-    write.csv(fit[[component]], strf('data/fit/%s.csv', component))
+    write.csv(fit[[component]], strf('../data/fit/%s.csv', component))
 
 # --------------------------
 # Analysis with labeled data
