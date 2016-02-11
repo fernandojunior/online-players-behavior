@@ -336,7 +336,7 @@ save.png = function (f, ...) {
             name = args['main']
     fname = as.character(substitute(f))
     filename = strf('%s%s.%s.png', PLOT_DIR, name, fname)
-    png(file=filename)
+    png(file=filename, width=960, height=960)
     f(...)
     dev.off()
     print(strf('Saved at %s', filename))
@@ -350,6 +350,25 @@ save.boxplot = function (...) {
 save.plot = function (...) {
     "Create a plot and save the output in a png file."
     save.png(plot, ...)
+}
+
+save.cor.plot = function (...) {
+    "Create a cor.plot and save the output in a png file."
+    save.png(cor.plot, ...)
+}
+
+save.clusplot = function (...) {
+    "Create a clusplot and save the output in a png file."
+    if (!require('cluster'))
+        library('cluster')
+    save.png(clusplot, ...)
+}
+
+save.scatterplot3d = function (...) {
+    "Create a scatterplot3d and save the output in a png file."
+    if (!require('scatterplot3d'))
+        library('scatterplot3d')
+    save.png(scatterplot3d, ...)
 }
 
 # k-means functions

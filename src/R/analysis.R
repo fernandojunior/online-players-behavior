@@ -143,14 +143,14 @@ save.boxplot(
 
 # Cluster dendrogram plot to analyze the affinity of each attribute based on
 # the correlation matrix.
-plot(
+save.plot(
     hclust(dist(correlations$estimates)),
     main='[Correlation] Features Dendrogram'
 ) # https://rpubs.com/gaston/dendrograms
 
 # Heatmap plot of the correlation matrix. p.values greater than significance
 # level at 0.05 are indicated.
-cor.plot(
+save.cor.plot(
     correlations$estimates,
     main='[Correlation] Features heatmap',
     p.mat=correlations$p.values,
@@ -280,9 +280,10 @@ losers = labeled[labeled$winner == 0,]
 data.sampled = labeled[sample(range(nrow(labeled)), 80),]
 
 # Clusplot of sampled data
-clusplot(
+save.clusplot(
     data.sampled[, features.selection],
     data.sampled$label,
+    main='Cluster plot of the labeled data (n=80)',
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
     col.p=data.sampled$label,
@@ -292,15 +293,26 @@ clusplot(
 # Scatter plot analysis
 # ---------------------
 
-# Plot of labeled data
-plot(labeled[, features.selection], col=labeled$label)
+# Plot of labeled data. Only the top selected features
+save.plot(
+    labeled[, features.topselection],
+    main='[Analysis] Scatter plot',
+    col=labeled$label
+)
 
-# Only the top correlated features
-plot(labeled[, features.topselection], col=labeled$label)
+# Only winners
+save.plot(
+    winners[, features.topselection],
+    main='[Analysis] Scatter plot - winners',
+    col=winners$label
+)
 
-# Plot of the top correlated features for each split
-plot(winners[, features.topselection], col=winners$label)
-plot(losers[, features.topselection], col=losers$label)
+# Only losers
+save.plot(
+    losers[, features.topselection],
+    main='[Analysis] Scatter plot - losers',
+    col=losers$label
+)
 
 # Principal Component Analysis (PCA)
 ------------------------------------
@@ -308,23 +320,38 @@ plot(losers[, features.topselection], col=losers$label)
 # PCA of labeled data
 labeled.pca = prcomp(labeled[, features.selection], center=TRUE)
 
-# PCA of winners split
+# PCA of winners
 winners.pca = prcomp(winners[, features.selection], center=TRUE)
 
-# PCA of losers split
+# PCA of losers
 losers.pca = prcomp(losers[, features.selection], center=TRUE)
 
 # Selecting principal components to view
 pca_indices = range(3)
 
 # 3-D visualization of principal components of the labeled data
-scatterplot3d(labeled.pca$x[, pca_indices], color=labeled$label, angle=95)
+save.scatterplot3d(
+    labeled.pca$x[, pca_indices],
+    main='[Analysis] PCA',
+    color=labeled$label,
+    angle=95
+)
 
 # 3-D visualization of principal components of winners
-scatterplot3d(winners.pca$x[, pca_indices], color=winners$label, angle=95)
+save.scatterplot3d(
+    winners.pca$x[, pca_indices],
+    main='[Analysis] PCA - winners',
+    color=winners$label,
+    angle=95
+)
 
 # 3-D visualization of principal components of losers
-scatterplot3d(losers.pca$x[, pca_indices], color=losers$label, angle=95)
+save.scatterplot3d(
+    losers.pca$x[, pca_indices],
+    main='[Analysis] PCA - losers',
+    color=losers$label,
+    angle=95
+)
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
