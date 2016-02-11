@@ -1,6 +1,6 @@
 # Constants
 
-PLOT_DIR = '../plots/'
+PLOT_DIR = '../output/'
 
 # helper functions
 

@@ -216,10 +216,10 @@ data.reduced = data.normalized[, features.selection]
 # number of clusters analyzing the curve of a generated graph from a clustering
 # conducted for each possible.
 
-# K-means clustering model/fit for each k = {1, ..., 50} number of clusters
+# K-means clustering model/fit for each k = {1, ..., 20} number of clusters
 fits = t(map(
     function(k) kmeans(data.reduced, k, algorithm='Lloyd', iter.max=200),
-    range(50)
+    range(20)
 ))
 
 # Total within-cluster SSE for each k-means fit
@@ -245,10 +245,10 @@ save.plot(
     xlab='k fit'
 )
 
-# Analysing the between-cluster SSE rate differences, the k = 8 fit seems to
+# Analysing the between-cluster SSE rate differences, the k = 7 fit seems to
 # have the best trade-off, as the rate difference does not vary so much after
 # it. Let's add some extra components and save it.
-fit = fits[8,]
+fit = fits[7,]
 
 # Between-cluster SSE rate
 fit$betweenss.rate = betweenss.rate(fit)
@@ -261,7 +261,7 @@ fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 
 # Saving all components
 for (component in names(fit))
-    write.csv(fit[[component]], strf('../data/fit/%s.csv', component))
+    write.csv(fit[[component]], strf('../output/fit/%s.csv', component))
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
@@ -367,7 +367,7 @@ save.scatterplot3d(
     labeled.pca$x[, pca_indices],
     main='[Visualization] PCA',
     color=labeled$label,
-    angle=95
+    angle=30
 )
 
 # 3-D visualization of principal components of winners
@@ -375,7 +375,7 @@ save.scatterplot3d(
     winners.pca$x[, pca_indices],
     main='[Visualization] PCA - winners',
     color=winners$label,
-    angle=95
+    angle=30
 )
 
 # 3-D visualization of principal components of losers
@@ -383,7 +383,7 @@ save.scatterplot3d(
     losers.pca$x[, pca_indices],
     main='[Visualization] PCA - losers',
     color=losers$label,
-    angle=95
+    angle=30
 )
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
