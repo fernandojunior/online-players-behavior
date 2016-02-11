@@ -1,8 +1,3 @@
-from os import listdir
-
-# Last dumped match
-last_match = lambda path: max([int(m.split('.')[0]) for m in listdir(path)])
-
 # Get one here: https://developer.riotgames.com/
 API_KEY = 'SUA_API_AQUI'
 
@@ -26,7 +21,4 @@ MATCH_FILTER = {
 }
 
 # First match to dump
-try:
-    STARTING_MATCH_ID = last_match(DUMP_DIR)
-except ValueError:
-    STARTING_MATCH_ID = FIRST_MATCH_ID['SEASON2015']
+STARTING_MATCH_ID = FIRST_MATCH_ID['SEASON2015']
