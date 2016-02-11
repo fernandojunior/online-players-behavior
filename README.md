@@ -1,19 +1,14 @@
-# Online players behavior
+# Online players' behavior
 
-Este repositório faz parte de um projeto de mestrado. Esse projeto visa descobrir padrões no comportamento de jogadores de League of Legends que caracterizem jogadores com alto rendimento de jogadores com baixo rendimento. Linguagens de programação: R, Python.
+Despite the importance of competitive video game in the world, such as the multiplayer online battle arena (MOBA) games, there is still a lack of tools and researches based on behavior analysis to help players improve their skills. Threfore, the project aims to reduce this gap and focuses on finding patterns from the players' behavior to characterize them in relation to performance using machine learning, more specifically, clustering algorithms. Programming languages: R, Python.
 
-## Autor
+## Author
 
 Fernando Felix do Nascimento Junior
 
-## Orientador
+## Professor adviser
 
 Leandro Balby Marinho
-
-## Links
-
-* https://github.com/fernandojunior/TeamCompML
-* https://github.com/fernandojunior/Riot-Watcher
 
 ## License
 
