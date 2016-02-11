@@ -1,6 +1,4 @@
-# ---------
 # Constants
-# ---------
 
 PLOT_DIR = '../plots/'
 
@@ -79,16 +77,6 @@ values = function (x) {
 }
 
 # string functions
-
-endswith = function (s, suffix) {
-    "Return TRUE if s ends with the specified suffix, FALSE otherwise."
-    return(grepl(strf('%s$', suffix), s))
-}
-
-startswith = function (s, prefix) {
-    "Return TRUE if s starts with the specified prefix, FALSE otherwise."
-    return(grepl(strf('^%s', prefix), s))
-}
 
 strf = function (...) {
     "Alias for sprintf."
@@ -218,8 +206,8 @@ cor.mtest = function(x, ...) {
     res = list()
     res$estimates = res$p.values = basematrix
 
-    # A correlation of the diagonal correlation matrix is a correlation of a data
-    # attribute with itself. So, the diagonal must be NA to prevent wrong
+    # A correlation of the diagonal correlation matrix is a correlation of a
+    # data attribute with itself. So, the diagonal must be NA to prevent wrong
     # behaviors as in dendrogram and box plots.
     diag(res$estimates) = NA
 
@@ -258,68 +246,6 @@ cor.plot = function (x, ...) {
 
     corrplot(x, ...)
 
-}
-
-attribute_selection = function (correlation_matrix) {
-    "Automatic attribute selection of a correlation matrix.
-
-    It is based on the non-correlations counter and mean of correlations for
-    each column (attribute) of the correlation matrix.
-
-    Formalization:
-
-        C = C(X) = {correlation matrix of a data X}
-
-        A = A(X) = A(C) = {attributes of the correlation matrix C}
-
-        c(a) in C = {correlations of attibute a}
-
-        select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
-            where 0 = False and 1 = True
-
-        selection(C) = { a in A(C) | select(a)}
-    "
-    # Correlation <= 5% is considered non-correlation
-    # correlation_matrix = round(correlation_matrix, digits=1)  # lazy round
-    correlation_matrix = map(  # hard round
-        function(x) if (!is.na(x) & x <= 0.05) 0 else x,
-        correlation_matrix
-    )
-
-    # A(C): Attributes of the correlation matrix C
-    attrs = colnames(correlation_matrix)
-
-    # qt(A): Correlations counter for each attribute A(C)
-    qt = cor.counter(correlation_matrix)
-
-    # qt0(A): Non-correlations counter for each attribute A(C)
-    qt0 = map(function(x) values(qt[[x]]['0']), names(qt))
-    qt0[is.na(qt0)] = 0  # replacing NA values
-
-    # m(qt0(A)): Mean of qt0
-    mqt0 = mean(values(qt0))
-
-    # m(A): Mean of correlations for each a in A(C)
-    m = cor.mean(correlation_matrix)
-
-    # md(m(A)): Median of m(A)
-    mdm = median(m)
-
-    select =  function (attribute) {
-        "Return TRUE if attribute must be selected, FALSE otherwise."
-        if (!is.na(qt0[attribute]) & !is.na(m[attribute]))
-            if (qt0[attribute] > mqt0 & m[attribute] < mdm)
-                return(FALSE)
-        return(TRUE)
-    }
-
-    # Applying select for each a in A(C) to indicate which must be selected
-    filter = values(map(select, attrs))
-
-    # Selecting (filtering) attributes
-    selection = attrs[filter]
-
-    return(selection)
 }
 
 # functions to save plots
@@ -386,26 +312,66 @@ betweenss.rate = function (fit) {
     return(fit$betweenss / fit$totss)
 }
 
-# deprecated functions
+# deprecated
 
-sum_of_squares = function (X) {
-    "Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
-    n = nrow(X) # size
-    VarX = colmap(var, x)  # variance
-    SS = (n-1) * VarX # sum of square
-    result = c()
-    result$size = n
-    result$ss = SS
-    result$var = VarX
-    return(result)
-}
+attribute_selection = function (correlation_matrix) {
+    "Automatic attribute selection of a correlation matrix.
 
-total_sum_of_squares = function (X) {
-    "Return total sum of squares of multidimensional X sample data: sum(ss(X))."
-    ss = sum_of_squares(X)
-    result = c()
-    result$size = ss$size
-    result$tss = sum(ss$ss)
-    result$tvar = sum(ss$var)
-    return(result)
+    It is based on the non-correlations counter and mean of correlations for
+    each column (attribute) of the correlation matrix.
+
+    Formalization:
+
+        C = C(X) = {correlation matrix of a data X}
+
+        A = A(X) = A(C) = {attributes of the correlation matrix C}
+
+        c(a) in C = {correlations of attibute a}
+
+        select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
+            where 0 = False and 1 = True
+
+        selection(C) = { a in A(C) | select(a)}
+    "
+    # Correlation <= 5% is considered non-correlation
+    # correlation_matrix = round(correlation_matrix, digits=1)  # lazy round
+    correlation_matrix = map(  # hard round
+        function(x) if (!is.na(x) & x <= 0.05) 0 else x,
+        correlation_matrix
+    )
+
+    # A(C): Attributes of the correlation matrix C
+    attrs = colnames(correlation_matrix)
+
+    # qt(A): Correlations counter for each attribute A(C)
+    qt = cor.counter(correlation_matrix)
+
+    # qt0(A): Non-correlations counter for each attribute A(C)
+    qt0 = map(function(x) values(qt[[x]]['0']), names(qt))
+    qt0[is.na(qt0)] = 0  # replacing NA values
+
+    # m(qt0(A)): Mean of qt0
+    mqt0 = mean(values(qt0))
+
+    # m(A): Mean of correlations for each a in A(C)
+    m = cor.mean(correlation_matrix)
+
+    # md(m(A)): Median of m(A)
+    mdm = median(m)
+
+    select =  function (attribute) {
+        "Return TRUE if attribute must be selected, FALSE otherwise."
+        if (!is.na(qt0[attribute]) & !is.na(m[attribute]))
+            if (qt0[attribute] > mqt0 & m[attribute] < mdm)
+                return(FALSE)
+        return(TRUE)
+    }
+
+    # Applying select for each a in A(C) to indicate which must be selected
+    filter = values(map(select, attrs))
+
+    # Selecting (filtering) attributes
+    selection = attrs[filter]
+
+    return(selection)
 }

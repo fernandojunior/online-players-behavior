@@ -67,6 +67,30 @@ These can be considered in a number of ways:
 # TODO Summarying partitions
 ----------------------------
 
+# deprecated functions
+
+sum_of_squares = function (X) {
+    "Return sum of squares of multidimensional X sample data: (n-1) * Var(X)."
+    n = nrow(X) # size
+    VarX = colmap(var, x)  # variance
+    SS = (n-1) * VarX # sum of square
+    result = c()
+    result$size = n
+    result$ss = SS
+    result$var = VarX
+    return(result)
+}
+
+total_sum_of_squares = function (X) {
+    "Return total sum of squares of multidimensional X sample data: sum(ss(X))."
+    ss = sum_of_squares(X)
+    result = c()
+    result$size = ss$size
+    result$tss = sum(ss$ss)
+    result$tvar = sum(ss$var)
+    return(result)
+}
+
 # Within cluster sum of squares
 withinss = function (data, cluster) {
     X = data[data$Cluster == cluster, ]
@@ -173,3 +197,17 @@ kruskal.test(rowSums(data.normalized_relative_weight), fit4$cluster)
 
 data:  rowSums(data.normalized_relative_weight) and fit4$cluster
 Kruskal-Wallis chi-squared = 70612, df = 7, p-value < 2.2e-16
+
+
+
+
+
+endswith = function (s, suffix) {
+    "Return TRUE if s ends with the specified suffix, FALSE otherwise."
+    return(grepl(strf('%s$', suffix), s))
+}
+
+startswith = function (s, prefix) {
+    "Return TRUE if s starts with the specified prefix, FALSE otherwise."
+    return(grepl(strf('^%s', prefix), s))
+}
