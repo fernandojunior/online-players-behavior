@@ -1,5 +1,3 @@
-library('cluster')  # for clusplot
-library('scatterplot3d')  # for scatterplot3d
 source('utils.R')
 
 options(scipen=999)
@@ -315,7 +313,7 @@ save.plot(
 )
 
 # Principal Component Analysis (PCA)
-------------------------------------
+# ------------------------------------
 
 # PCA of labeled data
 labeled.pca = prcomp(labeled[, features.selection], center=TRUE)
