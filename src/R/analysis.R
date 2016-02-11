@@ -274,13 +274,17 @@ losers = labeled[labeled$winner == 0,]
 # Statistical analysis of the results (Non-parametric)
 # ----------------------------------------------------
 
+hypothesis = list()
+
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
 # distributions of the clusters found in the learning model. Test:
 # Kruskal-Wallis rank sum test
 
-kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
+h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
+
 # Alternative hypothesis true: p.value < 0.05
+save.plot(1, h1$p.value, main='[Hypothesis] H1', xlab='h1', ylab='p.value')
 
 # Hypothesis 2. H2-0: For each cluster found in the learning model there is no
 # difference between the medians of the winning players and losing players;
@@ -288,45 +292,18 @@ kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 # winning players and losing players. Test: Wilcoxon rank sum test with
 # continuity correction
 
-x = rowSums(winners[winners$label == 1, features.selection])
-y = rowSums(losers[ losers$label == 1, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
 
-x = rowSums(winners[ winners$label == 2, features.selection])
-y = rowSums(losers[ losers$label == 2, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
+h2.p.values = map(
+    function (k) {
+        x = rowSums(winners[winners$label == k, features.selection])
+        y = rowSums(losers[ losers$label == k, features.selection])
+        wilcox.test(x , y, paired=FALSE)$p.value
+    },
+    range(fit$k)
+)
 
-x = rowSums(winners[ winners$label == 3, features.selection])
-y = rowSums(losers[ losers$label == 3, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
-
-x = rowSums(winners[ winners$label == 4, features.selection])
-y = rowSums(losers[ losers$label == 4, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
-
-x = rowSums(winners[ winners$label == 5, features.selection])
-y = rowSums(losers[ losers$label == 5, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
-
-x = rowSums(winners[ winners$label == 6, features.selection])
-y = rowSums(losers[ losers$label == 6, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
-
-x = rowSums(winners[ winners$label == 7, features.selection])
-y = rowSums(losers[ losers$label == 7, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
-
-x = rowSums(winners[ winners$label == 8, features.selection])
-y = rowSums(losers[ losers$label == 8, features.selection])
-wilcox.test(x , y, paired=FALSE)
-# Alternative hypothesis true: p.value < 0.05
+# Alternative hypothesis true for each cluster: p.value < 0.05
+save.plot(h2.p.values, main='[Hypothesis] H2', xlab='k', ylab='p.values')
 
 # --------------------------
 # Labeled data visualization
