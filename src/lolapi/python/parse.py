@@ -39,6 +39,7 @@ def load_match(filename):
 
 filename = 'data.%s.csv' % datetime.now().strftime('%Y%m%d.%H%M%S')
 csvfile = open(DATA_DIR + filename, 'w+')
+print('csv file:', csvfile.name)
 
 # general info - not used for clustering
 info_attrs = [
@@ -82,6 +83,9 @@ csvfile.write(headers)
 csvfile.write('\n')
 
 for f in os.listdir(DUMP_DIR):  # list matches
+
+    if not f.endswith('.json'):
+        continue
 
     data = load_match(DUMP_DIR+f)
 
