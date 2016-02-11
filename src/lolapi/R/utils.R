@@ -2,7 +2,7 @@
 # Constants
 # ---------
 
-PLOTS = 'plots/'
+PLOT_DIR = 'plots/'
 
 # helper functions
 
@@ -335,7 +335,7 @@ save.png = function (f, ...) {
         if (!is.null(args['main']) & !is.na(args['main']))
             name = args['main']
     fname = as.character(substitute(f))
-    filename = strf('%s%s.%s.png', PLOTS, name, fname)
+    filename = strf('%s%s.%s.png', PLOT_DIR, name, fname)
     png(file=filename)
     f(...)
     dev.off()

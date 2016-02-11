@@ -10,11 +10,11 @@ Match filter:
 
 import json
 from riotwatcher import RiotWatcher, BRAZIL
-from config import API_KEY, DUMP_DIR, STARTING_MATCH_ID
+import config
 
-api = RiotWatcher(key=API_KEY, default_region=BRAZIL)
+api = RiotWatcher(key=config.API_KEY, default_region=BRAZIL)
 
-starting_match_id = STARTING_MATCH_ID  # first match to dump
+starting_match_id = config.STARTING_MATCH_ID  # first match to dump
 
 n_matches = 10000  # total matches to dump
 
@@ -54,7 +54,7 @@ while counter < n_matches:
 
         if is_valid(match):
             print True
-            with open(DUMP_DIR + str(match_id) + '.json', 'w+') as f:
+            with open(config.DUMP_DIR + str(match_id) + '.json', 'w+') as f:
                 json.dump(match, f)
             counter += 1
             print(counter)
