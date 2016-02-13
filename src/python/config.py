@@ -1,5 +1,5 @@
 # Get one here: https://developer.riotgames.com/
-API_KEY = 'SUA_API_AQUI'
+API_KEY = 'YOUR_RIOT_API_HERE'
 
 # Direcotry where matches will be saved
 DUMP_DIR = '../dump/'
@@ -12,13 +12,39 @@ FIRST_MATCH_ID = {
     'SEASON2015': 456157041  # first match of season 2015
 }
 
-# Filter used in the parser
+# Parse only matches that satisfy the following key values
 MATCH_FILTER = {
     'matchMode': 'CLASSIC',
     'season': 'SEASON2015',
     'region': 'BR',
     'queueType': 'RANKED_SOLO_5x5',
 }
+
+# Statistics of participants to parse
+PARTICIPANT_STATS = [
+    'winner',
+    'firstBloodKill',
+    'firstTowerKill',
+    'firstTowerAssist',
+    'kills',
+    'assists',
+    'deaths',
+    'goldEarned',
+    'totalDamageDealt',
+    'magicDamageDealt',
+    'physicalDamageDealt',
+    'totalDamageDealtToChampions',
+    'totalDamageTaken',
+    'minionsKilled',
+    'neutralMinionsKilled',
+    'totalTimeCrowdControlDealt',
+    'wardsPlaced',
+    'towerKills',
+    'largestMultiKill',
+    'largestKillingSpree',
+    'largestCriticalStrike',
+    'totalHeal'
+]
 
 # First match to dump
 STARTING_MATCH_ID = FIRST_MATCH_ID['SEASON2015']

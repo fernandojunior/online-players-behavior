@@ -1,14 +1,19 @@
 '''
-Parse a set of matches in json format to a cvs file.
-
-The matches are looked up by participants. Only 22 statistical attributes of
-participants selected by ONG et al. (2015) are considered. No transformation is
-performed on the data as normalization/standardization.
+Parse a set of matches in JSON format to a file in CSV format. The matches will
+be looked up by participants.
 '''
 import json
 import os
 from datetime import datetime
-from config import DUMP_DIR, DATA_DIR, MATCH_FILTER
+from config import DATA_DIR, DUMP_DIR, MATCH_FILTER, PARTICIPANT_STATS
+
+
+def load(matchname):
+    '''
+    Load a specific match (JSON file).
+    '''
+    with open(matchname) as f:
+        return json.load(f)
 
 
 def parse(value):
@@ -20,102 +25,56 @@ def parse(value):
     return parse(int(value)) if isinstance(value, bool) else str(value)
 
 
-def csvrow(*values):
+def satisfied(match, filter):
     '''
-    Create a csv row.
-
-    Convert a list of values (any python type) into a comma separated values
-    string.
+    Verify if a match is satisfied by the match filter.
     '''
-    return ','.join(map(parse, values))
-
-
-def load_match(filename):
-    '''
-    Load a specific match in json format.
-    '''
-    with open(filename) as f:  # open match
-        return json.load(f)  # load match
-
-
-def filter(match):
-    '''
-    Verifies if a match corresponds to the MATCH_FILTER
-    '''
-    for key, value in MATCH_FILTER.items():
+    for key, value in filter.items():
         if match[key] != value:
             return False
     return True
 
 
-filename = 'data.%s.csv' % datetime.now().strftime('%Y%m%d.%H%M%S')
-csvfile = open(DATA_DIR + filename, 'w+')
-print('csv file:', csvfile.name)
+def write(values, f):
+    '''
+    Convert a list of values into a comma separated values string and write it
+    in a file.
+    '''
+    f.write(','.join(map(parse, values)) + '\n')
 
-# general info - not used for clustering
-info_attrs = [
-    'matchId',
-    'matchCreation',
-    'summonerId',
-    'championId',
-]
 
-# the 22 statistical attributes of participants selected by Ong et al. (2015)
-stats_attrs = [
-    # booleans attributes
-    'winner',
-    'firstBloodKill',
-    'firstTowerKill',
-    'firstTowerAssist',
-    # numeric attributes:
-    'kills',
-    'assists',
-    'deaths',
-    'goldEarned',
-    'totalDamageDealt',
-    'magicDamageDealt',
-    'physicalDamageDealt',
-    'totalDamageDealtToChampions',
-    'totalDamageTaken',
-    'minionsKilled',
-    'neutralMinionsKilled',
-    'totalTimeCrowdControlDealt',
-    'wardsPlaced',
-    'towerKills',
-    'largestMultiKill',
-    'largestKillingSpree',
-    'largestCriticalStrike',
-    'totalHeal'
-]
+# Creating CSV file in DATA_DIR
+filename = DATA_DIR + 'data' + datetime.now().strftime('%Y%m%d%H%M%S') + '.csv'
+file_ = open(filename, 'w+')
+print('CSV file:', file_.name)
 
-headers = ','.join('\"%s\"' % header for header in info_attrs + stats_attrs)
+# Writing CSV headers
+headers = ['matchId', 'matchCreation', 'summonerId', 'championId']  # info
+headers += PARTICIPANT_STATS  # statistical
+write(headers, file_)
 
-csvfile.write(headers)
-csvfile.write('\n')
-
-for f in os.listdir(DUMP_DIR):  # match files
-
-    if not f.endswith('.json'):
+# Match loop
+for matchname in os.listdir(DUMP_DIR):
+    if '.json' not in matchname:
         continue
 
-    match = load_match(DUMP_DIR+f)
+    match = load(DUMP_DIR + matchname)
 
-    if not filter(match):
+    if not satisfied(match, MATCH_FILTER):
         continue
 
-    # looking up by participants
+    # looking up match by participants
     for i, participant in enumerate(match['participants']):
-
-        # general info values
-        info = [
+        # selecting general info values of current participant
+        values = [
             match['matchId'],
             match['matchCreation'],
             match['participantIdentities'][i]['player']['summonerId'],
             participant['championId']
         ]
 
-        # statistical values. Filtering from all participant stats
-        stats = [participant['stats'][attr] for attr in stats_attrs]
+        # selecting statistical values of current participant
+        values += [participant['stats'][stat] for stat in PARTICIPANT_STATS]
 
-        csvfile.write(csvrow(*(info + stats)))  # write values in csv format
-        csvfile.write('\n')
+        # writing participant values in the csv file
+        write(values, file_)
