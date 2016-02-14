@@ -21,6 +21,7 @@ MATCH_FILTER = {
 }
 
 # Statistics of participants to parse
+# More in https://developer.riotgames.com/api/methods#!/1064
 PARTICIPANT_STATS = [
     'winner',
     'firstBloodKill',

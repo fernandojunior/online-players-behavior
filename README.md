@@ -10,29 +10,29 @@ The game being analyzed is the [League of Legends](http://br.leagueoflegends.com
 
 Two programming languages are used in the project: Python and R. Python to raw and parse the data and R to analyze it.
 
-To raw your own JSON matches:
+To raw JSON matches:
 
-1. Configure the Riot API Key in **src/python/config.py** to access League of Legends data
-2. Access **src/python** directory
-3. Run **pip install -r requeriments.txt**
-2. Run **python raw.py**
-3. All rawed matches can be found in **src/dump** directory
+1. Configure the Riot API Key in *src/python/config.py*
+2. Access *src/python/* through the terminal.
+3. Run *pip install -r requeriments.txt*
+2. Run *python raw.py*
+3. All rawed matches can be found in *src/dump/*
 
-To parse all matches present in *src/dump* direcotry to a CSV file:
+To parse all matches in *src/dump/* to a CSV file:
 
-1. Access **src/python** directory
-2. Run **python parse.py**
-3. The CSV file created can be found in **src/data** directory
+1. Access *src/python/* through the terminal
+2. Run *python parse.py*
+3. The created file can be found in *src/data/*
 
 To analyze the parsed data:
 
-1. Open **src/R/analysis.R** file
-2. Change the line **'../data/data.csv'** to read the CSV file created previously
-3. Acess **src/R** direcotry
-4. Run **Rscript analysis.R**
-5. All plots and results can be found in **src/output**
+1. Open *src/R/analysis.R*
+2. Change the line *'../data/data.csv'* to read the CSV file created previously
+3. Access *src/R/* through the terminal
+4. Run *Rscript analysis.R*
+5. The [analysis output](src/output/README.md) can be found in *src/output*
 
-To configure other settings, as participant statistics to parse, edit **src/python/config.py** file.
+To configure other settings (participant statistics to parse, dump directory, etc.), edit *src/python/config.py*.
 
 ## Author
 
