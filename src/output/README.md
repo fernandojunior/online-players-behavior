@@ -110,7 +110,7 @@ Summary of plots:
 [⬆ back to top](README.md)
 
 ## Exploring labeled data
-![](Cluster plot of the labeled data (n=80).clusplot.png) [⬆](README.md)
+![]([Exploring] Cluster plot of the labeled data (n=80).clusplot.png) [⬆](README.md)
 ![]([Exploring] Scatter plot.plot.png) [⬆](README.md)
 ![]([Exploring] Scatter plot - winners.plot.png) [⬆](README.md)
 ![]([Exploring] Scatter plot - losers.plot.png) [⬆](README.md)
