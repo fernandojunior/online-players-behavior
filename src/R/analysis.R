@@ -270,9 +270,9 @@ labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 winners = labeled[labeled$winner == 1,]
 losers = labeled[labeled$winner == 0,]
 
-# ----------------------------------------------------
-# Statistical analysis of the results (Non-parametric)
-# ----------------------------------------------------
+# -----------------------------------
+# Statistical analysis of the results
+# -----------------------------------
 
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
@@ -302,9 +302,9 @@ h2.p.values = map(
 # Alternative hypothesis true for each cluster: p.value < 0.05
 save.plot(h2.p.values, main='[Hypothesis] H2', xlab='k', ylab='p.values')
 
-# --------------------------
-# Labeled data visualization
-# --------------------------
+# ----------------------
+# Exploring labeled data
+# ----------------------
 
 # Clusplot analysis
 # -----------------
@@ -316,7 +316,7 @@ data.sampled = labeled[sample(range(nrow(labeled)), 80),]
 save.clusplot(
     data.sampled[, features.selection],
     data.sampled$label,
-    main='Cluster plot of the labeled data (n=80)',
+    main='[Exploring] Cluster plot of the labeled data (n=80)',
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
     col.p=data.sampled$label,
@@ -329,21 +329,21 @@ save.clusplot(
 # Plot of labeled data. Only the top selected features
 save.plot(
     labeled[, features.topselection],
-    main='[Visualization] Scatter plot',
+    main='[Exploring] Scatter plot',
     col=labeled$label
 )
 
 # Only winners
 save.plot(
     winners[, features.topselection],
-    main='[Visualization] Scatter plot - winners',
+    main='[Exploring] Scatter plot - winners',
     col=winners$label
 )
 
 # Only losers
 save.plot(
     losers[, features.topselection],
-    main='[Visualization] Scatter plot - losers',
+    main='[Exploring] Scatter plot - losers',
     col=losers$label
 )
 
@@ -365,7 +365,7 @@ pca_indices = range(3)
 # 3-D visualization of principal components of the labeled data
 save.scatterplot3d(
     labeled.pca$x[, pca_indices],
-    main='[Visualization] PCA',
+    main='[Exploring] PCA',
     color=labeled$label,
     angle=95
 )
@@ -373,7 +373,7 @@ save.scatterplot3d(
 # 3-D visualization of principal components of winners
 save.scatterplot3d(
     winners.pca$x[, pca_indices],
-    main='[Visualization] PCA - winners',
+    main='[Exploring] PCA - winners',
     color=winners$label,
     angle=95
 )
@@ -381,7 +381,7 @@ save.scatterplot3d(
 # 3-D visualization of principal components of losers
 save.scatterplot3d(
     losers.pca$x[, pca_indices],
-    main='[Visualization] PCA - losers',
+    main='[Exploring] PCA - losers',
     color=losers$label,
     angle=95
 )
