@@ -40,7 +40,7 @@ features.integer = features[9:26]
 save.boxplot(
     data[, features.integer],
     main='[Outlier] All integer features boxplot 1',
-    names=range(len(features.integer))
+    names=range(length(features.integer))
 )
 
 # As we can see from the above plot that some features has outliers in the
@@ -103,7 +103,7 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 save.boxplot(
     data[, features.integer],
     main='[Outlier] All integer features boxplot 2',
-    names=range(len(features.integer))
+    names=range(length(features.integer))
 )
 
 for (feature in features.integer) {
@@ -254,7 +254,7 @@ fit = fits[7,]
 fit$betweenss.rate = betweenss.rate(fit)
 
 # Number of clusters
-fit$k = len(fit$size)
+fit$k = length(fit$size)
 
 # Variance for each cluster
 fit$withinvar = 1 / (fit$size - 1) * fit$withinss

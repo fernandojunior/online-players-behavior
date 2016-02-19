@@ -14,11 +14,6 @@ index = function (e, l) {
     return(match(e, l))
 }
 
-len = function (...) {
-    "Alias for length."
-    return(length(...))
-}
-
 map = function (f, x) {
     "Apply a function f to a value x.
 
