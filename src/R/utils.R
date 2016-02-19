@@ -9,7 +9,7 @@ counter = function (...) {
     return(table(...))
 }
 
-index = function (e, l) {
+indexof = function (e, l) {
     "Alias for match."
     return(match(e, l))
 }
