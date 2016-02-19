@@ -19,7 +19,7 @@ map = function (f, x) {
 
     If x is a vector or a list, it applies for each item.
 
-    if x is a matrix or data frame, it applies for each item, for each column.
+    if x is a matrix or data frame, it applies for each item of each column.
 
     Examples:
         > map(function (a) a + 1, 1)
@@ -52,11 +52,6 @@ colmap = function (f, x) {
 range = function (...) {
     "Alias for seq.int. Override the built-in funtion."
     return(seq.int(...))
-}
-
-type = function (...) {
-    "Alias for typeof."
-    return(typeof(...))
 }
 
 values = function (x) {
