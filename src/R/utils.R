@@ -137,7 +137,7 @@ outlier_thresholds = function (x, factor=1.5) {
             apply(x, 2, function(y) outlier_thresholds(y, factor)
         ))))
 
-    quartiles = values(quantile(x)[2:4])
+    quartiles = unname(quantile(x)[2:4])
     first_quartile = quartiles[1]
     third_quartile = quartiles[3]
     iqr = third_quartile - first_quartile # same as IQR(x)
@@ -195,9 +195,9 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
     return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
-cor.mtest = function(x, ...) {
+cor.mtest = function(x, method='pearson',...) {
     "Peform a cor.test between paired features of a multivariate data set x."
-    features = names(x)
+    features = colnames(x)
     n = length(features)
 
     basematrix = matrix(NA, n, n)
@@ -213,7 +213,7 @@ cor.mtest = function(x, ...) {
 
     diag(res$p.values) = 0
 
-    if (c(...)['method'] == 'person') {
+    if (c(...)['method'] == 'pearson') {
         res$conf.int = list()
         res$conf.int$lower = res$conf.int$upper = basematrix
         diag(res$conf.int$lower) = diag(res$conf.int$upper) = 1
