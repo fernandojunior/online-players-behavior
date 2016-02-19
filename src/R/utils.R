@@ -137,7 +137,7 @@ outlier_thresholds = function (x, factor=1.5) {
             apply(x, 2, function(y) outlier_thresholds(y, factor)
         ))))
 
-    quartiles = unname(quantile(x)[2:4])
+    quartiles = values(quantile(x)[2:4])
     first_quartile = quartiles[1]
     third_quartile = quartiles[3]
     iqr = third_quartile - first_quartile # same as IQR(x)
