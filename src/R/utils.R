@@ -185,7 +185,7 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
     return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
-cor.mtest = function(x, method='pearson',...) {
+cor.mtest = function(x, method='pearson', ...) {
     "Peform a cor.test between paired features of a multivariate data set x."
     features = colnames(x)
     n = length(features)
@@ -203,7 +203,7 @@ cor.mtest = function(x, method='pearson',...) {
 
     diag(res$p.values) = 0
 
-    if (c(...)['method'] == 'pearson') {
+    if (method == 'pearson') {
         res$conf.int = list()
         res$conf.int$lower = res$conf.int$upper = basematrix
         diag(res$conf.int$lower) = diag(res$conf.int$upper) = 1
@@ -211,7 +211,7 @@ cor.mtest = function(x, method='pearson',...) {
 
     for (i in 1:(n - 1)) {
         for (j in (i + 1):n) {
-            tmp = cor.test(x[, i], x[, j], ...)
+            tmp = cor.test(x[, i], x[, j], method=method, ...)
             res$estimates[i, j] = res$estimates[j, i] = tmp$estimate
             res$p.values[i, j] = res$p.values[j, i] = tmp$p.value
             if ('conf.int' %in% names(tmp)) {
