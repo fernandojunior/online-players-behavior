@@ -394,15 +394,16 @@ save.scatterplot3d(
 # -----------------
 # label = read.csv('../output/fit/cluster.csv')$x
 # labeled = cbind(data[, features.info], label=label, data.reduced)
-# winners = labeled[labeled$winner == 1,]
-# losers = labeled[labeled$winner == 0,]
+winners = labeled[labeled$winner == 1,]
+losers = labeled[labeled$winner == 0,]
 
 centers_by_label = function (x, features) {
     "Given a data set x, return the feature centers by label.
 
     The labeled feature centers are converted into a list, then joined by row.
     "
-    labels = sort(unique(x[, 'label']))
+    label = x[, 'label']
+    labels = sort(unique(label))
     centers = aggregate(. ~ label, x[, features], mean)
     feature_center_by_label = function(feature) {
         cbind(
@@ -431,14 +432,19 @@ plot_centers_by_label = function (x, features, main) {
         pch=paste(x$label),
         main=main,
         xlab=xlab,
-        ylab='centers'
+        ylab='centers',
+        ylim=c(-2, 2)
     )
 
 }
 
 labeled.centers = centers_by_label(labeled, features.selection)
+winners.centers = centers_by_label(winners, features.selection)
+losers.centers = centers_by_label(losers, features.selection)
 
-plot_centers_by_label(labeled.centers, features.selection, '[Analysis] Centers')
+plot_centers_by_label(labeled.centers, features.selection, '[Exploring] Centers')
+plot_centers_by_label(winners.centers, features.selection, '[Exploring] Centers - winners')
+plot_centers_by_label(losers.centers, features.selection, '[Exploring] Centers - losers')
 
 # TODO Champ analisys
 # sort(table(winners[, 'championId']), decreasing=TRUE)
