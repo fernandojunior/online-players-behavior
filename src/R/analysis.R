@@ -392,7 +392,7 @@ save.scatterplot3d(
 
 # Centroid analysis
 # -----------------
-label = read.csv('../output/fit/cluster.csv')$x
+# label = read.csv('../output/fit/cluster.csv')$x
 # labeled = cbind(data[, features.info], label=label, data.reduced)
 # winners = labeled[labeled$winner == 1,]
 # losers = labeled[labeled$winner == 0,]
@@ -411,29 +411,34 @@ centers_by_label = function (x, features) {
             center=centers[, feature]
         )
     }
-    do.call(rbind, lapply(setdiff(features, 'label'), feature_center_by_label))
+    return(as.data.frame(do.call(
+        rbind,
+        lapply(setdiff(features, 'label'), feature_center_by_label)
+    )))
+}
+
+plot_centers_by_label = function (x, features, main) {
+
+    xlab = paste(sapply(
+        range(length(features)),
+        function(i) paste(i, features[i])
+    ), collapse=', ')
+
+    plot(
+        x$feature_id,
+        x$center,
+        col=x$label,
+        pch=paste(x$label),
+        main=main,
+        xlab=xlab,
+        ylab='centers'
+    )
+
 }
 
 labeled.centers = centers_by_label(labeled, features.selection)
 
-x = do.call(rbind, lapply(range(1, 14), function(f) cbind(feature=f, center=centers[, f], cluster=range(7))))
-
-lapply(features.selection, function(feature) paste(indexof(feature,features.selection), features))
-
-xlab = paste(sapply(
-    range(length(features.selection)),
-    function(i) paste(i, features.selection[i])
-), collapse=', ')
-
-plot(
-    labeled.centers[, 'feature_id'],
-    labeled.centers[, 'center'],
-    col=labeled.centers[, 'label'],
-    pch=paste(labeled.centers[, 'label']),
-    main='Centers by label',
-    xlab=xlab,
-    ylab='centroids'
-)
+plot_centers_by_label(labeled.centers, features.selection, '[Analysis] Centers')
 
 # TODO Champ analisys
 # sort(table(winners[, 'championId']), decreasing=TRUE)
