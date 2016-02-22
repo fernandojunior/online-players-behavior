@@ -397,19 +397,41 @@ label = read.csv('../output/fit/cluster.csv')$x
 # winners = labeled[labeled$winner == 1,]
 # losers = labeled[labeled$winner == 0,]
 
-centers = read.csv('../output/fit/centers.csv')[, features.selection]
+centers_by_label = function (x, features) {
+    "Given a data set x, return the feature centers by label.
+
+    The labeled feature centers are converted into a list, then joined by row.
+    "
+    labels = sort(unique(x[, 'label']))
+    centers = aggregate(. ~ label, x[, features], mean)
+    feature_center_by_label = function(feature) {
+        cbind(
+            feature_id=indexof(feature, features),
+            label=labels,
+            center=centers[, feature]
+        )
+    }
+    do.call(rbind, lapply(setdiff(features, 'label'), feature_center_by_label))
+}
+
+labeled.centers = centers_by_label(labeled, features.selection)
 
 x = do.call(rbind, lapply(range(1, 14), function(f) cbind(feature=f, center=centers[, f], cluster=range(7))))
 
-xlabs = map(function (i) paste(i, names(centers)[i]), 1:length(names(centers)))
+lapply(features.selection, function(feature) paste(indexof(feature,features.selection), features))
+
+xlab = paste(sapply(
+    range(length(features.selection)),
+    function(i) paste(i, features.selection[i])
+), collapse=', ')
 
 plot(
-    x[, 'feature'],
-    x[, 'center'],
-    col=x[, 'cluster'],
-    pch=paste(x[, 'cluster']),
-    main=NA,
-    xlab=paste(xlabs, collapse=', '),
+    labeled.centers[, 'feature_id'],
+    labeled.centers[, 'center'],
+    col=labeled.centers[, 'label'],
+    pch=paste(labeled.centers[, 'label']),
+    main='Centers by label',
+    xlab=xlab,
     ylab='centroids'
 )
 
