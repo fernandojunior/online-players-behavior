@@ -389,3 +389,30 @@ save.scatterplot3d(
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
 # the labeled data is splited between winners and losers.
+
+# Centroid analysis
+# -----------------
+label = read.csv('../output/fit/cluster.csv')$x
+# labeled = cbind(data[, features.info], label=label, data.reduced)
+# winners = labeled[labeled$winner == 1,]
+# losers = labeled[labeled$winner == 0,]
+
+centers = read.csv('../output/fit/centers.csv')[, features.selection]
+
+x = do.call(rbind, lapply(range(1, 14), function(f) cbind(feature=f, center=centers[, f], cluster=range(7))))
+
+xlabs = map(function (i) paste(i, names(centers)[i]), 1:length(names(centers)))
+
+plot(
+    x[, 'feature'],
+    x[, 'center'],
+    col=x[, 'cluster'],
+    pch=paste(x[, 'cluster']),
+    main=NA,
+    xlab=paste(xlabs, collapse=', '),
+    ylab='centroids'
+)
+
+# TODO Champ analisys
+# sort(table(winners[, 'championId']), decreasing=TRUE)
+# sort(table(winners[winners$label == 3, 'championId']), decreasing=TRUE)
