@@ -10,33 +10,33 @@ This repository contains the source code of an in-progress master research proje
 
 The project uses a set of historical matches provided by [Riot Games](http://www.riotgames.com/), LoL developer, from its application public interface ([API](https://developer.riotgames.com)). A match history contains data such as game mode, game type and identification number. It also contains basic information statistics of each participant in the match. The documentation of all statistics can be found in the [API Documentation](https://developer.riotgames.com/api/methods#!/1064).
 
-## Source
+## Replication
 
-Two programming languages are used in the project: Python and R. Python to raw and parse the data and R to analyze it.
+The project uses two programming languages: Python to raw and parse the data and R to analyze it. Following some basic steps to reproduce or replicate the [preliminary results](src/output/README.md):
 
-To raw JSON matches:
+**Raw JSON matches**
 
-1. Configure the Riot API Key in *src/python/config.py*
-2. Access *src/python/* through the terminal.
-3. Run *pip install -r requeriments.txt*
-2. Run *python raw.py*
-3. All rawed matches can be found in *src/dump/*
+1. Configure the Riot API Key in `src/python/config.py`
+2. Change current working directory to `src/python/` through the terminal
+3. Run `pip install -r requeriments.txt` to install Python dependencies
+2. Run `python raw.py` to raw the data
+3. All rawed matches can be found in `src/dump/`
 
-To parse all matches in *src/dump/* to a CSV file:
+**Parse rawed matches to CSV**
 
-1. Access *src/python/* through the terminal
-2. Run *python parse.py*
-3. The created file can be found in *src/data/*
+1. Change current working directory to `src/python/` through the terminal
+2. Run `python parse.py` to parse all JSON mathces to a CSV file
+3. The created CSV file can be found in `src/data/`
 
-To analyze the parsed data:
+**Analyze the parsed data**
 
-1. Open *src/R/analysis.R*
-2. Change the line *'../data/data.csv'* to read the CSV file created previously
-3. Access *src/R/* through the terminal
-4. Run *Rscript analysis.R*
-5. The [analysis output](src/output/README.md) can be found in *src/output*
+1. Open `src/R/analysis.R*
+2. In `src/R/analysis.R`, edit `data = read.csv('../data/data.csv')` to read the CSV file created previously
+3. Change current working directory to `src/R/` through the terminal
+4. Run `Rscript analysis.R` to build the analysis
+5. The analysis output can be found in `src/output`
 
-To configure other settings (participant statistics to parse, dump directory, etc.), edit *src/python/config.py*.
+Edit `src/python/config.py` to configure other settings (statistic attributes to parse, dump directory, etc.).
 
 ## References
 
