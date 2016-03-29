@@ -1,6 +1,6 @@
 # Online players' behavior
 
-This repository contains the source code of an in-progress master research project. Despite the importance of competitive games in the world, such as the multiplayer online battle arena (MOBA) genre, there is still a lack of tools and researches based on behavior analysis to help players improve their strategies and skills. Therefore, to reduce this gap the project aims to use machine learning algorithms in the context of the [most popular](https://www.superdataresearch.com/market-data/esports-market-brief/) MOBA, [League of Legends](http://leagueoflegends.com/) (LoL), to analyze and characterize players' behavior in relation to performance.
+This repository contains the source code of an in-progress master research project. Despite the importance of competitive games in the world, such as the multiplayer online battle arena (MOBA) genre, there is still a lack of tools and researches based on behavior analysis to help players improve their strategies and skills. Therefore, to reduce this gap the project aims to analyze and characterize players' behavior in relation to performance using machine learning algorithms in the context of the [most popular](https://www.superdataresearch.com/market-data/esports-market-brief/) MOBA, [League of Legends](http://leagueoflegends.com/) (LoL).
 
 * Project author: [Fernando Felix do Nascimento Junior](https://linkedin.com/in/fernandofnjr)
 * Professor adviser: [Leandro Balby Marinho](https://linkedin.com/in/leandro-balby-marinho-28b696b)
