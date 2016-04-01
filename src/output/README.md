@@ -3,8 +3,8 @@
 Table of contents
 
   1. [Correlation analysis](#correlation-analysis)
-  2. [Learning model](#learning-model)
-  3. [Statistical analysis of the results](#statistical-analysis-of-the-results)
+  2. [Clustering analysis](#clustering-analysis)
+  3. [Statistical inference analysis](#statistical-inference-analysis)
   4. [Exploring labeled data](#exploring-labeled-data)
 
 ## Correlation analysis
@@ -15,14 +15,14 @@ Table of contents
 
 [⬆ back to top](analysis-output)
 
-## Learning model
+## Clustering analysis
 
 ![]([K-means] Error curve.plot.png) [⬆](analysis-output)
 ![]([K-means] Between-cluster SSE rate differences.plot.png)
 
 [⬆ back to top](analysis-output)
 
-## Statistical analysis of the results
+## Statistical inference analysis
 
 ![]([Hypothesis] H1.plot.png) [⬆](analysis-output)
 ![]([Hypothesis] H2.plot.png)
