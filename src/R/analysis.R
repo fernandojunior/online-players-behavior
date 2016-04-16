@@ -99,6 +99,8 @@ data = data[!(data$matchId %in% inconsistent_matches),]
 # > nrow(data)
 # [1] 35140
 
+write.csv(data, "../data/treated.csv", row.names=FALSE)
+
 # Plots to analyze the integer features after the treatments
 save.boxplot(
     data[, features.integer],
@@ -123,6 +125,8 @@ data.normalized = cbind(
     scale(data[, features.integer])
 )
 
+write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
+
 # --------------------
 # Correlation analysis
 # --------------------
@@ -130,6 +134,8 @@ data.normalized = cbind(
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
 correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
+
+write.csv(correlations$estimates, "../data/correlations.csv")
 
 # Boxplot to analyze the correlation matrix. The absolute values are used,
 # because the correlation direction does not matter in this case.
@@ -263,8 +269,14 @@ fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 for (component in names(fit))
     write.csv(fit[[component]], strf('../output/fit/%s.csv', component))
 
+write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
+
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
+write.csv(labeled, "../data/labeled.csv", row.names=FALSE)
+
+# treated_with_labels = cbind(data[, features.info], label=fit$cluster)
+# write.csv(treated_with_labels, "treated_with_labels.csv", row.names=FALSE)
 
 # Spliting labeled data between winners and losers
 winners = labeled[labeled$winner == 1,]
