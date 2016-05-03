@@ -49,3 +49,10 @@ PARTICIPANT_STATS = [
 
 # First match to dump
 STARTING_MATCH_ID = FIRST_MATCH_ID['SEASON2015']
+
+# Mongodb settings
+DATABASE = {
+    'host': 'localhost',
+    'port': 27017,
+    'name': 'lol'
+}
