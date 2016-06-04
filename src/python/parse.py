@@ -25,16 +25,6 @@ def parse(value):
     return parse(int(value)) if isinstance(value, bool) else str(value)
 
 
-def satisfied(match, filter):
-    '''
-    Verify if a match is satisfied by the match filter.
-    '''
-    for key, value in filter.items():
-        if match[key] != value:
-            return False
-    return True
-
-
 def write(values, f):
     '''
     Convert a list of values into a comma separated values string and write it
@@ -43,32 +33,54 @@ def write(values, f):
     f.write(','.join(map(parse, values)) + '\n')
 
 
+def milisecondsToDatetime(ms):
+    return datetime.fromtimestamp(ms / 1e3)
+
+
+def find(filter):
+    for matchname in os.listdir(DUMP_DIR):
+        if '.json' not in matchname:
+            continue
+
+        match = load(DUMP_DIR + matchname)
+
+        if not all([match[key] == value for key, value in filter.items()]):
+            continue
+
+        yield match
+
+
 # Creating CSV file in DATA_DIR
 filename = DATA_DIR + 'data' + datetime.now().strftime('%Y%m%d%H%M%S') + '.csv'
 file_ = open(filename, 'w+')
 print('CSV file:', file_.name)
 
 # Writing CSV headers
-headers = ['matchId', 'matchCreation', 'summonerId', 'championId']  # info
+headers = [
+    'matchId', 'matchMode', 'queueType', 'season', 'matchCreation',
+    'matchCreationYear', 'matchCreationMonth', 'matchCreationDay',
+    'matchCreationHour', 'summonerId', 'championId'
+    ]  # info
 headers += PARTICIPANT_STATS  # statistical
 write(headers, file_)
 
 # Match loop
-for matchname in os.listdir(DUMP_DIR):
-    if '.json' not in matchname:
-        continue
-
-    match = load(DUMP_DIR + matchname)
-
-    if not satisfied(match, MATCH_FILTER):
-        continue
+for match in find(MATCH_FILTER):
+    match_creation = milisecondsToDatetime(match['matchCreation'])
 
     # looking up match by participants
     for i, participant in enumerate(match['participants']):
         # selecting general info values of current participant
         values = [
             match['matchId'],
+            match['matchMode'],
+            match['queueType'],
+            match['season'],
             match['matchCreation'],
+            match_creation.year,
+            match_creation.month,
+            match_creation.day,
+            match_creation.hour,
             match['participantIdentities'][i]['player']['summonerId'],
             participant['championId']
         ]
