@@ -55,13 +55,19 @@ filename = DATA_DIR + 'data' + datetime.now().strftime('%Y%m%d%H%M%S') + '.csv'
 file_ = open(filename, 'w+')
 print('CSV file:', file_.name)
 
-# Writing CSV headers
-headers = [
-    'matchId', 'matchMode', 'queueType', 'season', 'matchCreation',
-    'matchCreationYear', 'matchCreationMonth', 'matchCreationDay',
-    'matchCreationHour', 'summonerId', 'championId'
-    ]  # info
-headers += PARTICIPANT_STATS  # statistical
+# CSV headers
+headers = [  # general headers
+    'matchId', 'matchDuration', 'matchMode', 'queueType', 'season',
+    'championId', 'summonerId'
+]
+
+headers += [  # match creation headers
+    'matchCreation', 'matchCreationYear', 'matchCreationMonth',
+    'matchCreationDay', 'matchCreationHour'
+]
+
+headers += PARTICIPANT_STATS  # participant statistics headers
+
 write(headers, file_)
 
 # Match loop
@@ -70,22 +76,25 @@ for match in find(MATCH_FILTER):
 
     # looking up match by participants
     for i, participant in enumerate(match['participants']):
-        # selecting general info values of current participant
-        values = [
+        values = [  # general info values of current participant
             match['matchId'],
+            match['matchDuration'] / 60,  # seconds to minutes
             match['matchMode'],
             match['queueType'],
             match['season'],
+            participant['championId'],
+            match['participantIdentities'][i]['player']['summonerId']
+        ]
+
+        values += [  # match creation values of current participant
             match['matchCreation'],
             match_creation.year,
             match_creation.month,
             match_creation.day,
-            match_creation.hour,
-            match['participantIdentities'][i]['player']['summonerId'],
-            participant['championId']
+            match_creation.hour
         ]
 
-        # selecting statistical values of current participant
+        # statistical values of current participant
         values += [participant['stats'][stat] for stat in PARTICIPANT_STATS]
 
         # writing participant values in the csv file

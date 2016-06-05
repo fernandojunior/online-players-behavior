@@ -20,31 +20,26 @@ MATCH_FILTER = {
     'queueType': 'RANKED_SOLO_5x5',
 }
 
-# Statistics of participants to parse
-# More in https://developer.riotgames.com/api/methods#!/1064
+# 58 Statistics of participants to parse
+# More information: https://developer.riotgames.com/api/methods#!/1064
 PARTICIPANT_STATS = [
-    'winner',
-    'firstBloodKill',
-    'firstTowerKill',
-    'firstTowerAssist',
-    'kills',
-    'assists',
-    'deaths',
-    'goldEarned',
-    'totalDamageDealt',
-    'magicDamageDealt',
-    'physicalDamageDealt',
-    'totalDamageDealtToChampions',
-    'totalDamageTaken',
-    'minionsKilled',
-    'neutralMinionsKilled',
-    'totalTimeCrowdControlDealt',
-    'wardsPlaced',
-    'towerKills',
-    'largestMultiKill',
-    'largestKillingSpree',
-    'largestCriticalStrike',
-    'totalHeal'
+    'assists', 'champLevel', 'combatPlayerScore', 'deaths', 'doubleKills',
+    'firstBloodAssist', 'firstBloodKill', 'firstInhibitorAssist',
+    'firstInhibitorKill', 'firstTowerAssist', 'firstTowerKill', 'goldEarned',
+    'goldSpent', 'inhibitorKills', 'item0', 'item1', 'item2', 'item3', 'item4',
+    'item5', 'item6', 'killingSprees', 'kills', 'largestCriticalStrike',
+    'largestKillingSpree', 'largestMultiKill', 'magicDamageDealt',
+    'magicDamageDealtToChampions', 'magicDamageTaken', 'minionsKilled',
+    'neutralMinionsKilled', 'neutralMinionsKilledEnemyJungle',
+    'neutralMinionsKilledTeamJungle', 'objectivePlayerScore', 'pentaKills',
+    'physicalDamageDealt', 'physicalDamageDealtToChampions',
+    'physicalDamageTaken', 'quadraKills', 'sightWardsBoughtInGame',
+    'totalDamageDealt', 'totalDamageDealtToChampions', 'totalDamageTaken',
+    'totalHeal', 'totalPlayerScore', 'totalScoreRank',
+    'totalTimeCrowdControlDealt', 'totalUnitsHealed', 'towerKills',
+    'tripleKills', 'trueDamageDealt', 'trueDamageDealtToChampions',
+    'trueDamageTaken', 'unrealKills', 'visionWardsBoughtInGame',
+    'wardsKilled', 'wardsPlaced', 'winner'
 ]
 
 # First match to dump
