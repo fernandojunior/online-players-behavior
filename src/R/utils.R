@@ -83,6 +83,18 @@ breaks = function (x, method=nclass.Sturges) {
     return(pretty(x.min + range(0, bins) * (x.max - x.min)/bins, n=bins))
 }
 
+discretize = function (x) {
+    "Group a numeric vector x into a smaller number of bins.
+
+    It can be used to transform a numeric vector into a categorical one.
+
+    Reference:
+    https://en.wikipedia.org/wiki/Data_binning
+    http://www.mathworks.com/help/matlab/ref/discretize.html?requestedDomain=www.mathworks.com
+    "
+    return(cut(x, breaks=breaks(x)))
+}
+
 # string functions
 
 strf = function (...) {
