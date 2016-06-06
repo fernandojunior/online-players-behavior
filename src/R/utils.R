@@ -66,7 +66,7 @@ values = function (x) {
     return(unname(x))
 }
 
-breaks = function (x, method=nclass.Sturges) {
+generate_breaks = function (x, method=nclass.Sturges) {
     "Compute a vector of breakpoints automatically, ie the cutoff points to bin
     a dataset x.
 
@@ -83,7 +83,7 @@ breaks = function (x, method=nclass.Sturges) {
     return(pretty(x.min + range(0, bins) * (x.max - x.min)/bins, n=bins))
 }
 
-discretize = function (x) {
+discretize = function (x, breaks=NULL) {
     "Group a numeric vector x into a smaller number of bins.
 
     It can be used to transform a numeric vector into a categorical one.
@@ -92,7 +92,8 @@ discretize = function (x) {
     https://en.wikipedia.org/wiki/Data_binning
     http://www.mathworks.com/help/matlab/ref/discretize.html?requestedDomain=www.mathworks.com
     "
-    return(cut(x, breaks=breaks(x)))
+    breaks = if (is.null(breaks)) generate_breaks(x) else breaks
+    return(cut(x, breaks=breaks))
 }
 
 # string functions
