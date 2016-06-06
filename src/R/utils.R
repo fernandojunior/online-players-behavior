@@ -66,6 +66,23 @@ values = function (x) {
     return(unname(x))
 }
 
+breaks = function (x, method=nclass.Sturges) {
+    "Compute a vector of breakpoints automatically, ie the cutoff points to bin
+    a dataset x.
+
+    The default number of bins is based on Sturges formula.
+
+    References:
+    https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
+    http://www.r-bloggers.com/basics-of-histograms/
+    https://stat.ethz.ch/pipermail/r-help/2014-March/372559.html
+    "
+    x.min = min(x)
+    x.max = max(x)
+    bins = method(x)
+    return(pretty(x.min + range(0, bins) * (x.max - x.min)/bins, n=bins))
+}
+
 # string functions
 
 strf = function (...) {
