@@ -268,7 +268,7 @@ cor.plot = function (x, ...) {
 
 }
 
-# functions to save plots
+# plots
 
 save.png = function (f, ...) {
     "Save the output of a plot function f to a png file.
@@ -315,6 +315,32 @@ save.scatterplot3d = function (...) {
     if (!require('scatterplot3d'))
         library('scatterplot3d')
     save.png(scatterplot3d, ...)
+}
+
+chist = function (x, y, palette=rainbow) {
+    "Discriminate a dataset x by y to draw cobinated histograms plots.
+
+    References:
+    http://stackoverflow.com/questions/3541713/how-to-plot-two-histograms-together-in-r
+    "
+    breaks = generate_breaks(x)
+    xlim = c(min(breaks), max(breaks))
+    y.domain = unique(y)
+    y.counts = table(discretize(x, breaks))
+    ylim = c(min(y.counts), max(y.counts))
+    colors = adjustcolor(palette(length(y.domain)), alpha.f = 0.3)
+
+    for (i in range(length(y.domain))) {
+        value = y.domain[i]
+        subset = x[y == value]
+        col = colors[i]
+        if (i == length(y.domain))
+            hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, xlab='x', add=T)
+        else
+            hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, xlab='x', main='')
+    }
+    legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
+
 }
 
 # k-means functions
