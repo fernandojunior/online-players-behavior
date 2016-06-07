@@ -343,6 +343,28 @@ chist = function (x, y, palette=rainbow) {
 
 }
 
+mhist = function (x, y, palette=rainbow) {
+    "Discriminate a dataset x by y to draw multiple histogram plots.
+    "
+    breaks = generate_breaks(x)
+    xlim = c(min(breaks), max(breaks))
+    y.domain = unique(y)
+    y.counts = table(discretize(x, breaks))
+    ylim = c(min(y.counts), max(y.counts))
+    colors = adjustcolor(palette(length(y.domain)), alpha.f = 0.3)
+
+    par(mfrow=c(1, length(y.domain) + 1))
+    hist(x, xlim=xlim, ylim=ylim, breaks=breaks, main='')
+    for (i in range(length(y.domain))) {
+        value = y.domain[i]
+        subset = x[y == value]
+        col = colors[i]
+        xlab = strf('x[y == %s]', value)
+        hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, main='', xlab=xlab)
+    }
+    legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
+}
+
 # k-means functions
 
 betweenss.rate = function (fit) {
