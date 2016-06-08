@@ -96,6 +96,23 @@ discretize = function (x, breaks=NULL) {
     return(cut(x, breaks=breaks))
 }
 
+mcounter = function (x, y) {
+    "Discriminate a dataset x by y to count its subsets.
+    "
+    x.domain = unique(x)
+    y.domain = unique(y)
+    z = matrix(0, nrow=length(y.domain), ncol=length(x.domain))
+    colnames(z) = x.domain
+    rownames(z) = y.domain
+    for (i in range(length(y.domain))) {
+        counts = table(x[y == y.domain[i]])
+        for (j in names(counts)) {
+            z[i, j] = counts[j]
+        }
+    }
+    return(z)
+}
+
 # string functions
 
 strf = function (...) {
