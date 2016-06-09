@@ -9,7 +9,7 @@ options(scipen=999)
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('../data/data20160605004129.csv')
+data = read.csv('../data/data20160609012259.csv')
 # > nrow(data)
 # [1] 85470
 
@@ -37,8 +37,9 @@ for (feature in features) {
     xlab = 'Y = winner; domain(Y) = {false, true}'
     ylab = 'C = counts(distinct:X, by:Y)'
     ylim = c(0, sum(counts[1, ]))
+    print(ylim)
     colors = adjustcolor(palette(length(colnames(counts))), alpha.f = 0.3)
     plt = barplot(t(counts), col=colors, main=main, beside=TRUE, ylim=ylim, ylab=ylab, xlab=xlab)
-    text(plt, t(counts) + 40, labels=t(counts), col="black", srt=90, cex=0.8)
+    text(plt, t(counts) + 300, labels=t(counts), col="black", srt=60, cex=0.5)
     legend("topright", legend=legends, col=colors, lwd = 5, title='domain(X); abs(rate(C))', cex=0.5)
 }
