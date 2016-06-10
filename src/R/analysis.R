@@ -9,27 +9,27 @@ options(scipen=999)
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('../data/data.csv')
+data = read.csv('../data/data20160609012259.csv')
 # > nrow(data)
 # [1] 85470
 
 # Data features
 features = names(data)
-features.info = features[1:5]
-# [1] "matchId"       "matchCreation" "summonerId"    "championId"
-# [5] "winner"
-features.boolean = features[6:8]
-# [1] "firstBloodKill"   "firstTowerKill"   "firstTowerAssist"
-features.integer = features[9:26]
-# [1] "kills"                       "assists"
-# [3] "deaths"                      "goldEarned"
-# [5] "totalDamageDealt"            "magicDamageDealt"
-# [7] "physicalDamageDealt"         "totalDamageDealtToChampions"
-# [9] "totalDamageTaken"            "minionsKilled"
-# [11] "neutralMinionsKilled"        "totalTimeCrowdControlDealt"
-# [13] "wardsPlaced"                 "towerKills"
-# [15] "largestMultiKill"            "largestKillingSpree"
-# [17] "largestCriticalStrike"       "totalHeal"
+
+features.info = c(
+    'matchId', 'matchCreation', 'summonerId', 'championId', 'winner'
+)
+
+features.boolean = c('firstBloodKill', 'firstTowerKill', 'firstTowerAssist')
+
+features.integer = c(
+    'kills', 'assists', 'deaths', 'goldEarned','totalDamageDealt',
+    'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions',
+    'totalDamageTaken', 'minionsKilled', 'neutralMinionsKilled',
+    'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
+    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike',
+    'totalHeal'
+)
 
 # ---------------------
 # Treatment of outliers
@@ -77,7 +77,7 @@ thresholds = outlier_thresholds(data[, features.integer], factor=3)
 # Boolean vector to indicate which data point p is an extreme outlier or not.
 outliers = rowmap(
     function(p) is.outlier(p, thresholds['lower',], thresholds['upper',]),
-    data
+    data[, features.integer]
 )
 
 # Filtering entire data to remove extreme outliers
