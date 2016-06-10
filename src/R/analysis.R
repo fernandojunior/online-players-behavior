@@ -9,101 +9,27 @@ options(scipen=999)
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('../data/data20160605004129.csv')
+data = read.csv('../data/data.csv')
 # > nrow(data)
 # [1] 85470
 
-# features
+# Data features
 features = names(data)
-
-features.info = c(
-    'championId', 'matchCreation', 'matchCreationDay', 'matchCreationHour',
-    'matchCreationMonth', 'matchCreationYear', 'matchId', 'matchMode',
-    'queueType', 'season', 'summonerId'
-)
-
-features.boolean = c(
-    'firstBloodAssist', 'firstBloodKill', 'firstInhibitorAssist',
-    'firstInhibitorKill', 'firstTowerAssist', 'firstTowerKill', 'winner'
-)
-
-features.integer = c(
-    'matchDuration',
-    'matchCreationDay', 'matchCreationHour', 'matchCreationMonth',
-    'matchCreationYear',
-    'assists', 'champLevel', 'deaths', 'doubleKills',
-    'firstBloodAssist', 'firstBloodKill', 'firstInhibitorAssist',
-    'firstInhibitorKill', 'firstTowerAssist', 'firstTowerKill', 'goldEarned',
-    'goldSpent', 'inhibitorKills', 'killingSprees', 'kills', 'largestCriticalStrike',
-    'largestKillingSpree', 'largestMultiKill', 'magicDamageDealt',
-    'magicDamageDealtToChampions', 'magicDamageTaken', 'minionsKilled',
-    'neutralMinionsKilled', 'neutralMinionsKilledEnemyJungle',
-    'neutralMinionsKilledTeamJungle', 'objectivePlayerScore', 'pentaKills',
-    'physicalDamageDealt', 'physicalDamageDealtToChampions',
-    'physicalDamageTaken', 'quadraKills', 'sightWardsBoughtInGame',
-    'totalDamageDealt', 'totalDamageDealtToChampions', 'totalDamageTaken',
-    'totalHeal', 'totalPlayerScore', 'totalScoreRank',
-    'totalTimeCrowdControlDealt', 'totalUnitsHealed', 'towerKills',
-    'tripleKills', 'trueDamageDealt', 'trueDamageDealtToChampions',
-    'trueDamageTaken', 'unrealKills', 'visionWardsBoughtInGame',
-    'wardsKilled', 'wardsPlaced'
-)
-
-firsts = c('firstBloodKill',
-'firstInhibitorKill', 'firstTowerKill', 'firstInhibitorAssist', 'firstTowerAssist')
-
-#
-print(nrow(data))
-
-z = aggregate(. ~ matchId + winner, data[, c('matchId', 'winner', firsts)], sum)
-data = z
-
-dcounter = function (x, y) {
-    x.domain = unique(x)
-    y.domain = unique(y)
-    z = matrix(0, nrow=length(y.domain), ncol=length(x.domain))
-    colnames(z) = x.domain
-    rownames(z) = y.domain
-    for (i in range(length(y.domain))) {
-        counts = table(x[y == y.domain[i]])
-        for (j in names(counts)) {
-            z[i, j] = counts[j]
-        }
-    }
-    return(z)
-}
-
-# print(table(data[, 'firstTowerAssist'])['0'])
-
-par(mfrow=c(2, 3))
-for (first in firsts) {
-    palette = rainbow
-    counts = dcounter(data[, first], data[, 'winner'])
-    rownames(counts) = c('l', 'w')
-    colors = adjustcolor(palette(length(colnames(counts))), alpha.f = 0.3)
-    plt = barplot(t(counts), col=colors, main=first, beside=TRUE, ylim=c(0, 1000))
-    print(t(counts))
-    # text(x=counts, y=NULL, xpd=TRUE)
-    text(plt, t(counts) + 40, labels=t(counts), col="black", srt=90, cex=0.8)
-    # text(plt, counts + 10, labels=counts)
-    legend("topright", legend=colnames(counts), col=colors, lwd = 5)
-    # print(paste(first, ":", sep=""))
-    test = chisq.test(counts)
-    rate = (counts['w', ] - counts['l', ]) / (counts['w', ] + counts['l', ])
-    # print("(w-l)/(w+l):")
-    # print(rate)
-    # if (test$p.value < 0.05)
-    #     print(paste('Chi-squared ', 'p-value < 0.05'))
-    # else
-    #     print(paste('Chi-squared ', 'p-value > 0.05'))
-}
-
-quit(save='no')
-
-# http://yatani.jp/teaching/doku.php?id=hcistats:chisquare
-
-> (winners - losers) / total
-[1] 0.206
+features.info = features[1:5]
+# [1] "matchId"       "matchCreation" "summonerId"    "championId"
+# [5] "winner"
+features.boolean = features[6:8]
+# [1] "firstBloodKill"   "firstTowerKill"   "firstTowerAssist"
+features.integer = features[9:26]
+# [1] "kills"                       "assists"
+# [3] "deaths"                      "goldEarned"
+# [5] "totalDamageDealt"            "magicDamageDealt"
+# [7] "physicalDamageDealt"         "totalDamageDealtToChampions"
+# [9] "totalDamageTaken"            "minionsKilled"
+# [11] "neutralMinionsKilled"        "totalTimeCrowdControlDealt"
+# [13] "wardsPlaced"                 "towerKills"
+# [15] "largestMultiKill"            "largestKillingSpree"
+# [17] "largestCriticalStrike"       "totalHeal"
 
 # ---------------------
 # Treatment of outliers
