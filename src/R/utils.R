@@ -236,6 +236,37 @@ is.outlier = function (x, lower, upper) {
     return(FALSE)
 }
 
+find_outliers = function (x, factor=3) {
+    "Find outliers on a data matrix x. Default boxplot IQR factor == 3.
+
+    Return a boolean vector to indicate the outliers and the min and max
+    thresholds for each feature used to find the outliers.
+    "
+    features = colnames(x)
+    thresholds = outlier_thresholds(data[, features], factor=factor)
+
+    # select only features where the max and min thresholds are different in
+    # order to mantain the variability
+    thresholds.isdiff = diff(thresholds) != 0  # lower != upper
+    thresholds.features = names(thresholds.isdiff[, thresholds.isdiff == TRUE])
+    thresholds = thresholds[, thresholds.features]
+    features = thresholds.features
+
+    # boolean vector to indicate which data point p is an outlier or not
+    outliers = rowmap(
+        function(p) is.outlier(p, thresholds['lower',], thresholds['upper',]),
+        data[, features]
+    )
+
+    print('t(thresholds):')
+    print(t(thresholds))
+
+    result = list()
+    result$thresholds = thresholds
+    result$outliers = outliers
+    return(result)
+}
+
 # correlation functions
 
 cor.counter = function (x) {
