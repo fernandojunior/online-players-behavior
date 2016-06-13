@@ -114,6 +114,40 @@ counter_by = function (x, y) {
     return(z)
 }
 
+cluster_analysis = function (x, n=20, main='Error curve') {
+    "Perform a cluster analysis on a data matrix x for each k = {1, ..., n}
+    number of clusters.
+
+    The analysis is based on k-means. K-means clustering model aims to
+    partition the data into k clusters, so as to minimize the sum of squared
+    error (SSE or SS). To find the optimal k we can use the the knee of the
+    error curve method, which tries to find an appropriate number of clusters
+    analyzing the curve of a generated graph from a clustering conducted for
+    each possible.
+    "
+
+    features = colnames(x)
+
+    print(features)
+
+    # K-means clustering model/fit for each k = {1, ..., nk} number of clusters
+    fits = t(map(
+        function(k) kmeans(x[, features], k, algorithm='Lloyd', iter.max=200),
+        range(n)
+    ))
+
+    # Total within-cluster SSE for each k-means clustering
+    twss = rowmap(function(fit) fit$tot.withinss, fits)
+
+    ylab = 'tot.withinss(k)/tot.withinss(k=1)'
+
+    # Plot to analyze the knee of error curve resultant of k-means clustering
+    plot(twss/twss[1], main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
+    legend('topright', legend=paste(features, collapse='\n'), bty="n", cex=0.7)
+
+    return(fits)
+}
+
 # string functions
 
 strf = function (...) {
