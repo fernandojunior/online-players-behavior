@@ -236,8 +236,8 @@ is.outlier = function (x, lower, upper) {
     return(FALSE)
 }
 
-find_outliers = function (x, factor=3) {
-    "Find outliers on a data matrix x. Default boxplot IQR factor == 3.
+find_outliers = function (x, factor=1.5) {
+    "Find outliers on a data matrix x. Default boxplot IQR factor == 1.5.
 
     Return a boolean vector to indicate the outliers and the min and max
     thresholds for each feature used to find the outliers.
@@ -258,13 +258,35 @@ find_outliers = function (x, factor=3) {
         data[, features]
     )
 
+    total = sum(outliers)
+
     print('t(thresholds):')
     print(t(thresholds))
+
+    print(strf('total outliers: %s', total))
 
     result = list()
     result$thresholds = thresholds
     result$outliers = outliers
+    result$total = total
     return(result)
+}
+
+select_features = function (x, f, min=NULL, max=NULL) {
+    "Select the features of an data matrix x based on min > f(x) < max
+    "
+    y = apply(x, 2, f)
+
+    features = colnames(x)
+    if (is.null(min) && !is.null(max))
+        features = y < max
+    else if (!is.null(min) && is.null(max))
+        features = y > min
+    else
+        features = y > min & y < max
+
+    features = names(features[features == TRUE])
+    return(features)
 }
 
 # correlation functions
