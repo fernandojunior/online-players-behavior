@@ -114,8 +114,8 @@ counter_by = function (x, y) {
     return(z)
 }
 
-cluster_analysis = function (x, n=20, main='Error curve') {
-    "Perform a cluster analysis on a data matrix x for each k = {1, ..., n}
+cluster_analysis = function (data, kmax=20, main='Error curve') {
+    "Perform a cluster analysis on a data matrix x for each k = {1, ..., kmax}
     number of clusters.
 
     The analysis is based on k-means. K-means clustering model aims to
@@ -126,26 +126,51 @@ cluster_analysis = function (x, n=20, main='Error curve') {
     each possible.
     "
 
-    features = colnames(x)
-
-    print(features)
-
     # K-means clustering model/fit for each k = {1, ..., nk} number of clusters
     fits = t(map(
-        function(k) kmeans(x[, features], k, algorithm='Lloyd', iter.max=200),
-        range(n)
+        function(k) kmeans(data, k, algorithm='Lloyd', iter.max=200),
+        range(kmax)
     ))
 
     # Total within-cluster SSE for each k-means clustering
     twss = rowmap(function(fit) fit$tot.withinss, fits)
+    twss.prop = twss/twss[1]
 
-    ylab = 'tot.withinss(k)/tot.withinss(k=1)'
 
     # Plot to analyze the knee of error curve resultant of k-means clustering
-    plot(twss/twss[1], main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
-    legend('topright', legend=paste(features, collapse='\n'), bty="n", cex=0.7)
+    ylab = 'tot.withinss(k)/tot.withinss(k=1)'
+    plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
 
-    return(fits)
+    features = colnames(data)
+    legend_ = paste(features, collapse='\n')
+    legend('topright', legend=legend_, bty="n", cex=0.7)
+
+    result = list()
+    result$fits = fits
+    result$twss = twss
+    result$twss.prop = twss.prop
+    return(result)
+}
+
+cross_cluster_analysis = function (x, ncol, kmax=10, ntests=20) {
+    "Perform ntests cluster analysis on a matrix x for each k = {1, ..., kmax}.
+    ncol columns of x are chosen randomly. In the end, the tests are crossed,
+    i.e. summarized by mean.
+    "
+    tests = matrix(0, nrow=ntests, ncol=kmax)
+    for (i in range(ntests)) {
+        features = sample(colnames(x), ncol)
+        tests[i, ] = cluster_analysis(x[, features], kmax=kmax)$twss.prop
+    }
+
+    tests.summary = apply(tests, 2, mean)
+
+    ylab = 'mean(tot.withinss(k)/tot.withinss(k=1))'
+    legend_ = strf('random features: %s, tests: %s', ncol, ntests)
+    plot(tests.summary, ylim=c(0, 1), ylab=ylab, xlab='k')
+    legend('topright', legend=legend_, bty="n", cex=0.7)
+
+    return(apply(tests, 2, mean))  # summary
 }
 
 # string functions
