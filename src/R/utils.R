@@ -152,17 +152,16 @@ cluster_analysis = function (data, kmax=20, main='Error curve') {
     return(result)
 }
 
-cross_cluster_analysis = function (x, ncol, kmax=10, ntests=20) {
+many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     "Perform ntests cluster analysis on a matrix x for each k = {1, ..., kmax}.
-    ncol columns of x are chosen randomly. In the end, the tests are crossed,
-    i.e. summarized by mean.
+    if ncol != null, ncol columns of x are chosen randomly. In the end, the
+    tests are summarized by mean.
     "
     tests = matrix(0, nrow=ntests, ncol=kmax)
     for (i in range(ntests)) {
-        features = sample(colnames(x), ncol)
-        tests[i, ] = cluster_analysis(x[, features], kmax=kmax)$twss.prop
+        cols = if (is.null(ncol)) colnames(x) else sample(colnames(x), ncol)
+        tests[i, ] = cluster_analysis(x[, cols], kmax=kmax)$twss.prop
     }
-
     tests.summary = apply(tests, 2, mean)
 
     ylab = 'mean(tot.withinss(k)/tot.withinss(k=1))'
@@ -171,6 +170,47 @@ cross_cluster_analysis = function (x, ncol, kmax=10, ntests=20) {
     legend('topright', legend=legend_, bty="n", cex=0.7)
 
     return(apply(tests, 2, mean))  # summary
+}
+
+correlation_analysis = function (x) {
+    "Perform a correlation analysis in a data matrix x.
+    "
+
+    # Correlation matrix of normalized data using Spearman method, which does not
+    # require the features follow a normal distribuition or linear correlation.
+    correlations = cor.mtest(x, method='spearman', exact=FALSE)
+
+    par(mfrow=c(1, 2))
+
+    # Boxplot to analyze the correlation matrix. The absolute values are used,
+    # because the correlation direction does not matter in this case.
+    # boxplot(
+    #     abs(correlations$estimates),
+    #     main='[Correlation] Features boxplot',
+    #     names=range(ncol(correlations$estimates))
+    # )
+
+    # Cluster dendrogram plot to analyze the affinity of each attribute based on
+    # the correlation matrix.
+    # https://rpubs.com/gaston/dendrograms
+    plot(
+        hclust(dist(correlations$estimates)),
+        main='[Correlation] Features Dendrogram'
+    )
+
+    # Heatmap plot of the correlation matrix. p.values greater than significance
+    # level at 0.05 are indicated.
+    # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+    cor.plot(
+        correlations$estimates,
+        main='[Correlation] Features heatmap',
+        p.mat=correlations$p.values,
+        sig.level=0.05,
+        method='number',
+        order='alphabet'
+    )
+
+    return(correlations)
 }
 
 # string functions
