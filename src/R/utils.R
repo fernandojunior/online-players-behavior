@@ -45,10 +45,10 @@ Col = function (f, x) {
     return(apply(x, 2, f))
 }
 
-Row = function (f, data) {
-    "Apply a function f in each row3 of a data matrix x
+Row = function (f, x) {
+    "Apply a function f in each row of a data matrix x
     "
-    return(apply(data, 1, f))
+    return(apply(x, 1, f))
 }
 
 rowmap = function (f, x) {
