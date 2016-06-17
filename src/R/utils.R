@@ -39,12 +39,24 @@ map = function (f, x) {
         apply(x, 2, function (y) map(f, y))
 }
 
+Col = function (f, x) {
+    "Apply a function f in each column of a data matrix x
+    "
+    return(apply(x, 2, f))
+}
+
+Row = function (f, data) {
+    "Apply a function f in each row3 of a data matrix x
+    "
+    return(apply(data, 1, f))
+}
+
 rowmap = function (f, x) {
     "Apply a function f for each row in a matrix or data frame x."
     return(apply(x, 1, f))
 }
 
-colmap = function (f, x) {
+map_columns = function (x, f) {
     "Apply a function f for each column in a matrix or data frame x."
     return(apply(x, 2, f))
 }
@@ -114,7 +126,7 @@ counter_by = function (x, y) {
     return(z)
 }
 
-cluster_analysis = function (data, kmax=20, main='Error curve') {
+cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
     "Perform a cluster analysis on a data matrix x for each k = {1, ..., kmax}
     number of clusters.
 
@@ -136,14 +148,16 @@ cluster_analysis = function (data, kmax=20, main='Error curve') {
     twss = rowmap(function(fit) fit$tot.withinss, fits)
     twss.prop = twss/twss[1]
 
+    if (show == TRUE) {
+        # Plot to analyze the knee of error curve resultant of k-means
+        # clustering
+        ylab = 'tot.withinss(k)/tot.withinss(k=1)'
+        plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
 
-    # Plot to analyze the knee of error curve resultant of k-means clustering
-    ylab = 'tot.withinss(k)/tot.withinss(k=1)'
-    plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
-
-    features = colnames(data)
-    legend_ = paste(features, collapse='\n')
-    legend('topright', legend=legend_, bty="n", cex=0.7)
+        features = colnames(data)
+        legend_ = paste(features, collapse='\n')
+        legend('topright', legend=legend_, bty="n", cex=0.7)
+    }
 
     result = list()
     result$fits = fits
@@ -160,7 +174,7 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     tests = matrix(0, nrow=ntests, ncol=kmax)
     for (i in range(ntests)) {
         cols = if (is.null(ncol)) colnames(x) else sample(colnames(x), ncol)
-        tests[i, ] = cluster_analysis(x[, cols], kmax=kmax)$twss.prop
+        tests[i, ] = cluster_analysis(x[, cols], kmax=kmax, show=FALSE)$twss.prop
     }
     tests.summary = apply(tests, 2, mean)
 
@@ -337,7 +351,7 @@ find_outliers = function (x, factor=1.5) {
     return(result)
 }
 
-select_features = function (x, f, min=NULL, max=NULL) {
+filter_features = function (x, f, min=NULL, max=NULL) {
     "Select the features of an data matrix x based on min > f(x) < max
     "
     y = apply(x, 2, f)
