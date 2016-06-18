@@ -2,41 +2,46 @@
 
 Table of contents
 
-  1. [Correlation analysis](#correlation-analysis)
-  2. [Clustering analysis](#clustering-analysis)
-  3. [Hypothesis testing](#hypothesis-testing)
-  4. [Exploring labeled data](#exploring-labeled-data)
+  1. [Outliers analysis](#outliers-analysis)
+  2. [Correlation analysis](#correlation-analysis)
+  3. [Clustering analysis](#clustering-analysis)
+  4. [Hypothesis testing](#hypothesis-testing)
+  5. [Exploring labeled data](#exploring-labeled-data)
+
+## Outliers analysis
+
+![](Outliers - All numeric features 1.png) [⬆](data-visualization)
+![](Outliers - All numeric features 2.png)
+
+[⬆ back to top](data-visualization)
 
 ## Correlation analysis
 
-![]([Correlation] Features Dendrogram.plot.png) [⬆](data-visualization)
-![]([Correlation] Features boxplot.boxplot.png) [⬆](data-visualization)
-![]([Correlation] Features heatmap.cor.plot.png)
+![](Correlation - Dendrogram and heatmap.png)
 
 [⬆ back to top](data-visualization)
 
 ## Clustering analysis
 
-![]([K-means] Error curve.plot.png) [⬆](data-visualization)
-![]([K-means] Between-cluster SSE rate differences.plot.png)
+![](K-means - Error curve.png) [⬆](data-visualization)
+![](K-means - Between-cluster SSE rate differences.png)
 
 [⬆ back to top](data-visualization)
 
 ## Hypothesis testing
 
-![]([Hypothesis] H1.plot.png) [⬆](data-visualization)
-![]([Hypothesis] H2.plot.png)
+![](Hypothesis - H1.png) [⬆](data-visualization)
+![](Hypothesis - H1.png)
 
 [⬆ back to top](data-visualization)
 
 ## Exploring labeled data
-![]([Exploring] Cluster plot of the labeled data (n=80).clusplot.png) [⬆](data-visualization)
-![]([Exploring] Scatter plot.plot.png) [⬆](data-visualization)
-![]([Exploring] Scatter plot - winners.plot.png) [⬆](data-visualization)
-![]([Exploring] Scatter plot - losers.plot.png) [⬆](data-visualization)
-![]([Exploring] PCA.scatterplot3d.png) [⬆](data-visualization)
-![]([Exploring] PCA - winners.scatterplot3d.png) [⬆](data-visualization)
-![]([Exploring] PCA - losers.scatterplot3d.png)
+![](Exploring - Cluster plot of the labeled data n=80.png) [⬆](data-visualization)
+![](Exploring - Scatter plot.png) [⬆](data-visualization)
+![](Exploring - Scatter plot winners.png) [⬆](data-visualization)
+![](Exploring - Scatter plot losers.png) [⬆](data-visualization)
+![](Exploring - PCA.png) [⬆](data-visualization)
+![](Exploring - Centers.png)
 
 [⬆ back to top](data-visualization)
 

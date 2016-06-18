@@ -51,16 +51,6 @@ Row = function (f, x) {
     return(apply(x, 1, f))
 }
 
-rowmap = function (f, x) {
-    "Apply a function f for each row in a matrix or data frame x."
-    return(apply(x, 1, f))
-}
-
-map_columns = function (x, f) {
-    "Apply a function f for each column in a matrix or data frame x."
-    return(apply(x, 2, f))
-}
-
 range = function (...) {
     "Alias for seq.int. Override the built-in funtion."
     return(seq.int(...))
@@ -145,7 +135,7 @@ cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
     ))
 
     # Total within-cluster SSE for each k-means clustering
-    twss = rowmap(function(fit) fit$tot.withinss, fits)
+    twss = Row(function(fit) fit$tot.withinss, fits)
     twss.prop = twss/twss[1]
 
     if (show == TRUE) {
@@ -216,7 +206,7 @@ correlation_analysis = function (x) {
     # level at 0.05 are indicated.
     # https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
     cor.plot(
-        correlations$estimates,
+        round(correlations$estimates, 1),
         main='[Correlation] Features heatmap',
         p.mat=correlations$p.values,
         sig.level=0.05,
@@ -310,7 +300,7 @@ is.outlier = function (x, lower, upper) {
     thresholds = rbind(lower, upper)
     if(length(x) > 0 & !is.null(colnames(thresholds)))  # x is multivariate
         x = x[colnames(thresholds)]
-    if (any(x < thresholds['lower',]) | any(x > thresholds['upper',]))
+    if (any(x < thresholds['lower', ]) | any(x > thresholds['upper', ]))
         return(TRUE)
     return(FALSE)
 }
@@ -332,8 +322,8 @@ find_outliers = function (x, factor=1.5) {
     features = thresholds.features
 
     # boolean vector to indicate which data point p is an outlier or not
-    outliers = rowmap(
-        function(p) is.outlier(p, thresholds['lower',], thresholds['upper',]),
+    outliers = Row(
+        function(p) is.outlier(p, thresholds['lower', ], thresholds['upper', ]),
         data[, features]
     )
 
@@ -345,8 +335,8 @@ find_outliers = function (x, factor=1.5) {
     print(strf('total outliers: %s', total))
 
     result = list()
-    result$thresholds = thresholds
     result$outliers = outliers
+    result$thresholds = thresholds
     result$total = total
     return(result)
 }
@@ -454,6 +444,15 @@ cor.plot = function (x, ...) {
 
 # plots
 
+save.plot.png = function (filename, path='.') {
+    "Save the current page of a cairo ‘X11()’ device to a png file.
+    "
+    filename = strf('%s/%s.png', path, filename)
+    savePlot(filename=filename, type='png')
+    print(strf('Saved at %s', filename))
+    dev.off()
+}
+
 save.png = function (f, ...) {
     "Save the output of a plot function f to a png file.
 
@@ -465,11 +464,12 @@ save.png = function (f, ...) {
         if (!is.null(args['main']) & !is.na(args['main']))
             name = args['main']
     fname = as.character(substitute(f))
-    filename = strf('%s%s.%s.png', PLOT_DIR, name, fname)
+    filename = strf('%s%s.png', PLOT_DIR, name)
     png(file=filename, width=960, height=960)
     f(...)
-    dev.off()
     print(strf('Saved at %s', filename))
+    print(strf('Plot type: %s', fname))
+    dev.off()
 }
 
 save.boxplot = function (...) {

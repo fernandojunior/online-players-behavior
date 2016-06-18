@@ -2,59 +2,73 @@ source('utils.R')
 
 options(scipen=999)
 
-# ---------
-# Load data
-# ---------
+# Load data -------------------------------------------------------------------
 
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('../data/data20160609012259.csv')
-# > nrow(data)
+data = read.csv('../data/data.csv')
+# nrow(data)
 # [1] 85470
 
-# Data features
 features = names(data)
 
 features.info = c(
-    'matchId', 'matchCreation', 'summonerId', 'championId', 'winner'
+    'matchId',
+    'matchCreation',
+    'summonerId',
+    'championId',
+    'winner'
 )
 
-features.boolean = c('firstBloodKill', 'firstTowerKill', 'firstTowerAssist')
+features.boolean = c(
+    'firstBloodKill',
+    'firstTowerKill',
+    'firstTowerAssist'
+)
 
-features.integer = c(
-    'kills', 'assists', 'deaths', 'goldEarned','totalDamageDealt',
-    'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions',
-    'totalDamageTaken', 'minionsKilled', 'neutralMinionsKilled',
-    'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
-    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike',
+features.numeric = c(
+    'kills',
+    'assists',
+    'deaths',
+    'goldEarned',
+    'totalDamageDealt',
+    'magicDamageDealt',
+    'physicalDamageDealt',
+    'totalDamageDealtToChampions',
+    'totalDamageTaken',
+    'minionsKilled',
+    'neutralMinionsKilled',
+    'totalTimeCrowdControlDealt',
+    'wardsPlaced',
+    'towerKills',
+    'largestMultiKill',
+    'largestKillingSpree',
+    'largestCriticalStrike',
     'totalHeal'
 )
 
-# ---------------------
-# Treatment of outliers
-# ---------------------
+# Treatment of outliers -------------------------------------------------------
 
-# Boxplot to analyze the outliers of all integer features. Boolean features do
-# not need be analyzed.
+# Boxplot to analyze the outliers of all numeric features.
 save.boxplot(
-    data[, features.integer],
-    main='[Outlier] All integer features boxplot 1',
-    names=range(length(features.integer))
+    data[, features.numeric],
+    main='Outliers - All numeric features 1',
+    names=range(length(features.numeric))
 )
 
 # As we can see from the above plot that some features has outliers in the
 # data. Let's analyze all them individually using boxplot and scatterplot.
-for (feature in features.integer) {
-    save.plot(data[, feature], main=strf('[Outlier] %s plot 1', feature))
-    save.boxplot(data[, feature], main=strf('[Outlier] %s boxplot 1', feature))
-}
+x11(width=16, height=9)
+par(mfrow=c(3, 6))
+for (feature in features.numeric)
+    boxplot(data[, feature], main=strf('Outliers - %s', feature))
+save.plot.png('Outliers - All numeric features 2', path=PLOT_DIR)
 
-# Automatically finding the lower and upper extreme outlier thresholds
-# for each integer feature. IQR factor = 3.
-thresholds = outlier_thresholds(data[, features.integer], factor=3)
-# > t(thresholds)
-# lower    upper
+# auto indentify extreme (IQR factor = 3) outliers.
+outliers = find_outliers(data[, features.numeric], factor=3)
+# t(outliers$total)
+#                                  lower    upper
 # kills                           -19.00     30.0
 # assists                         -19.00     37.0
 # deaths                          -11.00     24.0
@@ -74,15 +88,12 @@ thresholds = outlier_thresholds(data[, features.integer], factor=3)
 # largestCriticalStrike         -1653.00   2204.0
 # totalHeal                     -7896.00  11865.0
 
-# Boolean vector to indicate which data point p is an extreme outlier or not.
-outliers = rowmap(
-    function(p) is.outlier(p, thresholds['lower',], thresholds['upper',]),
-    data[, features.integer]
-)
+# outliers$total
+# [1] 10814
 
 # Filtering entire data to remove extreme outliers
-data = data[!outliers,]
-# > nrow(data)
+data = data[!outliers$outliers, ]
+# nrow(data)
 # [1] 74656
 
 # As data were looked up by participants, some matches were left with less than
@@ -95,75 +106,33 @@ participants_by_match = counter(data$matchId)
 inconsistent_matches = names(participants_by_match[participants_by_match < 10])
 
 # Removing inconsistent matches from data
-data = data[!(data$matchId %in% inconsistent_matches),]
-# > nrow(data)
+data = data[!(data$matchId %in% inconsistent_matches), ]
+# nrow(data)
 # [1] 35140
 
 write.csv(data, "../data/treated.csv", row.names=FALSE)
 
-# Plots to analyze the integer features after the treatments
-save.boxplot(
-    data[, features.integer],
-    main='[Outlier] All integer features boxplot 2',
-    names=range(length(features.integer))
-)
-
-for (feature in features.integer) {
-    save.plot(data[, feature], main=strf('[Outlier] %s plot 2', feature))
-    save.boxplot(data[, feature], main=strf('[Outlier] %s boxplot 2', feature))
-}
-
-# ----------------------------
-# Data normalization (z-score)
-# ----------------------------
+# Data normalization (z-score) ------------------------------------------------
 
 # Since the features are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the
 # integer features using Z-score. Boolean features do not need be normalized.
 data.normalized = cbind(
     data[, features.boolean],
-    scale(data[, features.integer])
+    scale(data[, features.numeric])
 )
 
 write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 
-# --------------------
-# Correlation analysis
-# --------------------
-
+# Correlation analysis --------------------------------------------------------
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
-correlations = cor.mtest(data.normalized, method='spearman', exact=FALSE)
+
+x11(width=16, height=9)
+correlations = correlation_analysis(data.normalized)
+save.plot.png('Correlation - Dendrogram and heatmap', path=PLOT_DIR)
 
 write.csv(correlations$estimates, "../data/correlations.csv")
-
-# Boxplot to analyze the correlation matrix. The absolute values are used,
-# because the correlation direction does not matter in this case.
-save.boxplot(
-    abs(correlations$estimates),
-    main='[Correlation] Features boxplot',
-    names=range(ncol(correlations$estimates))
-)
-
-# Cluster dendrogram plot to analyze the affinity of each attribute based on
-# the correlation matrix.
-# https://rpubs.com/gaston/dendrograms
-save.plot(
-    hclust(dist(correlations$estimates)),
-    main='[Correlation] Features Dendrogram'
-)
-
-# Heatmap plot of the correlation matrix. p.values greater than significance
-# level at 0.05 are indicated.
-# https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
-save.cor.plot(
-    correlations$estimates,
-    main='[Correlation] Features heatmap',
-    p.mat=correlations$p.values,
-    sig.level=0.05,
-    method='number',
-    order='alphabet'
-)
 
 # Correlation matrix features ranked by the mean of correlations for each one
 features.ranked = cor.rank(abs(correlations$estimates))
@@ -179,9 +148,7 @@ features.ranked = cor.rank(abs(correlations$estimates))
 # [19] "firstTowerKill"              "firstBloodKill"
 # [21] "firstTowerAssist"
 
-# ------------------------
-# Dimensionality reduction
-# ------------------------
+# Dimensionality reduction ----------------------------------------------------
 
 # The features with high affinity (dendogram plot) and high correlation
 # (heatmap plot) > 0.7 are redundants. The following are redundant features and
@@ -209,37 +176,23 @@ features.selection = setdiff(features.ranked, features.unselect)
 # Top 3 hightly correled features of the selection
 features.topselection = features.selection[1:3]
 
-# Reducing the dimensionality of the normalized data with selected features
+# Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection]
 
-# ------------------------
-# Learning model (K-means)
-# ------------------------
+# Learning model (K-means) ----------------------------------------------------
+# Perform a cluster analysis on reduced data using k-means
 
-# K-means clustering model aims to partition the data into k clusters, so as to
-# minimize the sum of squared error (SSE or SS). To find the optimal k we can
-# use the the knee of the error curve method, which tries to find an appropriate
-# number of clusters analyzing the curve of a generated graph from a clustering
-# conducted for each possible.
-
-# K-means clustering model/fit for each k = {1, ..., 20} number of clusters
-fits = t(map(
-    function(k) kmeans(data.reduced, k, algorithm='Lloyd', iter.max=200),
-    range(20)
-))
-
-# Total within-cluster SSE for each k-means fit
-twss = rowmap(function(fit) fit$tot.withinss, fits)
-
-# Plot to analyze the knee of error curve resultant of k-means fits
-save.plot(twss, main='[K-means] Error curve', xlab='k', ylab='tot.withinss')
+# Analyse the knee of the error curve to find the optimal k
+x11(width=9, height=9)
+fits = cluster_analysis(data.reduced, kmax=30, main='K-means - Error curve')$fits
+save.plot.png('K-means - Error curve', path=PLOT_DIR)
 
 # Which is the optimal fit in this case for k = {5, ..., 9}? Let's analyse the
 # between-cluster SSE rate (betweenss / totss) difference for each one.
 
 # Between-cluster SSE rate differences for each k = {5, ..., 9} k-means fit
 bssrd = map(
-    function(k) betweenss.rate(fits[k,]) - betweenss.rate(fits[k - 1,]),
+    function(k) betweenss.rate(fits[k, ]) - betweenss.rate(fits[k - 1, ]),
     range(5, 9)
 )
 
@@ -247,14 +200,14 @@ bssrd = map(
 save.plot(
     range(5, 9),
     bssrd,
-    main='[K-means] Between-cluster SSE rate differences',
+    main='K-means - Between-cluster SSE rate differences',
     xlab='k fit'
 )
 
 # Analysing the between-cluster SSE rate differences, the k = 7 fit seems to
 # have the best trade-off, as the rate difference does not vary so much after
 # it. Let's add some extra components and save it.
-fit = fits[7,]
+fit = fits[7, ]
 
 # Between-cluster SSE rate
 fit$betweenss.rate = betweenss.rate(fit)
@@ -275,16 +228,15 @@ write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 write.csv(labeled, "../data/labeled.csv", row.names=FALSE)
 
-# treated_with_labels = cbind(data[, features.info], label=fit$cluster)
-# write.csv(treated_with_labels, "treated_with_labels.csv", row.names=FALSE)
+# Load previous labeled data
+# cluster = read.csv('../output/fit/cluster.csv')$x
+# labeled = cbind(data[, features.info], label=cluster, data.reduced)
 
 # Spliting labeled data between winners and losers
-winners = labeled[labeled$winner == 1,]
-losers = labeled[labeled$winner == 0,]
+winners = labeled[labeled$winner == 1, ]
+losers = labeled[labeled$winner == 0, ]
 
-# -----------------------------------
-# Statistical analysis of the results
-# -----------------------------------
+# Statistical analysis of the results -----------------------------------------
 
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
@@ -292,9 +244,8 @@ losers = labeled[labeled$winner == 0,]
 # Kruskal-Wallis rank sum test
 
 h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
-
 # Alternative hypothesis true: p.value < 0.05
-save.plot(1, h1$p.value, main='[Hypothesis] H1', xlab='h1', ylab='p.value')
+save.plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
 
 # Hypothesis 2. H2-0: For each cluster found in the learning model there is no
 # difference between the medians of the winning players and losing players;
@@ -312,103 +263,94 @@ h2.p.values = map(
 )
 
 # Alternative hypothesis true for each cluster: p.value < 0.05
-save.plot(h2.p.values, main='[Hypothesis] H2', xlab='k', ylab='p.values')
+save.plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
 
-# ----------------------
-# Exploring labeled data
-# ----------------------
-
-# Clusplot analysis
-# -----------------
+# Exploring labeled data ------------------------------------------------------
 
 # A sample with n = 80 random points from labeled data
-data.sampled = labeled[sample(range(nrow(labeled)), 80),]
+data.sampled = labeled[sample(range(nrow(labeled)), 80), ]
 
 # Clusplot of sampled data
 save.clusplot(
     data.sampled[, features.selection],
     data.sampled$label,
-    main='[Exploring] Cluster plot of the labeled data (n=80)',
+    main='Exploring - Cluster plot of the labeled data n=80',
     labels=4,
     col.clus= sort(unique(data.sampled$label)),
     col.p=data.sampled$label,
     lines=0
 )
 
-# Scatter plot analysis
-# ---------------------
-
 # Plot of labeled data. Only the top selected features
 save.plot(
     labeled[, features.topselection],
-    main='[Exploring] Scatter plot',
+    main='Exploring - Scatter plot',
     col=labeled$label
 )
 
 # Only winners
 save.plot(
     winners[, features.topselection],
-    main='[Exploring] Scatter plot - winners',
+    main='Exploring - Scatter plot winners',
     col=winners$label
 )
 
 # Only losers
 save.plot(
     losers[, features.topselection],
-    main='[Exploring] Scatter plot - losers',
+    main='Exploring - Scatter plot losers',
     col=losers$label
 )
 
-# Principal Component Analysis (PCA)
-# ------------------------------------
-
 # PCA of labeled data
 labeled.pca = prcomp(labeled[, features.selection], center=TRUE)
-
-# PCA of winners
 winners.pca = prcomp(winners[, features.selection], center=TRUE)
-
-# PCA of losers
 losers.pca = prcomp(losers[, features.selection], center=TRUE)
 
 # Selecting principal components to view
 pca_indices = range(3)
 
 # 3-D visualization of principal components of the labeled data
-save.scatterplot3d(
+x11(width=18, height=9)
+par(mfrow=c(1, 3))
+if (!require('scatterplot3d'))
+    library('scatterplot3d')
+scatterplot3d(
     labeled.pca$x[, pca_indices],
-    main='[Exploring] PCA',
+    main='Exploring - PCA',
     color=labeled$label,
-    angle=95
+    angle=95,
+    xlim=c(-10, 10),
+    ylim=c(-10, 10),
+    zlim=c(-10, 10)
 )
-
-# 3-D visualization of principal components of winners
-save.scatterplot3d(
+scatterplot3d(
     winners.pca$x[, pca_indices],
-    main='[Exploring] PCA - winners',
+    main='Exploring - PCA winners',
     color=winners$label,
-    angle=95
+    angle=95,
+    xlim=c(-10, 10),
+    ylim=c(-10, 10),
+    zlim=c(-10, 10)
 )
-
 # 3-D visualization of principal components of losers
-save.scatterplot3d(
+scatterplot3d(
     losers.pca$x[, pca_indices],
-    main='[Exploring] PCA - losers',
+    main='Exploring - PCA losers',
     color=losers$label,
-    angle=95
+    angle=95,
+    xlim=c(-10, 10),
+    ylim=c(-10, 10),
+    zlim=c(-10, 10)
 )
+save.plot.png('Exploring - PCA', path=PLOT_DIR)
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
-# the labeled data is splited between winners and losers.
+# the labeled data is discriminated between winners and losers.
 
 # Centroid analysis
 # -----------------
-# label = read.csv('../output/fit/cluster.csv')$x
-# labeled = cbind(data[, features.info], label=label, data.reduced)
-winners = labeled[labeled$winner == 1,]
-losers = labeled[labeled$winner == 0,]
-
 centers_by_label = function (x, features) {
     "Given a data set x, return the feature centers by label.
 
@@ -431,21 +373,13 @@ centers_by_label = function (x, features) {
 }
 
 plot_centers_by_label = function (x, features, main) {
-
     xlab = paste(sapply(
         range(length(features)),
         function(i) paste(i, features[i])
     ), collapse=', ')
 
-    plot(
-        x$feature_id,
-        x$center,
-        col=x$label,
-        pch=paste(x$label),
-        main=main,
-        xlab=xlab,
-        ylab='centers',
-        ylim=c(-2, 2)
+    plot(x$feature_id, x$center, col=x$label, pch=paste(x$label), main=main,
+         xlab=xlab, ylab='centers', ylim=c(-2, 2)
     )
 
 }
@@ -454,9 +388,23 @@ labeled.centers = centers_by_label(labeled, features.selection)
 winners.centers = centers_by_label(winners, features.selection)
 losers.centers = centers_by_label(losers, features.selection)
 
-plot_centers_by_label(labeled.centers, features.selection, '[Exploring] Centers')
-plot_centers_by_label(winners.centers, features.selection, '[Exploring] Centers - winners')
-plot_centers_by_label(losers.centers, features.selection, '[Exploring] Centers - losers')
+x11(width=16, height=9)
+par(mfrow=c(3,1))
+plot_centers_by_label(labeled.centers, features.selection, 'Exploring - Centers')
+plot_centers_by_label(winners.centers, features.selection, 'Exploring - Centers winners')
+plot_centers_by_label(losers.centers, features.selection, 'Exploring - Centers losers')
+save.plot.png('Exploring - Centers', path=PLOT_DIR)
+
+# TODO function to save plot using callback
+
+# TODO function for outliers analysis
+
+# TODO As the match duration varies between the matches, the features must be divided by match duration.
+
+# TODO remove duplicated summonerIds and choose only a participant for each match
+
+# TODO win rate analysis
+# (counter(winners$label) - counter(losers$label)) / (counter(winners$label) + counter(losers$label))
 
 # TODO Champ analisys
 # sort(table(winners[, 'championId']), decreasing=TRUE)
