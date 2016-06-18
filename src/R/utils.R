@@ -454,8 +454,8 @@ save_plot = function (filename, fn, width=9, height=9, close=FALSE) {
     "
     x11(width=width, height=height)
     filename = strf('%s.png', filename)
-    print(strf('Saved at %s', filename))
     result = fn()
+    print(strf('Plot saved at %s', filename))
     savePlot(filename=filename, type='png')
     if (close == TRUE)
         dev.off()
