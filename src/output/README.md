@@ -10,38 +10,37 @@ Table of contents
 
 ## Outliers analysis
 
-![](Outliers - All numeric features 1.png) [⬆](data-visualization)
-![](Outliers - All numeric features 2.png)
+![](outliers-all-in-one.png) [⬆](data-visualization)
+![](outliers-for-each-one.png)
 
 [⬆ back to top](data-visualization)
 
 ## Correlation analysis
 
-![](Correlation - Dendrogram and heatmap.png)
+![](correlation-dendrogram-and-heatmap.png)
 
 [⬆ back to top](data-visualization)
 
 ## Clustering analysis
 
-![](K-means - Error curve.png) [⬆](data-visualization)
-![](K-means - Between-cluster SSE rate differences.png)
+![](k-means-error-curve.png) [⬆](data-visualization)
+![](k-means-between-cluster-see-rate-differences.png)
 
 [⬆ back to top](data-visualization)
 
 ## Hypothesis testing
 
-![](Hypothesis - H1.png) [⬆](data-visualization)
-![](Hypothesis - H1.png)
+![](hypothesis.png)
 
 [⬆ back to top](data-visualization)
 
 ## Exploring labeled data
-![](Exploring - Cluster plot of the labeled data n=80.png) [⬆](data-visualization)
-![](Exploring - Scatter plot.png) [⬆](data-visualization)
-![](Exploring - Scatter plot winners.png) [⬆](data-visualization)
-![](Exploring - Scatter plot losers.png) [⬆](data-visualization)
-![](Exploring - PCA.png) [⬆](data-visualization)
-![](Exploring - Centers.png)
+![](exploring-cluster-plot-n-80.png) [⬆](data-visualization)
+![](exploring-scatter-plot.png) [⬆](data-visualization)
+![](exploring-scatter-plot-winners.png) [⬆](data-visualization)
+![](exploring-scatter-plot-losers.png) [⬆](data-visualization)
+![](exploring-pca.png) [⬆](data-visualization)
+![](exploring-centers.png)
 
 [⬆ back to top](data-visualization)
 
