@@ -211,3 +211,12 @@ startswith = function (s, prefix) {
     "Return TRUE if s starts with the specified prefix, FALSE otherwise."
     return(grepl(strf('^%s', prefix), s))
 }
+
+# similar players dendrogram
+kmeans(data.normalized, 8)
+plot(
+    hclust(dist(data.normalized[r, ])),
+    main='Players Dendrogram',
+    labels=data[sample(range(nrow(data.normalized)), 100), 'summonerId'],
+    # col=kmeans(data.normalized, 8)$cluster[r]
+)
