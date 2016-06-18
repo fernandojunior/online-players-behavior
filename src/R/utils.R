@@ -444,16 +444,18 @@ cor.plot = function (x, ...) {
 
 # plots
 
-save_plot = function (filename, fn, width=9, height=9, close=FALSE) {
+save_plot = function (filename, fn, path='', width=9, height=9, close=FALSE) {
     "Save a plot, renderized by a fn function, in a PNG file.
 
     filename: the name of the output file.
     fn: the function to render the plot.
+    path: a prefix path for filename
     width, height: the width and height of the plotting window, in inches.
     close: indicate if the plotting window must be closed or not.
     "
     x11(width=width, height=height)
-    filename = strf('%s.png', filename)
+    path = if (path != '') strf('%s/', path) else path
+    filename = strf('%s%s.png', path, filename)
     result = fn()
     savePlot(filename=filename, type='png')
     print(strf('Plot saved at %s', filename))
