@@ -444,7 +444,7 @@ cor.plot = function (x, ...) {
 
 # plots
 
-save_plot = function (filename, fn, path='', width=9, height=9, close=FALSE) {
+save_plot = function (fn, filename, path='', width=9, height=9, close=FALSE) {
     "Save a plot, renderized by a fn function, in a PNG file.
 
     filename: the name of the output file.
