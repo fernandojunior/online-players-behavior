@@ -444,6 +444,24 @@ cor.plot = function (x, ...) {
 
 # plots
 
+save_plot = function (filename, fn, width=9, height=9, close=FALSE) {
+    "Save a plot, renderized by a fn function, in a PNG file.
+
+    filename: the name of the output file.
+    fn: the function to render the plot.
+    width, height: the width and height of the plotting window, in inches.
+    close: indicate if the plotting window must be closed or not.
+    "
+    x11(width=width, height=height)
+    filename = strf('%s.png', filename)
+    print(strf('Saved at %s', filename))
+    result = fn()
+    savePlot(filename=filename, type='png')
+    if (close == TRUE)
+        dev.off()
+    return(result)
+}
+
 save.plot.png = function (filename, path='.') {
     "Save the current page of a cairo ‘X11()’ device to a png file.
     "
