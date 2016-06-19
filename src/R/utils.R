@@ -68,6 +68,17 @@ values = function (x) {
     return(unname(x))
 }
 
+each = function (fn, x) {
+    "Iterate over a vector x, executing a fn function for each element.
+
+    Example:
+
+        each(function (x) print(x + 1), c(1,2,3))
+    "
+    for (element in x)
+        fn(element)
+}
+
 generate_breaks = function (x, method=nclass.Sturges) {
     "Compute a vector of breakpoints automatically, ie the cutoff points to bin
     a dataset x.
