@@ -80,9 +80,7 @@ each = function (fn, x) {
 }
 
 or = function (...) {
-    "Logical operator or.
-
-    Iterate over the argunments and return one if it is !NULL or equal to true;
+    "Apply the logical operator 'or' over the arguments.
 
     Examples:
         or(TRUE, TRUE)  # TRUE
@@ -95,11 +93,51 @@ or = function (...) {
         or(c(FALSE, TRUE), 'Dog')  # 'Dog'
         or(c(TRUE, TRUE), FALSE)  # TRUE TRUE
         or(NULL, FALSE, 'Dog', 'Cat')  # 'Dog'
+        or(TRUE, NULL, 'Dog')  # TRUE
+        or(FALSE, NULL, 'Dog')  # 'Dog'
     "
     for (i in list(...))
         if (!is.null(i) && (!is.logical(i) || is.logical(i) && all(i)))
             return(i)
     return(FALSE)
+}
+
+and = function (...) {
+    "Apply the logical operator 'and' over the arguments.
+
+    Examples:
+        and(TRUE, TRUE)  # TRUE
+        and(TRUE, FALSE)  # FALSE
+        and(FALSE, TRUE)  # FALSE
+        and(FALSE, (3 == 4))  # FALSE
+        and('Cat', 'Dog')  # 'Dog'
+        and(FALSE, 'Cat')  # FALSE
+        and('Cat', FALSE)  # FALSE
+        and(c(FALSE, TRUE), 'Dog')  # FALSE, TRUE
+        and(c(TRUE, TRUE), FALSE)  # FALSE
+        and(NULL, FALSE, 'Dog', 'Cat')  # NULL
+        and(TRUE, NULL, 'Dog')  # NULL
+        and(FALSE, NULL, 'Dog')  # FALSE
+    "
+    args = list(...)
+
+    for (i in range(length(args))) {
+        value = args[[i]]
+
+        if (length(args[[i]]) > 1)
+            value = do.call(and, as.list(args[[i]]))
+
+        if (is.null(value))
+            return(args[[i]])
+
+        if (value == FALSE)
+            return(args[[i]])
+    }
+
+    for (i in range(2, length(args)))
+        if (!identical(args[i - 1], args[i]))
+            return(args[[length(args)]])
+    return(args[[1]])
 }
 
 generate_breaks = function (x, method=nclass.Sturges) {
