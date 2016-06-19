@@ -94,6 +94,7 @@ or = function (...) {
         or('Cat', FALSE)  # 'Cat'
         or(c(FALSE, TRUE), 'Dog')  # 'Dog'
         or(c(TRUE, TRUE), FALSE)  # TRUE TRUE
+        or(NULL, FALSE, 'Dog', 'Cat')  # 'Dog'
     "
     for (i in list(...))
         if (!is.null(i) && (!is.logical(i) || is.logical(i) && all(i)))
