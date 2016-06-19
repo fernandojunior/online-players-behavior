@@ -79,6 +79,28 @@ each = function (fn, x) {
         fn(element)
 }
 
+or = function (...) {
+    "Logical operator or.
+
+    Iterate over the argunments and return one if it is !NULL or equal to true;
+
+    Examples:
+        or(TRUE, TRUE)  # TRUE
+        or(FALSE, TRUE)  # TRUE
+        or(TRUE, FALSE)  # TRUE
+        or(FALSE, (3 == 4))  # FALSE
+        or('Cat', 'Dog')  # 'Cat'
+        or(FALSE, 'Cat')  # 'Cat'
+        or('Cat', FALSE)  # 'Cat'
+        or(c(FALSE, TRUE), 'Dog')  # 'Dog'
+        or(c(TRUE, TRUE), FALSE)  # TRUE TRUE
+    "
+    for (i in list(...))
+        if (!is.null(i) && (!is.logical(i) || is.logical(i) && all(i)))
+            return(i)
+    return(FALSE)
+}
+
 generate_breaks = function (x, method=nclass.Sturges) {
     "Compute a vector of breakpoints automatically, ie the cutoff points to bin
     a dataset x.
