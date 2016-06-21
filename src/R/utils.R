@@ -15,10 +15,10 @@ indexof = function (e, l) {
 }
 
 map = function (f, x) {
-    # Apply a function f to a value x.
+    # Apply a function f to x.
     #
-    # If x is a vector or a list, it applies for each item.
-    # if x is a matrix or data frame, it applies for each item of each column.
+    # If x is a vector or a list, apply on each value.
+    # If x is a matrix or data frame, apply on each value in each column.
     #
     # Examples:
     #     > map(function (a) a + 1, 1)
@@ -38,24 +38,49 @@ map = function (f, x) {
 }
 
 Col = function (f, x) {
-    # Apply a function f in each column of a data matrix x
+    # Apply a function f on each column present in x.
+    #
+    # Example:
+    #     > Col(sum, rbind(c(1,2), c(3,4)))
+    #     [1] 4 6
     return(apply(x, 2, f))
 }
 
 Row = function (f, x) {
-    # Apply a function f in each row of a data matrix x
+    # Apply a function f on each row present in x.
+    #
+    # Example:
+    #     > Row(sum, rbind(c(1,2), c(3,4)))
+    #     [1] 3 7
     return(apply(x, 1, f))
 }
 
 range = function (...) {
     # Alias for seq.int. Override the built-in funtion.
+    #
+    # Examples:
+    #     > range(10)
+    #     [1]  1  2  3  4  5  6  7  8  9 10
+    #     > range(5,10)
+    #     [1]  5  6  7  8  9 10
+    #     > range(0, 10, 2)
+    #     [1]  0  2  4  6  8 10
     return(seq.int(...))
 }
 
 values = function (x) {
-    # Remove the names and return only the values of x.
+    # Simplify x by removing its names attribute.
     #
-    # x can be a list, vector, matrix or data frame.
+    # If x is a list, convert it to a vector.
+    # If x is a data frame, convert it to a matrix.
+    #
+    # Examples:
+    #     > values(list(a=1, b=2))
+    #     [1] 1 2
+    #     > values(rbind(c(a=1, b=2), c(c=3, c=4)))
+    #           [,1] [,2]
+    #     [1,]    1    2
+    #     [2,]    3    4
     if (is.list(x))
         x = unlist(x)
     if (is.data.frame(x))
@@ -64,7 +89,7 @@ values = function (x) {
 }
 
 each = function (f, x) {
-    # Iterate over a vector x, executing a f function for each element.
+    # Iterate over a vector x and execute a f function for each element.
     #
     # Example:
     #     > each(function (x) print(x + 1), c(1,2,3))
@@ -155,6 +180,7 @@ and = function (...) {
     for (i in range(2, length(args)))
         if (!identical(args[i - 1], args[i]))
             return(args[[length(args)]])
+
     return(args[[1]])
 }
 
@@ -162,6 +188,10 @@ generate_breaks = function (x, method=nclass.Sturges) {
     # Compute a vector of breakpoints, ie the cutoff points to bin a dataset x.
     #
     # The default method to compute number of bins is based on Sturges formula.
+    #
+    # Example:
+    #    > generate_breaks(range(1000))
+    #    [1]    0  100  200  300  400  500  600  700  800  900 1000
     #
     # References:
     #     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
@@ -178,6 +208,10 @@ discretize = function (x, breaks=NULL) {
     #
     # It can be used to transform a numeric vector into a categorical one.
     #
+    # Example:
+    #     > discretize(range(10))
+    #     [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
+    #     Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
     # References:
     #     https://en.wikipedia.org/wiki/Data_binning
     #     http://www.mathworks.com/help/matlab/ref/discretize.html
@@ -340,16 +374,16 @@ ss = function (x, n=NA, VAR=FALSE) {
 # outlier functions
 
 outlier_thresholds = function (x, factor=1.5) {
-    # Find the lower and upper outlier thresholds of a specific data set x.
+    # Find the lower and upper outlier thresholds of x.
     #
     # Any point greater than upper threshold or less than lower threshold is
     # considered an outlier.
     #
     # A factor is used to determine the upper and lower threshold. The default
-    # factor 1.5 (based on Turkey boxplot) indicates that the minimum and maximum
-    # ranges of a point is 50% less and greater than IQR, respectively.
+    # factor 1.5 (based on Turkey boxplot) indicates that the minimum and
+    # maximum range of a point is 50% less and greater than IQR, respectively.
     #
-    # If x is a matrix or data frame, for each column in x.
+    # If x is a matrix or data frame, find the thresholds on each column.
     if (is.matrix(x))
         return(t(do.call(rbind,
             apply(x, 2, function(y) outlier_thresholds(y, factor)
