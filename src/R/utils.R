@@ -471,35 +471,35 @@ cor.mtest = function(x, method='pearson', ...) {
     basematrix = matrix(NA, n, n)
     colnames(basematrix) = rownames(basematrix) = features
 
-    res = list()
-    res$estimates = res$p.values = basematrix
+    r = list()
+    rug$estimates = r$p.values = basematrix
 
     # A correlation of the diagonal correlation matrix is a correlation of a
     # data attribute with itself. So, the diagonal must be NA to prevent wrong
     # behaviors as in dendrogram and box plots.
-    diag(res$estimates) = NA
+    diag(r$estimates) = NA
 
-    diag(res$p.values) = 0
+    diag(r$p.values) = 0
 
     if (method == 'pearson') {
-        res$conf.int = list()
-        res$conf.int$lower = res$conf.int$upper = basematrix
-        diag(res$conf.int$lower) = diag(res$conf.int$upper) = 1
+        r$conf.int = list()
+        r$conf.int$lower = r$conf.int$upper = basematrix
+        diag(r$conf.int$lower) = diag(r$conf.int$upper) = 1
     }
 
     for (i in 1:(n - 1)) {
         for (j in (i + 1):n) {
             tmp = cor.test(x[, i], x[, j], method=method, ...)
-            res$estimates[i, j] = res$estimates[j, i] = tmp$estimate
-            res$p.values[i, j] = res$p.values[j, i] = tmp$p.value
+            r$estimates[i, j] = r$estimates[j, i] = tmp$estimate
+            r$p.values[i, j] = r$p.values[j, i] = tmp$p.value
             if ('conf.int' %in% names(tmp)) {
-                res$conf.int$lower[i, j] = res$conf.int$lower[j, i] = tmp$conf.int[1]
-                res$conf.int$upper[i, j] = res$conf.int$upper[j, i] = tmp$conf.int[2]
+                r$conf.int$lower[i, j] = r$conf.int$lower[j, i] = tmp$conf.int[1]
+                r$conf.int$upper[i, j] = r$conf.int$upper[j, i] = tmp$conf.int[2]
             }
         }
     }
 
-    return(res)
+    return(r)
 }
 
 cor.plot = function (x, ...) {
@@ -508,89 +508,31 @@ cor.plot = function (x, ...) {
         install.packages('corrplot', dependencies=TRUE)
         library('corrplot')
     }
-
     if (all(is.na(diag(x))))
         diag(x) = 1
-
     corrplot(x, ...)
-
 }
 
 # plots
 
-save_plot = function (fn, filename, path='', width=9, height=9, close=FALSE) {
-    # Save a plot, renderized by a fn function, in a PNG file.
+save_plot = function (f, filename, path='', width=9, height=9, close=FALSE) {
+    # Save a plot, renderized by a f function, in a PNG file.
     #
     # Arguments:
     #     filename: the name of the output file.
-    #     fn: the function to render the plot.
+    #     f: the function to render the plot.
     #     path: a prefix path for filename
     #     width, height: the width and height of the plotting window, in inches.
     #     close: indicate if the plotting window must be closed or not.
     x11(width=width, height=height)
     path = if (path != '') strf('%s/', path) else path
     filename = strf('%s%s.png', path, filename)
-    result = fn()
+    result = f()
     savePlot(filename=filename, type='png')
     print(strf('Plot saved at %s', filename))
     if (close == TRUE)
         dev.off()
     return(result)
-}
-
-save.plot.png = function (filename, path='.') {
-    # Save the current page of a cairo ‘X11()’ device to a png file.
-    filename = strf('%s/%s.png', path, filename)
-    savePlot(filename=filename, type='png')
-    print(strf('Saved at %s', filename))
-    dev.off()
-}
-
-save.png = function (f, ...) {
-    # Save the output of a plot function f to a png file.
-    #
-    # Similar to savePlot(type='png').
-    name = 'Rplot'
-    args = c(...)
-    if (!is.null(args))
-        if (!is.null(args['main']) & !is.na(args['main']))
-            name = args['main']
-    fname = as.character(substitute(f))
-    filename = strf('%s%s.png', PLOT_DIR, name)
-    png(file=filename, width=960, height=960)
-    f(...)
-    print(strf('Saved at %s', filename))
-    print(strf('Plot type: %s', fname))
-    dev.off()
-}
-
-save.boxplot = function (...) {
-    # Create a boxplot and save the output in a png file.
-    save.png(boxplot, ...)
-}
-
-save.plot = function (...) {
-    # Create a plot and save the output in a png file.
-    save.png(plot, ...)
-}
-
-save.cor.plot = function (...) {
-    # Create a cor.plot and save the output in a png file.
-    save.png(cor.plot, ...)
-}
-
-save.clusplot = function (...) {
-    # Create a clusplot and save the output in a png file.
-    if (!require('cluster'))
-        library('cluster')
-    save.png(clusplot, ...)
-}
-
-save.scatterplot3d = function (...) {
-    # Create a scatterplot3d and save the output in a png file.
-    if (!require('scatterplot3d'))
-        library('scatterplot3d')
-    save.png(scatterplot3d, ...)
 }
 
 chist = function (x, y, palette=rainbow) {
@@ -712,4 +654,26 @@ attribute_selection = function (correlation_matrix) {
     selection = attrs[filter]
 
     return(selection)
+}
+
+save.png = function (f, ...) {
+    # Save the output of a plot function f to a png file.
+    #
+    # Similar to savePlot(type='png').
+    #
+    # Examples:
+    #     > save.png(plot, c(1, 2, 3))
+    #     > save.png(boxplot, c(1, 2, 3))
+    name = 'Rplot'
+    args = c(...)
+    if (!is.null(args))
+        if (!is.null(args['main']) & !is.na(args['main']))
+            name = args['main']
+    fname = as.character(substitute(f))
+    filename = strf('%s%s.png', PLOT_DIR, name)
+    png(file=filename, width=960, height=960)
+    f(...)
+    print(strf('Saved at %s', filename))
+    print(strf('Plot type: %s', fname))
+    dev.off()
 }
