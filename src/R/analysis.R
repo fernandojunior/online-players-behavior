@@ -67,8 +67,7 @@ save_plot(function (name) {
 # data. Let's analyze all them individually using boxplot and scatterplot.
 save_plot(function () {
     par(mfrow=c(3, 6))
-    for (feature in features.numeric)
-        boxplot(data[, feature], main=strf('Outliers - %s', feature))
+    each_col(function(x, i) boxplot(x, main=i), data[, features.numeric])
 }, 'outliers-for-each-one', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 # auto indentify extreme (IQR factor = 3) outliers.
@@ -224,8 +223,7 @@ fit$k = length(fit$size)
 fit$withinvar = 1 / (fit$size - 1) * fit$withinss
 
 # Saving all components
-for (component in names(fit))
-    write.csv(fit[[component]], strf('../output/fit/%s.csv', component))
+each(function (x, i) write.csv(x, strf('../output/fit/%s.csv', i)), fit)
 
 write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
 

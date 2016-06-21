@@ -89,35 +89,39 @@ values = function (x) {
 }
 
 each = function (f, x) {
-    # Iterate over a vector x and execute a f function for each element.
+    # Iterate over a vector or list x and execute a f function for each element.
     #
     # Example:
-    #     > each(function (x) print(x + 1), c(1,2,3))
-    #     [1] 2
-    #     [1] 3
-    #     [1] 4
-    for (element in x)
-        f(element)
+    #     > x = c(3, 4, 5)
+    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
+    #     [1] "1: 4"
+    #     [1] "2: 5"
+    #     [1] "3: 6"
+    indexes = or(names(x), range(length(x)))
+    for (i in indexes)
+        f(x[i], i)
 }
 
 each_col = function (f, x) {
     # Iterate over the columns of x and execute a f function on each one.
     # Examples:
-    #     > data = rbind(c(1, 2), c(3, 4))
-    #     > each_col(function(x, i) print(strf('%s: %s', i, sum(x))), data)
+    #     > x = rbind(c(1, 2), c(3, 4))
+    #     > each_col(function(x, i) print(strf('%s: %s', i, sum(x))), x)
     #     [1] "1: 4"
     #     [1] "2: 6"
-    each(function (i) f(x[, i], i), or(names(x), colnames(x), range(ncol(x))))
+    columns = or(names(x), colnames(x), range(ncol(x)))
+    each(function (c, i) f(x[, c], c), columns)
 }
 
 each_row = function (f, x) {
     # Iterate over the rows of x and execute a f function on each one.
     # Examples:
-    #     > data = rbind(c(1, 2), c(3, 4))
-    #     > each_row(function(x, i) print(strf('%s: %s', i, sum(x))), data)
+    #     > x = rbind(c(1, 2), c(3, 4))
+    #     > each_row(function(x, i) print(strf('%s: %s', i, sum(x))), x)
     #     [1] "1: 3"
     #     [1] "2: 7"
-    each(function (i) f(x[i, ], i), or(names(x), rownames(x), range(nrow(x))))
+    rows = or(names(x), rownames(x), range(nrow(x)))
+    each(function (r, i) f(x[i, ], i), rows)
 }
 
 or = function (...) {
@@ -526,7 +530,7 @@ cor.mtest = function(x, method='pearson', ...) {
     colnames(basematrix) = rownames(basematrix) = features
 
     r = list()
-    rug$estimates = r$p.values = basematrix
+    r$estimates = r$p.values = basematrix
 
     # A correlation of the diagonal correlation matrix is a correlation of a
     # data attribute with itself. So, the diagonal must be NA to prevent wrong
