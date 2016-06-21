@@ -100,6 +100,26 @@ each = function (f, x) {
         f(element)
 }
 
+each_col = function (f, x) {
+    # Iterate over the columns of x and execute a f function on each one.
+    # Examples:
+    #     > data = rbind(c(1, 2), c(3, 4))
+    #     > each_col(function(x, i) print(strf('%s: %s', i, sum(x))), data)
+    #     [1] "1: 4"
+    #     [1] "2: 6"
+    each(function (i) f(x[, i], i), or(names(x), colnames(x), range(ncol(x))))
+}
+
+each_row = function (f, x) {
+    # Iterate over the rows of x and execute a f function on each one.
+    # Examples:
+    #     > data = rbind(c(1, 2), c(3, 4))
+    #     > each_row(function(x, i) print(strf('%s: %s', i, sum(x))), data)
+    #     [1] "1: 3"
+    #     [1] "2: 7"
+    each(function (i) f(x[i, ], i), or(names(x), rownames(x), range(nrow(x))))
+}
+
 or = function (...) {
     # Apply the logical operator 'or' over the arguments.
     #
