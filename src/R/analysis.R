@@ -59,8 +59,7 @@ features.numeric = c(
 # Boxplot to analyze the outliers of all numeric features.
 save_plot(function (name) {
     data = data[, features.numeric]
-    main = 'Outliers - All in one'
-    boxplot(data, main=main, names=range(ncol(data)))
+    boxplot(data, main='Outliers - All in one', names=range(ncol(data)))
 }, 'outliers-all-in-one', path=PLOT_DIR, close=TRUE)
 
 # As we can see from the above plot that some features has outliers in the
@@ -70,9 +69,9 @@ save_plot(function () {
     each_col(function(x, i) boxplot(x, main=i), data[, features.numeric])
 }, 'outliers-for-each-one', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
-# auto indentify extreme (IQR factor = 3) outliers.
-outliers = find_outliers(data[, features.numeric], factor=3)
-# t(outliers$thresholds)
+# indentify and remove extreme (IQR factor = 3) outliers.
+data = remove_outliers(data, cols=features.numeric, factor=3)
+# [1] "t(thresholds):"
 #                                  lower    upper
 # kills                           -19.00     30.0
 # assists                         -19.00     37.0
@@ -92,11 +91,7 @@ outliers = find_outliers(data[, features.numeric], factor=3)
 # largestKillingSpree             -12.00     16.0
 # largestCriticalStrike         -1653.00   2204.0
 # totalHeal                     -7896.00  11865.0
-# outliers$total
-# [1] 10814
-
-# Filtering entire data to remove extreme outliers
-data = data[!outliers$outliers, ]
+# [1] "total outliers: 10814"
 # nrow(data)
 # [1] 74656
 
@@ -117,7 +112,6 @@ data = data[!(data$matchId %in% inconsistent_matches), ]
 write.csv(data, "../data/treated.csv", row.names=FALSE)
 
 # Data normalization (z-score) ------------------------------------------------
-
 # Since the features are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the
 # integer features using Z-score. Boolean features do not need be normalized.
@@ -134,7 +128,7 @@ write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 
 correlations = save_plot(function () {
     return(correlation_analysis(data.normalized))
-}, 'correlation-dendrogram-and-heatmap', path=PLOT_DIR, width=16, height=9, close=TRUE)
+}, 'correlation', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 write.csv(correlations$estimates, "../data/correlations.csv")
 
@@ -193,24 +187,9 @@ fits = save_plot(function () {
     return(result$fits)
 }, 'k-means-error-curve', path=PLOT_DIR, close=TRUE)
 
-# Which is the optimal fit in this case for k = {5, ..., 9}? Let's analyse the
-# between-cluster SSE rate (betweenss / totss) difference for each one.
-
-# Between-cluster SSE rate differences for each k = {5, ..., 9} k-means fit
-bssrd = map(
-    function(k) betweenss.rate(fits[k, ]) - betweenss.rate(fits[k - 1, ]),
-    range(5, 9)
-)
-
-# Plot to visualuze the between-cluster SSE rate differences
-save_plot(function () {
-    main = 'K-means - Between-cluster SSE rate differences'
-    plot(range(5, 9), bssrd, main=main, xlab='k fit')
-}, 'k-means-between-cluster-see-rate-differences', path=PLOT_DIR, close=TRUE)
-
-# Analysing the between-cluster SSE rate differences, the k = 7 fit seems to
-# have the best trade-off, as the rate difference does not vary so much after
-# it. Let's add some extra components and save it.
+# Which is the optimal fit in this case? Analysing the error curve plot, the
+# k = 7 fit seems to have the best trade-off, as the rate difference does not
+# vary so much after it. Let's add some extra components and save it.
 fit = fits[7, ]
 
 # Between-cluster SSE rate
@@ -393,6 +372,8 @@ save_plot(function () {
     plot_centers_by_label(winners.centers, features.selection, 'Exploring - Centers winners')
     plot_centers_by_label(losers.centers, features.selection, 'Exploring - Centers losers')
 }, 'exploring-centers', path=PLOT_DIR, width=16, height=9, close=TRUE)
+
+# TODO barplot to compare clusters
 
 # TODO function to save plot using callback
 
