@@ -478,6 +478,14 @@ find_outliers = function (x, factor=1.5) {
     return(result)
 }
 
+remove_outliers = function (x, cols=NULL, factor=1.5) {
+    # Indentify and remove outliers in a matrix x based on boxplot IQR factor.
+    cols = or(cols, names(x), colnames(x), range(length(x)))
+    outliers = find_outliers(x[, cols], factor=3)
+    x = x[!outliers$outliers, ]
+    return(x)
+}
+
 filter_features = function (x, f, min=NULL, max=NULL) {
     # Select the features of an data matrix x based on min > f(x) < max
     y = apply(x, 2, f)
@@ -712,26 +720,4 @@ attribute_selection = function (correlation_matrix) {
     selection = attrs[filter]
 
     return(selection)
-}
-
-save.png = function (f, ...) {
-    # Save the output of a plot function f to a png file.
-    #
-    # Similar to savePlot(type='png').
-    #
-    # Examples:
-    #     > save.png(plot, c(1, 2, 3))
-    #     > save.png(boxplot, c(1, 2, 3))
-    name = 'Rplot'
-    args = c(...)
-    if (!is.null(args))
-        if (!is.null(args['main']) & !is.na(args['main']))
-            name = args['main']
-    fname = as.character(substitute(f))
-    filename = strf('%s%s.png', PLOT_DIR, name)
-    png(file=filename, width=960, height=960)
-    f(...)
-    print(strf('Saved at %s', filename))
-    print(strf('Plot type: %s', fname))
-    dev.off()
 }
