@@ -10,14 +10,13 @@ Table of contents
 
 ## Outliers analysis
 
-![](outliers-all-in-one.png) [⬆](data-visualization)
 ![](outliers-for-each-one.png)
 
 [⬆ back to top](data-visualization)
 
 ## Correlation analysis
 
-![](correlation-dendrogram-and-heatmap.png)
+![](correlation.png)
 
 [⬆ back to top](data-visualization)
 

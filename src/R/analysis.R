@@ -55,15 +55,8 @@ features.numeric = c(
 )
 
 # Treatment of outliers -------------------------------------------------------
-
-# Boxplot to analyze the outliers of all numeric features.
-save_plot(function (name) {
-    data = data[, features.numeric]
-    boxplot(data, main='Outliers - All in one', names=range(ncol(data)))
-}, 'outliers-all-in-one', path=PLOT_DIR, close=TRUE)
-
-# As we can see from the above plot that some features has outliers in the
-# data. Let's analyze all them individually using boxplot and scatterplot.
+# Boxplots to analyze the outliers of all numeric features individually. As we
+# can see from the above plot that some features has outliers in the data.
 save_plot(function () {
     par(mfrow=c(3, 6))
     each_col(function(x, i) boxplot(x, main=i), data[, features.numeric])
