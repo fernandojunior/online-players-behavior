@@ -8,7 +8,7 @@ Table of contents
   4. [Hypothesis testing](#hypothesis-testing)
   5. [Exploring labeled data](#exploring-labeled-data)
 
-## Outliers analysis
+## Outlier analysis
 
 ![](outliers-for-each-one.png)
 
@@ -22,8 +22,7 @@ Table of contents
 
 ## Clustering analysis
 
-![](k-means-error-curve.png) [⬆](data-visualization)
-![](k-means-between-cluster-see-rate-differences.png)
+![](k-means-error-curve.png)
 
 [⬆ back to top](data-visualization)
 
