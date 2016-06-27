@@ -107,7 +107,7 @@ each = function (f, x) {
     #     [1] "3: 6"
     #     [1] 3 4 5
     indexes = or(names(x), range(length(x)))
-    if (length(formals(f)) == 1)
+    if (length(or(formals(f), 1)) == 1)
         for (i in indexes)
             f(x[i])
     else
