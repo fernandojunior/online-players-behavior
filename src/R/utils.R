@@ -55,6 +55,34 @@ Row = function (f, x) {
     return(apply(x, 1, f))
 }
 
+Curry = function(f,...) {
+    # Pre-specify a procedures named parameters, returning a new procedure.
+    #
+    # Example:
+    #     > Curry(paste, collapse='')(c(1, 2, 3))
+    #     [1] "123"
+    #
+    # Reference:
+    #     stackoverflow.com - higher level functions in R - is there an
+    #     official compose operator or curry function?
+    args = list(...);
+    return(function(...) do.call(f, c(args,list(...))))
+}
+
+Compose = function(...) {
+    # Compose an arbitrary number of functions.
+    #
+    # Example:
+    #     > Compose(sum, sqrt)(c(1,2,3))
+    #     [1] 2.44949
+    #
+    # Reference:
+    #     stackoverflow.com - higher level functions in R - is there an
+    #     official compose operator or curry function?
+    args = list(...)
+    return(function(...) Reduce(function(x, f) f(x), args, ...))
+}
+
 range = function (...) {
     # Alias for seq.int. Override the built-in funtion.
     #
