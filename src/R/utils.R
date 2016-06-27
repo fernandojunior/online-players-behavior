@@ -91,15 +91,29 @@ values = function (x) {
 each = function (f, x) {
     # Iterate over a vector or list x and execute a f function for each element.
     #
+    # Return:
+    #     x
+    #
     # Example:
-    #     > x = c(3, 4, 5)
-    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
+    #     > data = c(3, 4, 5)
+    #     > each(print, data)
+    #     [1] 3
+    #     [1] 4
+    #     [1] 5
+    #     [1] 3 4 5
+    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), data)
     #     [1] "1: 4"
     #     [1] "2: 5"
     #     [1] "3: 6"
+    #     [1] 3 4 5
     indexes = or(names(x), range(length(x)))
-    for (i in indexes)
-        f(x[i], i)
+    if (length(formals(f)) == 1)
+        for (i in indexes)
+            f(x[i])
+    else
+        for (i in indexes)
+            f(x[i], i)
+    return(x)
 }
 
 each_col = function (f, x) {
