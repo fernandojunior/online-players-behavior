@@ -20,6 +20,8 @@ map = function (f, x) {
     # If x is a vector or a list, apply on each value.
     # If x is a matrix or data frame, apply on each value in each column.
     #
+    # Curring: map(f, x) == map(f)(x)
+    #
     # Examples:
     #     > map(function (a) a + 1, 1)
     #     [1] 2
@@ -29,33 +31,43 @@ map = function (f, x) {
     #          [,1] [,2]
     #     [1,]    2    3
     #     [2,]    2    3
+    if (missing(x))
+        return(Curry(map, f))
     if (is.list(x))
-        lapply(x, f)
+        return(lapply(x, f))
     else if (is.vector(x))
-        sapply(x, f)
+        return(sapply(x, f))
     else if (is.matrix(x) | is.data.frame(x))
-        apply(x, 2, function (y) map(f, y))
+        return(apply(x, 2, function (y) map(f, y)))
 }
 
 Col = function (f, x) {
     # Apply a function f on each column present in x.
     #
+    # Curring: Col(f, x) == Col(f)(x)
+    #
     # Example:
     #     > Col(sum, rbind(c(1,2), c(3,4)))
     #     [1] 4 6
+    if (missing(x))
+        return(Curry(Col, f))
     return(apply(x, 2, f))
 }
 
 Row = function (f, x) {
     # Apply a function f on each row present in x.
     #
+    # Curring: Row(f, x) == Row(f)(x)
+    #
     # Example:
     #     > Row(sum, rbind(c(1,2), c(3,4)))
     #     [1] 3 7
+    if (missing(x))
+        return(Curry(Row, f))
     return(apply(x, 1, f))
 }
 
-Curry = function(f,...) {
+Curry = function(f, ...) {
     # Pre-specify a procedures named parameters, returning a new procedure.
     #
     # Example:
@@ -72,8 +84,17 @@ Curry = function(f,...) {
 Compose = function(...) {
     # Compose an arbitrary number of functions.
     #
-    # Example:
+    # Examples:
     #     > Compose(sum, sqrt)(c(1,2,3))
+    #     [1] 2.44949
+    #     > x = c(a=1,b=2,c=3)
+    #     > x = Compose(print, values, print, sum, print, sqrt, print)(x)
+    #     a b c
+    #     1 2 3
+    #     [1] 1 2 3
+    #     [1] 6
+    #     [1] 2.44949
+    #     > x
     #     [1] 2.44949
     #
     # Reference:
@@ -109,7 +130,7 @@ values = function (x) {
     #           [,1] [,2]
     #     [1,]    1    2
     #     [2,]    3    4
-    if (is.list(x))
+    if (is.list(x) && !is.matrix(x))
         x = unlist(x)
     if (is.data.frame(x))
         x = data.matrix(x)
@@ -117,53 +138,98 @@ values = function (x) {
 }
 
 each = function (f, x) {
-    # Iterate over a vector or list x and execute a f function for each element.
+    # Iterate over a vector or list x and execute a function f for each element.
     #
-    # Return:
-    #     x
+    # Curring: each(f, x) == each(f)(x)
+    #
+    # Return: x
     #
     # Example:
-    #     > data = c(3, 4, 5)
-    #     > each(print, data)
+    #     > x = c(3, 4, 5)
+    #     > each(print, x)
     #     [1] 3
     #     [1] 4
     #     [1] 5
     #     [1] 3 4 5
-    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), data)
+    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
     #     [1] "1: 4"
     #     [1] "2: 5"
     #     [1] "3: 6"
     #     [1] 3 4 5
-    indexes = or(names(x), range(length(x)))
+    if (missing(x))
+        return(Curry(each, f))
+    indices = or(names(x), range(length(x)))
     if (length(or(formals(f), 1)) == 1)
-        for (i in indexes)
+        for (i in indices)
             f(x[i])
     else
-        for (i in indexes)
+        for (i in indices)
             f(x[i], i)
     return(x)
 }
 
 each_col = function (f, x) {
-    # Iterate over the columns of x and execute a f function on each one.
+    # Iterate over the columns of x and execute a function f on each one.
+    #
+    # Curring: each_col(f, x) == each_col(f)(x)
+    #
+    # Return: x
+    #
     # Examples:
     #     > x = rbind(c(1, 2), c(3, 4))
-    #     > each_col(function(x, i) print(strf('%s: %s', i, sum(x))), x)
-    #     [1] "1: 4"
-    #     [1] "2: 6"
-    columns = or(names(x), colnames(x), range(ncol(x)))
-    each(function (c, i) f(x[, c], c), columns)
+    #     > colnames(x) = c('a', 'b')
+    #     > each_col(function (c) print(sum(c)), x)
+    #     [1] 4
+    #     [1] 6
+    #          a b
+    #     [1,] 1 2
+    #     [2,] 3 4
+    #     > f = f
+    #     > each_col(function(c, i) print(strf('%s: %s', i, sum(c))), x)
+    #     [1] "a: 4"
+    #     [1] "b: 6"
+    #          a b
+    #     [1,] 1 2
+    #     [2,] 3 4
+    if (missing(x))
+        return(Curry(each_col, f))
+    indices = or(names(x), colnames(x), range(ncol(x)))
+    if (length(or(formals(f), 1)) == 1)
+        Col(f, x)
+    else
+        each(function (i) f(x[, i], i), indices)
+    return(x)
 }
 
 each_row = function (f, x) {
-    # Iterate over the rows of x and execute a f function on each one.
+    # Iterate over the rows of x and execute a function f on each one.
+    #
+    # Curring: each_row(f, x) == each_row(f)(x)
+    #
+    # Return: x
+    #
     # Examples:
     #     > x = rbind(c(1, 2), c(3, 4))
-    #     > each_row(function(x, i) print(strf('%s: %s', i, sum(x))), x)
-    #     [1] "1: 3"
-    #     [1] "2: 7"
-    rows = or(names(x), rownames(x), range(nrow(x)))
-    each(function (r, i) f(x[i, ], i), rows)
+    #     > rownames(x) = c('a', 'b')
+    #     > each_row(function(r) print(sum(r)), x)
+    #     [1] 3
+    #     [1] 7
+    #       [,1]  [,2]
+    #     a    1    2
+    #     b    3    4
+    #     > each_row(function(r, i) print(strf('%s: %s', i, sum(r))), x)
+    #     [1] "a: 3"
+    #     [1] "b: 7"
+    #       a b
+    #     a 1 2
+    #     b 3 4
+    if (missing(x))
+        return(Curry(each_row, f))
+    if (length(or(formals(f), 1)) == 1)
+        Row(f, x)
+    else
+        each(function (i) f(x[i, ], i), or(rownames(x), range(nrow(x))))
+    return(x)
 }
 
 or = function (...) {
@@ -232,13 +298,10 @@ and = function (...) {
 
     for (i in range(length(args))) {
         value = args[[i]]
-
         if (length(args[[i]]) > 1)
             value = do.call(and, as.list(args[[i]]))
-
         if (is.null(value))
             return(args[[i]])
-
         if (value == FALSE)
             return(args[[i]])
     }
