@@ -1,36 +1,34 @@
-# Constants
-
-PLOT_DIR = '../output/'
-
 # helper functions
 
+#' @alias table
 counter = function (...) {
-    # Alias for table.
     return(table(...))
 }
 
+#' @alias match
 indexof = function (e, l) {
-    # Alias for match.
     return(match(e, l))
 }
 
+#' Apply a function f on each element in x and return the results.
+#'
+#' Curring: map(f, x) == map(f)(x)
+#'
+#' @param f Function to apply.
+#' @param x Vector or matrix.
+#'
+#' @return The results.
+#'
+#' @examples
+#'     map(function (a) a + 1, 1)
+#'     # [1] 2
+#'     map(function (a) a + 1, c(1,2,3))
+#'     # [1] 2 3 4
+#'     map(function (a) a + 1, rbind(c(1,2), c(1,2)))
+#'     #     [,1] [,2]
+#'     # [1,]    2    3
+#'     # [2,]    2    3
 map = function (f, x) {
-    # Apply a function f to x.
-    #
-    # If x is a vector or a list, apply on each value.
-    # If x is a matrix or data frame, apply on each value in each column.
-    #
-    # Curring: map(f, x) == map(f)(x)
-    #
-    # Examples:
-    #     > map(function (a) a + 1, 1)
-    #     [1] 2
-    #     > map(function (a) a + 1, c(1,2,3))
-    #     [1] 2 3 4
-    #     > map(function (a) a + 1, rbind(c(1,2), c(1,2)))
-    #          [,1] [,2]
-    #     [1,]    2    3
-    #     [2,]    2    3
     if (missing(x))
         return(Curry(map, f))
     if (is.list(x))
@@ -41,95 +39,123 @@ map = function (f, x) {
         return(apply(x, 2, function (y) map(f, y)))
 }
 
+#' Apply a function f on each column of x and return the results.
+#'
+#' Curring: Col(f, x) == Col(f)(x)
+#'
+#' @param f Function to apply.
+#' @param x Matrix.
+#'
+#' @return The results.
+#'
+#' @examples
+#'     Col(sum, rbind(c(1,2), c(3,4)))
+#'     # [1] 4 6
 Col = function (f, x) {
-    # Apply a function f on each column present in x.
-    #
-    # Curring: Col(f, x) == Col(f)(x)
-    #
-    # Example:
-    #     > Col(sum, rbind(c(1,2), c(3,4)))
-    #     [1] 4 6
     if (missing(x))
         return(Curry(Col, f))
     return(apply(x, 2, f))
 }
 
+#' Apply a function f on each row of x and return the results.
+#'
+#' Curring: Row(f, x) == Row(f)(x)
+#'
+#' @param f Function to apply.
+#' @param x Matrix.
+#'
+#' @return The results.
+#'
+#' @examples
+#'     Row(sum, rbind(c(1,2), c(3,4)))
+#'     # [1] 3 7
 Row = function (f, x) {
-    # Apply a function f on each row present in x.
-    #
-    # Curring: Row(f, x) == Row(f)(x)
-    #
-    # Example:
-    #     > Row(sum, rbind(c(1,2), c(3,4)))
-    #     [1] 3 7
     if (missing(x))
         return(Curry(Row, f))
     return(apply(x, 1, f))
 }
 
+#' Prespecify arguments for a function f to create and return a new one.
+#'
+#' @param f Function to be curried.
+#' @param ... Arguments.
+#'
+#' @return Function f with prespecified arguments.
+#'
+#' @examples
+#'     Curry(paste, collapse='')(c(1, 2, 3))
+#'     # [1] "123"
+#'
+#' @reference
+#'     stackoverflow.com: higher level functions in R - is there an official
+#'     compose operator or curry function?
 Curry = function(f, ...) {
-    # Pre-specify a procedures named parameters, returning a new procedure.
-    #
-    # Example:
-    #     > Curry(paste, collapse='')(c(1, 2, 3))
-    #     [1] "123"
-    #
-    # Reference:
-    #     stackoverflow.com - higher level functions in R - is there an
-    #     official compose operator or curry function?
     args = list(...);
     return(function(...) do.call(f, c(args,list(...))))
 }
 
+#' Compose an arbitrary number of functions to create and return a new one.
+#'
+#' @param ... Functions to be composed.
+#'
+#' @return A composite function.
+#'
+#' @examples
+#'     Compose(sum, sqrt)(c(1,2,3))
+#'     # [1] 2.44949
+#'     x = c(a=1,b=2,c=3)
+#'     x = Compose(print, values, print, sum, print, sqrt, print)(x)
+#'     # a b c
+#'     # 1 2 3
+#'     # [1] 1 2 3
+#'     # [1] 6
+#'     # [1] 2.44949
+#'     x
+#'     # [1] 2.44949
+#'     Compose(each(print), Col(sum))(rbind(c(1,2), c(3,4)))
+#'     # [1] 1
+#'     # [1] 3
+#'     # [1] 2
+#'     # [1] 4
+#'     # [1] 4 6
+#'
+#' @reference
+#'     stackoverflow.com: higher level functions in R - is there an official
+#'     compose operator or curry function?
 Compose = function(...) {
-    # Compose an arbitrary number of functions.
-    #
-    # Examples:
-    #     > Compose(sum, sqrt)(c(1,2,3))
-    #     [1] 2.44949
-    #     > x = c(a=1,b=2,c=3)
-    #     > x = Compose(print, values, print, sum, print, sqrt, print)(x)
-    #     a b c
-    #     1 2 3
-    #     [1] 1 2 3
-    #     [1] 6
-    #     [1] 2.44949
-    #     > x
-    #     [1] 2.44949
-    #
-    # Reference:
-    #     stackoverflow.com - higher level functions in R - is there an
-    #     official compose operator or curry function?
     args = list(...)
     return(function(...) Reduce(function(x, f) f(x), args, ...))
 }
 
+#' @deprecated Override the built-in funtion range.
+#'
+#' @alias seq.int
+#'
+#' @examples
+#'     range(10)
+#'     # [1]  1  2  3  4  5  6  7  8  9 10
+#'     range(5,10)
+#'     # [1]  5  6  7  8  9 10
+#'     range(0, 10, 2)
+#'     # [1]  0  2  4  6  8 10
 range = function (...) {
-    # Alias for seq.int. Override the built-in funtion.
-    #
-    # Examples:
-    #     > range(10)
-    #     [1]  1  2  3  4  5  6  7  8  9 10
-    #     > range(5,10)
-    #     [1]  5  6  7  8  9 10
-    #     > range(0, 10, 2)
-    #     [1]  0  2  4  6  8 10
     return(seq.int(...))
 }
 
+#' Simplify x by removing its names attribute.
+#'
+#' @param x Vector or matrix.
+#'
+#' @return Simplified vector or matrix.
+#'
+#' @examples
+#'     values(list(a=1, b=2))
+#'     # [1] 1 2
+#'     values(rbind(c(a=1, b=2), c(c=3, c=4)))
+#'     #       [,1] [,2]
+#'     # [1,]    1    2
+#'     # [2,]    3    4
 values = function (x) {
-    # Simplify x by removing its names attribute.
-    #
-    # If x is a list, convert it to a vector.
-    # If x is a data frame, convert it to a matrix.
-    #
-    # Examples:
-    #     > values(list(a=1, b=2))
-    #     [1] 1 2
-    #     > values(rbind(c(a=1, b=2), c(c=3, c=4)))
-    #           [,1] [,2]
-    #     [1,]    1    2
-    #     [2,]    3    4
     if (is.list(x) && !is.matrix(x))
         x = unlist(x)
     if (is.data.frame(x))
@@ -137,25 +163,27 @@ values = function (x) {
     return(unname(x))
 }
 
+#' Iterate over the elements of x and execute a function f on each one.
+#'
+#' Curring: each(f, x) == each(f)(x)
+#'
+#' @param x Vector
+#'
+#' @return x
+#'
+#' @examples
+#'     x = c(3, 4, 5)
+#'     each(print, x)
+#'     # [1] 3
+#'     # [1] 4
+#'     # [1] 5
+#'     # [1] 3 4 5
+#'     each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
+#'     # [1] "1: 4"
+#'     # [1] "2: 5"
+#'     # [1] "3: 6"
+#'     # [1] 3 4 5
 each = function (f, x) {
-    # Iterate over a vector or list x and execute a function f for each element.
-    #
-    # Curring: each(f, x) == each(f)(x)
-    #
-    # Return: x
-    #
-    # Example:
-    #     > x = c(3, 4, 5)
-    #     > each(print, x)
-    #     [1] 3
-    #     [1] 4
-    #     [1] 5
-    #     [1] 3 4 5
-    #     > each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
-    #     [1] "1: 4"
-    #     [1] "2: 5"
-    #     [1] "3: 6"
-    #     [1] 3 4 5
     if (missing(x))
         return(Curry(each, f))
     indices = or(names(x), range(length(x)))
@@ -168,132 +196,136 @@ each = function (f, x) {
     return(x)
 }
 
+#' Iterate over the columns of x and execute a function f on each one.
+#'
+#' Curring: each_col(f, x) == each_col(f)(x)
+#'
+#' @return x
+#'
+#' @examples
+#'     x = rbind(c(1, 2), c(3, 4))
+#'     colnames(x) = c('a', 'b')
+#'     each_col(function (c) print(sum(c)), x)
+#'     # [1] 4
+#'     # [1] 6
+#'     #      a b
+#'     # [1,] 1 2
+#'     # [2,] 3 4
+#'     f = f
+#'     each_col(function(c, i) print(strf('%s: %s', i, sum(c))), x)
+#'     # [1] "a: 4"
+#'     # [1] "b: 6"
+#'     #      a b
+#'     # [1,] 1 2
+#'     # [2,] 3 4
 each_col = function (f, x) {
-    # Iterate over the columns of x and execute a function f on each one.
-    #
-    # Curring: each_col(f, x) == each_col(f)(x)
-    #
-    # Return: x
-    #
-    # Examples:
-    #     > x = rbind(c(1, 2), c(3, 4))
-    #     > colnames(x) = c('a', 'b')
-    #     > each_col(function (c) print(sum(c)), x)
-    #     [1] 4
-    #     [1] 6
-    #          a b
-    #     [1,] 1 2
-    #     [2,] 3 4
-    #     > f = f
-    #     > each_col(function(c, i) print(strf('%s: %s', i, sum(c))), x)
-    #     [1] "a: 4"
-    #     [1] "b: 6"
-    #          a b
-    #     [1,] 1 2
-    #     [2,] 3 4
     if (missing(x))
         return(Curry(each_col, f))
     indices = or(names(x), colnames(x), range(ncol(x)))
     if (length(or(formals(f), 1)) == 1)
-        Col(f, x)
+        xxx = Col(f, x)
     else
         each(function (i) f(x[, i], i), indices)
     return(x)
 }
 
+#' Iterate over the rows of x and execute a function f on each one.
+#'
+#' Curring: each_row(f, x) == each_row(f)(x)
+#'
+#' @return x
+#'
+#' @examples
+#'     x = rbind(c(1, 2), c(3, 4))
+#'     rownames(x) = c('a', 'b')
+#'     each_row(function(r) print(sum(r)), x)
+#'     # [1] 3
+#'     # [1] 7
+#'     #   [,1]  [,2]
+#'     # a    1    2
+#'     # b    3    4
+#'     each_row(function(r, i) print(strf('%s: %s', i, sum(r))), x)
+#'     # [1] "a: 3"
+#'     # [1] "b: 7"
+#'     #   a b
+#'     # a 1 2
+#'     # b 3 4
 each_row = function (f, x) {
-    # Iterate over the rows of x and execute a function f on each one.
-    #
-    # Curring: each_row(f, x) == each_row(f)(x)
-    #
-    # Return: x
-    #
-    # Examples:
-    #     > x = rbind(c(1, 2), c(3, 4))
-    #     > rownames(x) = c('a', 'b')
-    #     > each_row(function(r) print(sum(r)), x)
-    #     [1] 3
-    #     [1] 7
-    #       [,1]  [,2]
-    #     a    1    2
-    #     b    3    4
-    #     > each_row(function(r, i) print(strf('%s: %s', i, sum(r))), x)
-    #     [1] "a: 3"
-    #     [1] "b: 7"
-    #       a b
-    #     a 1 2
-    #     b 3 4
     if (missing(x))
         return(Curry(each_row, f))
     if (length(or(formals(f), 1)) == 1)
-        Row(f, x)
+        xxx = Row(f, x)
     else
         each(function (i) f(x[i, ], i), or(rownames(x), range(nrow(x))))
     return(x)
 }
 
+#' Apply the logical operator OR on the arguments.
+#'
+#' Similar to `any`
+#'
+#' @examples
+#'     or(TRUE, TRUE)
+#'     # [1] TRUE
+#'     or(FALSE, TRUE)
+#'     [1] TRUE
+#'     or(TRUE, FALSE)
+#'     # [1] TRUE
+#'     or(FALSE, (3 == 4))
+#'     # [1] FALSE
+#'     or('Cat', 'Dog')
+#'     # [1] 'Cat'
+#'     or(FALSE, 'Cat')
+#'     # [1] 'Cat'
+#'     or('Cat', FALSE)
+#'     # [1] 'Cat'
+#'     or(c(FALSE, TRUE), 'Dog')
+#'     # [1] 'Dog'
+#'     or(c(TRUE, TRUE), FALSE)
+#'     # [1] TRUE TRUE
+#'     or(NULL, FALSE, 'Dog', 'Cat')
+#'     # [1] 'Dog'
+#'     or(TRUE, NULL, 'Dog')
+#'     # [1] TRUE
+#'     or(FALSE, NULL, 'Dog')
+#'     # [1] 'Dog'
 or = function (...) {
-    # Apply the logical operator 'or' over the arguments.
-    #
-    # Examples:
-    #     > or(TRUE, TRUE)
-    #     [1] TRUE
-    #     > or(FALSE, TRUE)
-    #     [1] TRUE
-    #     > or(TRUE, FALSE)
-    #     [1] TRUE
-    #     > or(FALSE, (3 == 4))
-    #     [1] FALSE
-    #     > or('Cat', 'Dog')
-    #     > [1] 'Cat'
-    #     > or(FALSE, 'Cat')
-    #     [1] 'Cat'
-    #     > or('Cat', FALSE)
-    #     [1] 'Cat'
-    #     > or(c(FALSE, TRUE), 'Dog')
-    #     [1] 'Dog'
-    #     > or(c(TRUE, TRUE), FALSE)
-    #     [1] TRUE TRUE
-    #     > or(NULL, FALSE, 'Dog', 'Cat')
-    #     [1] 'Dog'
-    #     > or(TRUE, NULL, 'Dog')
-    #     [1] TRUE
-    #     > or(FALSE, NULL, 'Dog')
-    #     [1] 'Dog'
     for (i in list(...))
         if (!is.null(i) && (!is.logical(i) || is.logical(i) && all(i)))
             return(i)
     return(FALSE)
 }
 
+#' Apply the logical operator AND on the arguments.
+#'
+#' Similar to `all`
+#'
+#' @examples
+#'     and(TRUE, TRUE)
+#'     # [1] TRUE
+#'     and(TRUE, FALSE)
+#'     # [1] FALSE
+#'     and(FALSE, TRUE)
+#'     # [1] FALSE
+#'     and(FALSE, (3 == 4))
+#'     # [1] FALSE
+#'     and('Cat', 'Dog')
+#'     # [1] 'Dog'
+#'     and(FALSE, 'Cat')
+#'     # [1] FALSE
+#'     and('Cat', FALSE)
+#'     # [1] FALSE
+#'     and(c(FALSE, TRUE), 'Dog')
+#'     # [1] FALSE, TRUE
+#'     and(c(TRUE, TRUE), FALSE)
+#'     # [1] FALSE
+#'     and(NULL, FALSE, 'Dog', 'Cat')
+#'     # [1] NULL
+#'     and(TRUE, NULL, 'Dog')
+#'     # [1] NULL
+#'     and(FALSE, NULL, 'Dog')
+#'     # [1] FALSE
 and = function (...) {
-    # Apply the logical operator 'and' over the arguments.
-    #
-    # Examples:
-    #     > and(TRUE, TRUE)
-    #     [1] TRUE
-    #     > and(TRUE, FALSE)
-    #     [1] FALSE
-    #     > and(FALSE, TRUE)
-    #     [1] FALSE
-    #     > and(FALSE, (3 == 4))
-    #     [1] FALSE
-    #     > and('Cat', 'Dog')
-    #     [1] 'Dog'
-    #     > and(FALSE, 'Cat')
-    #     [1] FALSE
-    #     > and('Cat', FALSE)
-    #     [1] FALSE
-    #     > and(c(FALSE, TRUE), 'Dog')
-    #     [1] FALSE, TRUE
-    #     > and(c(TRUE, TRUE), FALSE)
-    #     [1] FALSE
-    #     > and(NULL, FALSE, 'Dog', 'Cat')
-    #     [1] NULL
-    #     > and(TRUE, NULL, 'Dog')
-    #     [1] NULL
-    #     > and(FALSE, NULL, 'Dog')
-    #     [1] FALSE
     args = list(...)
 
     for (i in range(length(args))) {
@@ -313,43 +345,49 @@ and = function (...) {
     return(args[[1]])
 }
 
+#' Compute a vector of breakpoints, ie the cutoff points to bin x.
+#'
+#' @param x Vector
+#' @param method {function optional nclass.Sturges} Method to compute number
+#'     of bins.
+#'
+#' @return Breakpoints
+#'
+#' @examples
+#'    generate_breaks(range(1000))
+#'    # [1]    0  100  200  300  400  500  600  700  800  900 1000
+#'
+#' @references
+#'     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
+#'     http://www.r-bloggers.com/basics-of-histograms/
+#'     https://stat.ethz.ch/pipermail/r-help/2014-March/372559.html
 generate_breaks = function (x, method=nclass.Sturges) {
-    # Compute a vector of breakpoints, ie the cutoff points to bin a dataset x.
-    #
-    # The default method to compute number of bins is based on Sturges formula.
-    #
-    # Example:
-    #    > generate_breaks(range(1000))
-    #    [1]    0  100  200  300  400  500  600  700  800  900 1000
-    #
-    # References:
-    #     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
-    #     http://www.r-bloggers.com/basics-of-histograms/
-    #     https://stat.ethz.ch/pipermail/r-help/2014-March/372559.html
     x.min = min(x)
     x.max = max(x)
     bins = method(x)
     return(pretty(x.min + range(0, bins) * (x.max - x.min)/bins, n=bins))
 }
 
-discretize = function (x, breaks=NULL) {
-    # Group a numeric vector x into a smaller number of bins.
-    #
-    # It can be used to transform a numeric vector into a categorical one.
-    #
-    # Example:
-    #     > discretize(range(10))
-    #     [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
-    #     Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
-    # References:
-    #     https://en.wikipedia.org/wiki/Data_binning
-    #     http://www.mathworks.com/help/matlab/ref/discretize.html
-    breaks = if (is.null(breaks)) generate_breaks(x) else breaks
+#' Discretize a numeric vector x by grouping into a smaller number of bins.
+#'
+#' It can be used to transform x into a categorical one.
+#'
+#' @param x {numeric} Vector to discretize.
+#' @param breaks {numeric optional generate_breaks(x)} Cutoff points to bin x.
+#'
+#' @examples
+#'     discretize(range(10))
+#'     # [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
+#'     # Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
+#' @references
+#'     https://en.wikipedia.org/wiki/Data_binning
+#'     http://www.mathworks.com/help/matlab/ref/discretize.html
+discretize = function (x, breaks=generate_breaks(x)) {
     return(cut(x, breaks=breaks))
 }
 
+#' Discriminate a dataset x by y to (distinct) count its subsets.
 counter_by = function (x, y) {
-    # Discriminate a dataset x by y to (distinct) count its subsets.
     x.domain = sort(unique(x))
     y.domain = sort(unique(y))
     z = matrix(0, nrow=length(y.domain), ncol=length(x.domain))
@@ -364,17 +402,16 @@ counter_by = function (x, y) {
     return(z)
 }
 
+#' Perform a cluster analysis on a data matrix x for each k = {1:kmax}
+#' number of clusters.
+#'
+#' The analysis is based on k-means. K-means clustering model aims to
+#' partition the data into k clusters, so as to minimize the sum of squared
+#' error (SSE or SS). To find the optimal k we can use the the knee of the
+#' error curve method, which tries to find an appropriate number of clusters
+#' analyzing the curve of a generated graph from a clustering conducted for
+#' each possible.
 cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
-    # Perform a cluster analysis on a data matrix x for each k = {1:kmax}
-    # number of clusters.
-    #
-    # The analysis is based on k-means. K-means clustering model aims to
-    # partition the data into k clusters, so as to minimize the sum of squared
-    # error (SSE or SS). To find the optimal k we can use the the knee of the
-    # error curve method, which tries to find an appropriate number of clusters
-    # analyzing the curve of a generated graph from a clustering conducted for
-    # each possible.
-
     # K-means clustering for each k
     fits = t(map(
         function(k) kmeans(data, k, algorithm='Lloyd', iter.max=200),
@@ -401,11 +438,11 @@ cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
     return(result)
 }
 
+#' Perform ntests cluster analysis on a matrix x for each k = {1:kmax}.
+#'
+#' If ncol != NULL, ncol columns of x are chosen randomly to the analysis.
+#' In the end, the tests are summarized by mean.
 many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
-    # Perform ntests cluster analysis on a matrix x for each k = {1:kmax}.
-    #
-    # If ncol != NULL, ncol columns of x are chosen randomly to the analysis.
-    # In the end, the tests are summarized by mean.
     tests = matrix(0, nrow=ntests, ncol=kmax)
     for (i in range(ntests)) {
         cols = if (is.null(ncol)) colnames(x) else sample(colnames(x), ncol)
@@ -421,29 +458,20 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     return(apply(tests, 2, mean))  # summary
 }
 
+#' Perform a correlation analysis on a matrix x.
+#'
+#' @references
+#'     https://rpubs.com/gaston/dendrograms
+#'     https://cran.r-project.org/web/packages/corrplot
 correlation_analysis = function (x) {
-    # Perform a correlation analysis on a data matrix x.
-    #
-    # References:
-    #     https://rpubs.com/gaston/dendrograms
-    #     https://cran.r-project.org/web/packages/corrplot
-
     # Correlation matrix of x using Spearman method, which does not require the
     # features follow a normal distribuition or linear correlation.
     correlations = cor.mtest(x, method='spearman', exact=FALSE)
 
     par(mfrow=c(1, 2))
 
-    # Boxplot to analyze the correlation matrix. The absolute values are used,
-    # because the correlation direction does not matter in this case.
-    # boxplot(
-    #     abs(correlations$estimates),
-    #     main='[Correlation] Features boxplot',
-    #     names=range(ncol(correlations$estimates))
-    # )
-
-    # Cluster dendrogram plot to analyze the affinity of each attribute based on
-    # the correlation matrix.
+    # Cluster dendrogram plot to analyze the affinity of each attribute based
+    # on the correlation matrix.
     plot(
         hclust(dist(correlations$estimates)),
         main='[Correlation] Features Dendrogram'
@@ -472,24 +500,24 @@ strf = function (...) {
 
 # math functions
 
+#' Return the sum of square error of a vector x: (n - 1) * var(x).
+#'
+#' If VAR == TRUE, x is a variance value (or a list) of a sample data with n
+#' length.
+#'
+#' @examples
+#'     x = c(1, 2, 3, 4, 5)
+#'     length(x)
+#'     # [1] 5
+#'     var(x)
+#'     # [1] 2.5
+#'     ss(x)  # sum of square of x
+#'     # [1] 10
+#'     ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
+#'     # [1] 10
+#'     ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
+#'     # [1] 10 10
 ss = function (x, n=NA, VAR=FALSE) {
-    # Return the sum of square error of a data set x: (n - 1) * var(x).
-    #
-    # If VAR == TRUE, x is a variance value (or a list) of a sample data with n
-    # length.
-    #
-    # Example:
-    #     > x = c(1, 2, 3, 4, 5)
-    #     > length(x)
-    #     [1] 5
-    #     > var(x)
-    #     [1] 2.5
-    #     > ss(x)  # sum of square of x
-    #     [1] 10
-    #     > ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
-    #     [1] 10
-    #     > ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
-    #     [1] 10 10
     if (VAR == FALSE) {
         if (is.vector(x))
             n = length(x)
@@ -502,17 +530,17 @@ ss = function (x, n=NA, VAR=FALSE) {
 
 # outlier functions
 
+#' Find the lower and upper outlier thresholds of x.
+#'
+#' Any point greater than upper threshold or less than lower threshold is
+#' considered an outlier.
+#'
+#' A factor is used to determine the upper and lower threshold. The default
+#' factor 1.5 (based on Turkey boxplot) indicates that the minimum and
+#' maximum range of a point is 50% less and greater than IQR, respectively.
+#'
+#' If x is a matrix or data frame, find the thresholds on each column.
 outlier_thresholds = function (x, factor=1.5) {
-    # Find the lower and upper outlier thresholds of x.
-    #
-    # Any point greater than upper threshold or less than lower threshold is
-    # considered an outlier.
-    #
-    # A factor is used to determine the upper and lower threshold. The default
-    # factor 1.5 (based on Turkey boxplot) indicates that the minimum and
-    # maximum range of a point is 50% less and greater than IQR, respectively.
-    #
-    # If x is a matrix or data frame, find the thresholds on each column.
     if (is.matrix(x))
         return(t(do.call(rbind,
             apply(x, 2, function(y) outlier_thresholds(y, factor)
@@ -533,13 +561,10 @@ outlier_thresholds = function (x, factor=1.5) {
     return(threshold)
 }
 
+#' Verify if x is an outlier based on lower and upper thresholds.
+#'
+#' If x is multivariate (vector), so the thresholds also must be.
 is.outlier = function (x, lower, upper) {
-    # Return TRUE if x is an outlier, FALSE otherwise.
-    #
-    # It's based on lower and upper thresholds.
-    #
-    # x point can be multivariate (a list or vector). In this case, the
-    # thresholds also must be.
     thresholds = rbind(lower, upper)
     if(length(x) > 0 & !is.null(colnames(thresholds)))  # x is multivariate
         x = x[colnames(thresholds)]
@@ -548,11 +573,11 @@ is.outlier = function (x, lower, upper) {
     return(FALSE)
 }
 
+#' Find outliers on a data matrix x. Default boxplot IQR factor == 1.5.
+#'
+#' Return a boolean vector to indicate the outliers and the min and max
+#' thresholds for each feature used to find the outliers.
 find_outliers = function (x, factor=1.5) {
-    # Find outliers on a data matrix x. Default boxplot IQR factor == 1.5.
-    #
-    # Return a boolean vector to indicate the outliers and the min and max
-    # thresholds for each feature used to find the outliers.
     features = colnames(x)
     thresholds = outlier_thresholds(data[, features], factor=factor)
 
@@ -583,16 +608,16 @@ find_outliers = function (x, factor=1.5) {
     return(result)
 }
 
+#' Indentify and remove outliers in a matrix x based on boxplot IQR factor.
 remove_outliers = function (x, cols=NULL, factor=1.5) {
-    # Indentify and remove outliers in a matrix x based on boxplot IQR factor.
     cols = or(cols, names(x), colnames(x), range(length(x)))
     outliers = find_outliers(x[, cols], factor=3)
     x = x[!outliers$outliers, ]
     return(x)
 }
 
+#' Select the features of an data matrix x based on min > f(x) < max
 filter_features = function (x, f, min=NULL, max=NULL) {
-    # Select the features of an data matrix x based on min > f(x) < max
     y = apply(x, 2, f)
 
     features = colnames(x)
@@ -609,33 +634,34 @@ filter_features = function (x, f, min=NULL, max=NULL) {
 
 # correlation functions
 
+#' Count the number of items from a list or vector of correlations x.
+#'
+#' If x is a matrix or data frame, count the number of items for each column.
 cor.counter = function (x) {
-    # Count the number of items from a list or vector of correlations x.
-    #
-    # If x is a matrix or data frame, count the number of items for each column.
     if (is.matrix(x) | is.data.frame(x))
         return(apply(x, 2, cor.counter))
     return(counter(x))
 }
 
+#' Mean of a list or vector of correlations x.
+#'
+#' If x is a matrix or data frame, calculate the mean for each column.
 cor.mean = function (x) {
-    # Mean of a list or vector of correlations x.
-    #
-    # If x is a matrix or data frame, calculate the mean for each column.
     if (is.matrix(x) | is.data.frame(x))
         return(apply(x, 2, cor.mean))
     return(mean(x[!x %in% NA]))
 }
 
+#' Correlation rank of the attributes of a correlation matrix.
+#'
+#' It is based on the mean of correlations for each one.
 cor.rank = function (correlation_matrix, decreasing=TRUE) {
-    # Correlation rank of the attributes of a correlation matrix.
-    #
-    # It is based on the mean of correlations for each one.
     return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
+
+#' Peform a cor.test between paired features of a multivariate data set x.
 cor.mtest = function(x, method='pearson', ...) {
-    # Peform a cor.test between paired features of a multivariate data set x.
     features = colnames(x)
     n = length(features)
 
@@ -673,8 +699,8 @@ cor.mtest = function(x, method='pearson', ...) {
     return(r)
 }
 
+#' @alias corrplot
 cor.plot = function (x, ...) {
-    # Alias for corrplot.
     if (!require('corrplot')) {
         install.packages('corrplot', dependencies=TRUE)
         library('corrplot')
@@ -686,15 +712,15 @@ cor.plot = function (x, ...) {
 
 # plots
 
+#' Save a plot, renderized by a f function, in a PNG file.
+#'
+#' @param f Function to render the plot.
+#' @param filename Name of the output file.
+#' @param path Optional prefix path for filename
+#' @param width Width of the plotting window, in inches.
+#' @param height Height of the plotting window, in inches.
+#' @param close Indicate if the plotting window must be closed or not.
 save_plot = function (f, filename, path='', width=9, height=9, close=FALSE) {
-    # Save a plot, renderized by a f function, in a PNG file.
-    #
-    # Arguments:
-    #     filename: the name of the output file.
-    #     f: the function to render the plot.
-    #     path: a prefix path for filename
-    #     width, height: the width and height of the plotting window, in inches.
-    #     close: indicate if the plotting window must be closed or not.
     x11(width=width, height=height)
     path = if (path != '') strf('%s/', path) else path
     filename = strf('%s%s.png', path, filename)
@@ -706,11 +732,11 @@ save_plot = function (f, filename, path='', width=9, height=9, close=FALSE) {
     return(result)
 }
 
+#' Discriminate a dataset x by y to draw cobinated histograms plots.
+#'
+#' @references
+#'     http://stackoverflow.com/questions/3541713/how-to-plot-two-histograms-together-in-r
 chist = function (x, y, palette=rainbow) {
-    # Discriminate a dataset x by y to draw cobinated histograms plots.
-    #
-    # References:
-    #     http://stackoverflow.com/questions/3541713/how-to-plot-two-histograms-together-in-r
     breaks = generate_breaks(x)
     xlim = c(min(breaks), max(breaks))
     y.domain = unique(y)
@@ -728,11 +754,10 @@ chist = function (x, y, palette=rainbow) {
             hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, xlab='x', main='')
     }
     legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
-
 }
 
+#' Discriminate a dataset x by y to draw multiple histogram plots.
 mhist = function (x, y, palette=rainbow) {
-    # Discriminate a dataset x by y to draw multiple histogram plots.
     breaks = generate_breaks(x)
     xlim = c(min(breaks), max(breaks))
     y.domain = unique(y)
@@ -754,36 +779,39 @@ mhist = function (x, y, palette=rainbow) {
 
 # k-means functions
 
+#' Between-cluster Sum of Square Error rate of a k-means fit.
+#'
+#' It represents the total SSE rate minimized from the data after
+#' partitioning in k clusters.
+#'
+#' @todo Refactor `betweenss.rate` to betweenss.prop
+#'
+#' @examples
+#'     data = sample(range(1000), 100)
+#'     totss = sum(ss(data))
+#'     tot.withinss = sum(kmeans(data, 5)$withinss)
+#'     betweenss = abs(tot.withinss - totss)
+#'     (betweenss / totss) == betweenss.rate(kmeans(data, 5))
+#'     [1] TRUE
 betweenss.rate = function (fit) {
-    # Between-cluster Sum of Square Error rate of a k-means fit.
-    #
-    # It represents the total SSE rate minimized from the data after
-    # partitioning in k clusters.
-    #
-    # Same as:
-    #     totss = sum(ss(data))
-    #     tot.withinss = sum(k-means(data, k)$withinss)
-    #     betweenss = tot.withinss - totss
-    #     betweenss.rate = betweenss / totss
     return(fit$betweenss / fit$totss)
 }
 
 # deprecated
 
+#' Automatic attribute selection of a correlation matrix.
+#'
+#' It is based on the non-correlations counter and mean of correlations for
+#' each column (attribute) of the correlation matrix.
+#'
+#' Formalization:
+#'     C = C(X) = {correlation matrix of a data X}
+#'     A = A(X) = A(C) = {attributes of the correlation matrix C}
+#'     c(a) in C = {correlations of attibute a}
+#'     select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
+#'         where 0 = False and 1 = True
+#'     selection(C) = { a in A(C) | select(a)}
 attribute_selection = function (correlation_matrix) {
-    # Automatic attribute selection of a correlation matrix.
-    #
-    # It is based on the non-correlations counter and mean of correlations for
-    # each column (attribute) of the correlation matrix.
-    #
-    # Formalization:
-    #     C = C(X) = {correlation matrix of a data X}
-    #     A = A(X) = A(C) = {attributes of the correlation matrix C}
-    #     c(a) in C = {correlations of attibute a}
-    #     select(a) = 0, if qt0(a) > m(qt0(A)) And m(a) < md(m(A)); 1 otherwise
-    #         where 0 = False and 1 = True
-    #     selection(C) = { a in A(C) | select(a)}
-
     # Correlation <= 5% is considered non-correlation
     # correlation_matrix = round(correlation_matrix, digits=1)  # lazy round
     correlation_matrix = map(  # hard round
