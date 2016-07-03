@@ -1,4 +1,4 @@
-# Outlier functions
+# Functions to handle outliers
 
 # library(modules)
 import('fun', attach=c('or', 'Col', 'Curry', 'values', 'Row', 'strf'))
