@@ -1,7 +1,7 @@
 library('modules')
 
 import('fun', attach=TRUE)
-# import('outliers', attach=TRUE)
+import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
 import_package('cluster', attach=TRUE)  # clusplot
@@ -127,7 +127,7 @@ write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 
 correlations = save_plot(function () {
     return(correlation_analysis(data.normalized))
-}, 'correlation', path=PLOT_DIR, width=16, height=9, close=FALSE)
+}, 'correlation', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 write.csv(correlations$estimates, "../data/correlations.csv")
 
@@ -247,7 +247,7 @@ save_plot(function () {
     par(mfrow=c(1, 2))
     plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
     plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-}, 'hypothesis', path=PLOT_DIR, width=16, height=9, close=FALSE)
+}, 'hypothesis', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 # Exploring labeled data ------------------------------------------------------
 
