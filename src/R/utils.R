@@ -1,5 +1,12 @@
 # helper functions
 
+import_package('corrplot', attach=TRUE)  # corrplot
+
+#' @aliases sprintf
+strf = function (...) {
+    return(sprintf(...))
+}
+
 #' @aliases table
 counter = function (...) {
     return(table(...))
@@ -8,6 +15,21 @@ counter = function (...) {
 #' @aliases match
 indexof = function (e, l) {
     return(match(e, l))
+}
+
+#' @deprecated Cuz override the built-in funtion range.
+#'
+#' @aliases seq.int
+#'
+#' @examples
+#'     range(10)
+#'     #> [1]  1  2  3  4  5  6  7  8  9 10
+#'     range(5,10)
+#'     #> [1]  5  6  7  8  9 10
+#'     range(0, 10, 2)
+#'     #> [1]  0  2  4  6  8 10
+range = function (...) {
+    return(seq.int(...))
 }
 
 #' Apply a function f on each element in x and return the results.
@@ -127,21 +149,6 @@ Compose = function(...) {
     return(function(...) Reduce(function(x, f) f(x), args, ...))
 }
 
-#' @deprecated Override the built-in funtion range.
-#'
-#' @aliases seq.int
-#'
-#' @examples
-#'     range(10)
-#'     #> [1]  1  2  3  4  5  6  7  8  9 10
-#'     range(5,10)
-#'     #> [1]  5  6  7  8  9 10
-#'     range(0, 10, 2)
-#'     #> [1]  0  2  4  6  8 10
-range = function (...) {
-    return(seq.int(...))
-}
-
 #' Simplify x by removing its names attribute.
 #'
 #' @param x Vector or matrix.
@@ -178,10 +185,10 @@ values = function (x) {
 #'     #> [1] 4
 #'     #> [1] 5
 #'     #> [1] 3 4 5
-#'     each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
-#'     #> [1] "1: 4"
-#'     #> [1] "2: 5"
-#'     #> [1] "3: 6"
+#'     each(function (x, i) print(paste(i, x + 1)), x)
+#'     #> [1] "1 4"
+#'     #> [1] "2 5"
+#'     #> [1] "3 6"
 #'     #> [1] 3 4 5
 each = function (f, x) {
     if (missing(x))
@@ -203,21 +210,19 @@ each = function (f, x) {
 #' @return x
 #'
 #' @examples
-#'     x = rbind(c(1, 2), c(3, 4))
-#'     colnames(x) = c('a', 'b')
+#'     x = cbind(a=c(1, 2), b=c(3, 4))
 #'     each_col(function (c) print(sum(c)), x)
-#'     #> [1] 4
-#'     #> [1] 6
+#'     #> [1] 3
+#'     #> [1] 7
 #'     #>      a b
-#'     #> [1,] 1 2
-#'     #> [2,] 3 4
-#'     f = f
-#'     each_col(function(c, i) print(strf('%s: %s', i, sum(c))), x)
-#'     #> [1] "a: 4"
-#'     #> [1] "b: 6"
+#'     #> [1,] 1 3
+#'     #> [2,] 2 4
+#'     each_col(function(c, i) print(paste(i, sum(c))), x)
+#'     #> [1] "a 3"
+#'     #> [1] "b 7"
 #'     #>      a b
-#'     #> [1,] 1 2
-#'     #> [2,] 3 4
+#'     #> [1,] 1 3
+#'     #> [2,] 2 4
 each_col = function (f, x) {
     if (missing(x))
         return(Curry(each_col, f))
@@ -236,20 +241,19 @@ each_col = function (f, x) {
 #' @return x
 #'
 #' @examples
-#'     x = rbind(c(1, 2), c(3, 4))
-#'     rownames(x) = c('a', 'b')
+#'     x = rbind(a=c(1, 2), b=c(3, 4))
 #'     each_row(function(r) print(sum(r)), x)
 #'     #> [1] 3
 #'     #> [1] 7
 #'     #>   [,1]  [,2]
 #'     #> a    1    2
 #'     #> b    3    4
-#'     each_row(function(r, i) print(strf('%s: %s', i, sum(r))), x)
-#'     #> [1] "a: 3"
-#'     #> [1] "b: 7"
-#'     #>   a b
-#'     #> a 1 2
-#'     #> b 3 4
+#'     each_row(function(r, i) print(paste(i, sum(r))), x)
+#'     #> [1] "a 3"
+#'     #> [1] "b 7"
+#'     #> [,1] [,2]
+#'     #> a    1    2
+#'     #> b    3    4
 each_row = function (f, x) {
     if (missing(x))
         return(Curry(each_row, f))
@@ -343,11 +347,6 @@ and = function (...) {
             return(args[[length(args)]])
 
     return(args[[1]])
-}
-
-#' @aliases sprintf
-strf = function (...) {
-    return(sprintf(...))
 }
 
 #' Compute a vector of breakpoints, ie the cutoff points to bin x.
@@ -484,7 +483,7 @@ correlation_analysis = function (x) {
 
     # Heatmap plot of the correlation matrix. p.values greater than significance
     # level at 0.05 are indicated.
-    cor.plot(
+    corrplot(
         round(correlations$estimates, 1),
         main='[Correlation] Features heatmap',
         p.mat=correlations$p.values,
@@ -526,7 +525,7 @@ ss = function (x, n=NA, VAR=FALSE) {
     return ((n - 1) * x)
 }
 
-# outlier functions
+# ourlier functions
 
 #' Find the lower and upper outlier thresholds of x.
 #'
@@ -699,7 +698,6 @@ cor.rank = function (correlation_matrix, decreasing=TRUE) {
     return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
 }
 
-
 #' Peform a cor.test between paired features of a multivariate data set x.
 cor.mtest = function(x, method='pearson', ...) {
     features = colnames(x)
@@ -737,17 +735,6 @@ cor.mtest = function(x, method='pearson', ...) {
     }
 
     return(r)
-}
-
-#' @aliases corrplot
-cor.plot = function (x, ...) {
-    if (!require('corrplot')) {
-        install.packages('corrplot', dependencies=TRUE)
-        library('corrplot')
-    }
-    if (all(is.na(diag(x))))
-        diag(x) = 1
-    corrplot(x, ...)
 }
 
 # plots

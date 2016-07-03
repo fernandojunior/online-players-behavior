@@ -33,8 +33,9 @@ The project uses two programming languages: Python to raw and parse the data and
 1. Open `src/R/analysis.R`
 2. In `src/R/analysis.R`, edit `data = read.csv('../data/data.csv')` to read the CSV file created previously
 3. Change current working directory to `src/R/` through the terminal
-4. Run `Rscript analysis.R` to build the analysis
-5. The analysis output can be found in `src/output`
+4. Install all dependencies in `requirements.R`
+5. Run `Rscript analysis.R` to build the analysis
+6. The analysis output can be found in `src/output`
 
 Edit `src/python/config.py` to configure other settings (statistic attributes to parse, dump directory, etc.).
 

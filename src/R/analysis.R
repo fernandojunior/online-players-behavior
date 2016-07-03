@@ -1,10 +1,11 @@
-if (!require('cluster'))
-    library('cluster')
+library('modules')
 
-if (!require('scatterplot3d'))
-    library('scatterplot3d')
+import('fun', attach=TRUE)
+import('outliers', attach=TRUE)
+import('utils', attach=TRUE)
 
-source('utils.R')
+import_package('cluster', attach=TRUE)  # clusplot
+import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 
 options(scipen=999)
 
@@ -126,7 +127,7 @@ write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 
 correlations = save_plot(function () {
     return(correlation_analysis(data.normalized))
-}, 'correlation', path=PLOT_DIR, width=16, height=9, close=TRUE)
+}, 'correlation', path=PLOT_DIR, width=16, height=9, close=FALSE)
 
 write.csv(correlations$estimates, "../data/correlations.csv")
 
@@ -256,10 +257,10 @@ data.sampled = labeled[sample(range(nrow(labeled)), 80), ]
 # Clusplot of sampled data
 save_plot(function () {
     main = 'Exploring - Cluster plot n=80'
-    data = data.sampled[, features.selection]
+    x = data.sampled[, features.selection]
     lb = data.sampled$label
     lb.d = sort(unique(data.sampled$label))
-    clusplot(data, lb, main=main, labels=4, col.clus=lb.d, col.p=lb, lines=0)
+    clusplot(x, lb, main=main, labels=4, col.clus=lb.d, col.p=lb, lines=0)
 }, 'exploring-cluster-plot-n-80', path=PLOT_DIR, close=TRUE)
 
 # Plot of labeled data. Only the top selected features
