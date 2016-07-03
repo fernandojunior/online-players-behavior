@@ -8,6 +8,8 @@ source('utils.R')
 
 options(scipen=999)
 
+PLOT_DIR = '../output'
+
 # Load data -------------------------------------------------------------------
 
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
@@ -60,33 +62,36 @@ features.numeric = c(
 save_plot(function () {
     par(mfrow=c(3, 6))
     each_col(function(x, i) boxplot(x, main=i), data[, features.numeric])
+    return()
 }, 'outliers-for-each-one', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 # indentify and remove extreme (IQR factor = 3) outliers.
 data = remove_outliers(data, cols=features.numeric, factor=3)
-# [1] "t(thresholds):"
-#                                  lower    upper
-# kills                           -19.00     30.0
-# assists                         -19.00     37.0
-# deaths                          -11.00     24.0
-# goldEarned                    -7465.00  29957.0
-# totalDamageDealt            -229216.25 433109.8
-# magicDamageDealt            -112411.75 169991.0
-# physicalDamageDealt         -260943.50 380499.8
-# totalDamageDealtToChampions  -33290.00  66089.0
-# totalDamageTaken             -25844.25  69949.0
-# minionsKilled                  -347.00    556.0
-# neutralMinionsKilled            -59.00     81.0
-# totalTimeCrowdControlDealt    -1023.00   1567.0
-# wardsPlaced                     -17.00     32.0
-# towerKills                       -3.00      4.0
-# largestMultiKill                 -2.00      5.0
-# largestKillingSpree             -12.00     16.0
-# largestCriticalStrike         -1653.00   2204.0
-# totalHeal                     -7896.00  11865.0
-# [1] "total outliers: 10814"
+#> [1] "Thresholds:"
+#>                                  lower    upper
+#> kills                           -19.00     30.0
+#> assists                         -19.00     37.0
+#> deaths                          -11.00     24.0
+#> goldEarned                    -7465.00  29957.0
+#> totalDamageDealt            -229216.25 433109.8
+#> magicDamageDealt            -112411.75 169991.0
+#> physicalDamageDealt         -260943.50 380499.8
+#> totalDamageDealtToChampions  -33290.00  66089.0
+#> totalDamageTaken             -25844.25  69949.0
+#> minionsKilled                  -347.00    556.0
+#> neutralMinionsKilled            -59.00     81.0
+#> totalTimeCrowdControlDealt    -1023.00   1567.0
+#> wardsPlaced                     -17.00     32.0
+#> towerKills                       -3.00      4.0
+#> largestMultiKill                 -2.00      5.0
+#> largestKillingSpree             -12.00     16.0
+#> largestCriticalStrike         -1653.00   2204.0
+#> totalHeal                     -7896.00  11865.0
+#> [1] "Total outliers:"
+#>       [,1]
+#> [1,] 10814
 # nrow(data)
-# [1] 74656
+#> [1] 74656
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent matches need to be removed.
@@ -100,7 +105,7 @@ inconsistent_matches = names(participants_by_match[participants_by_match < 10])
 # Removing inconsistent matches from data
 data = data[!(data$matchId %in% inconsistent_matches), ]
 # nrow(data)
-# [1] 35140
+#> [1] 35140
 
 write.csv(data, "../data/treated.csv", row.names=FALSE)
 
@@ -127,17 +132,17 @@ write.csv(correlations$estimates, "../data/correlations.csv")
 
 # Correlation matrix features ranked by the mean of correlations for each one
 features.ranked = cor.rank(abs(correlations$estimates))
-# [1] "goldEarned"                  "totalDamageDealt"
-# [3] "totalDamageDealtToChampions" "kills"
-# [5] "physicalDamageDealt"         "largestKillingSpree"
-# [7] "minionsKilled"               "largestMultiKill"
-# [9] "totalDamageTaken"            "towerKills"
-# [11] "largestCriticalStrike"       "neutralMinionsKilled"
-# [13] "assists"                     "totalTimeCrowdControlDealt"
-# [15] "magicDamageDealt"            "wardsPlaced"
-# [17] "totalHeal"                   "deaths"
-# [19] "firstTowerKill"              "firstBloodKill"
-# [21] "firstTowerAssist"
+#> [1] "goldEarned"                  "totalDamageDealt"
+#> [3] "totalDamageDealtToChampions" "kills"
+#> [5] "physicalDamageDealt"         "largestKillingSpree"
+#> [7] "minionsKilled"               "largestMultiKill"
+#> [9] "totalDamageTaken"            "towerKills"
+#> [11] "largestCriticalStrike"       "neutralMinionsKilled"
+#> [13] "assists"                     "totalTimeCrowdControlDealt"
+#> [15] "magicDamageDealt"            "wardsPlaced"
+#> [17] "totalHeal"                   "deaths"
+#> [19] "firstTowerKill"              "firstBloodKill"
+#> [21] "firstTowerAssist"
 
 # Dimensionality reduction ----------------------------------------------------
 
@@ -156,13 +161,13 @@ features.unselect = c(
 
 # Ranked feature selection.
 features.selection = setdiff(features.ranked, features.unselect)
-# [1] "goldEarned"                 "kills"
-# [3] "physicalDamageDealt"        "minionsKilled"
-# [5] "totalDamageTaken"           "towerKills"
-# [7] "largestCriticalStrike"      "neutralMinionsKilled"
-# [9] "assists"                    "totalTimeCrowdControlDealt"
-# [11] "magicDamageDealt"           "wardsPlaced"
-# [13] "totalHeal"                  "deaths"
+#> [1] "goldEarned"                 "kills"
+#> [3] "physicalDamageDealt"        "minionsKilled"
+#> [5] "totalDamageTaken"           "towerKills"
+#> [7] "largestCriticalStrike"      "neutralMinionsKilled"
+#> [9] "assists"                    "totalTimeCrowdControlDealt"
+#> [11] "magicDamageDealt"           "wardsPlaced"
+#> [13] "totalHeal"                  "deaths"
 
 # Top 3 hightly correled features of the selection
 features.topselection = features.selection[1:3]

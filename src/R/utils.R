@@ -1,11 +1,11 @@
 # helper functions
 
-#' @alias table
+#' @aliases table
 counter = function (...) {
     return(table(...))
 }
 
-#' @alias match
+#' @aliases match
 indexof = function (e, l) {
     return(match(e, l))
 }
@@ -21,13 +21,13 @@ indexof = function (e, l) {
 #'
 #' @examples
 #'     map(function (a) a + 1, 1)
-#'     # [1] 2
+#'     #> [1] 2
 #'     map(function (a) a + 1, c(1,2,3))
-#'     # [1] 2 3 4
+#'     #> [1] 2 3 4
 #'     map(function (a) a + 1, rbind(c(1,2), c(1,2)))
-#'     #     [,1] [,2]
-#'     # [1,]    2    3
-#'     # [2,]    2    3
+#'     #>     [,1] [,2]
+#'     #> [1,]    2    3
+#'     #> [2,]    2    3
 map = function (f, x) {
     if (missing(x))
         return(Curry(map, f))
@@ -50,7 +50,7 @@ map = function (f, x) {
 #'
 #' @examples
 #'     Col(sum, rbind(c(1,2), c(3,4)))
-#'     # [1] 4 6
+#'     #> [1] 4 6
 Col = function (f, x) {
     if (missing(x))
         return(Curry(Col, f))
@@ -68,7 +68,7 @@ Col = function (f, x) {
 #'
 #' @examples
 #'     Row(sum, rbind(c(1,2), c(3,4)))
-#'     # [1] 3 7
+#'     #> [1] 3 7
 Row = function (f, x) {
     if (missing(x))
         return(Curry(Row, f))
@@ -86,7 +86,7 @@ Row = function (f, x) {
 #'     Curry(paste, collapse='')(c(1, 2, 3))
 #'     # [1] "123"
 #'
-#' @reference
+#' @references
 #'     stackoverflow.com: higher level functions in R - is there an official
 #'     compose operator or curry function?
 Curry = function(f, ...) {
@@ -102,24 +102,24 @@ Curry = function(f, ...) {
 #'
 #' @examples
 #'     Compose(sum, sqrt)(c(1,2,3))
-#'     # [1] 2.44949
+#'     #> [1] 2.44949
 #'     x = c(a=1,b=2,c=3)
 #'     x = Compose(print, values, print, sum, print, sqrt, print)(x)
-#'     # a b c
-#'     # 1 2 3
-#'     # [1] 1 2 3
-#'     # [1] 6
-#'     # [1] 2.44949
+#'     #> a b c
+#'     #> 1 2 3
+#'     #> [1] 1 2 3
+#'     #> [1] 6
+#'     #> [1] 2.44949
 #'     x
-#'     # [1] 2.44949
+#'     #> [1] 2.44949
 #'     Compose(each(print), Col(sum))(rbind(c(1,2), c(3,4)))
-#'     # [1] 1
-#'     # [1] 3
-#'     # [1] 2
-#'     # [1] 4
-#'     # [1] 4 6
+#'     #> [1] 1
+#'     #> [1] 3
+#'     #> [1] 2
+#'     #> [1] 4
+#'     #> [1] 4 6
 #'
-#' @reference
+#' @references
 #'     stackoverflow.com: higher level functions in R - is there an official
 #'     compose operator or curry function?
 Compose = function(...) {
@@ -129,15 +129,15 @@ Compose = function(...) {
 
 #' @deprecated Override the built-in funtion range.
 #'
-#' @alias seq.int
+#' @aliases seq.int
 #'
 #' @examples
 #'     range(10)
-#'     # [1]  1  2  3  4  5  6  7  8  9 10
+#'     #> [1]  1  2  3  4  5  6  7  8  9 10
 #'     range(5,10)
-#'     # [1]  5  6  7  8  9 10
+#'     #> [1]  5  6  7  8  9 10
 #'     range(0, 10, 2)
-#'     # [1]  0  2  4  6  8 10
+#'     #> [1]  0  2  4  6  8 10
 range = function (...) {
     return(seq.int(...))
 }
@@ -150,11 +150,11 @@ range = function (...) {
 #'
 #' @examples
 #'     values(list(a=1, b=2))
-#'     # [1] 1 2
+#'     #> [1] 1 2
 #'     values(rbind(c(a=1, b=2), c(c=3, c=4)))
-#'     #       [,1] [,2]
-#'     # [1,]    1    2
-#'     # [2,]    3    4
+#'     #>       [,1] [,2]
+#'     #> [1,]    1    2
+#'     #> [2,]    3    4
 values = function (x) {
     if (is.list(x) && !is.matrix(x))
         x = unlist(x)
@@ -174,15 +174,15 @@ values = function (x) {
 #' @examples
 #'     x = c(3, 4, 5)
 #'     each(print, x)
-#'     # [1] 3
-#'     # [1] 4
-#'     # [1] 5
-#'     # [1] 3 4 5
+#'     #> [1] 3
+#'     #> [1] 4
+#'     #> [1] 5
+#'     #> [1] 3 4 5
 #'     each(function (x, i) print(strf('%s: %s', i, x + 1)), x)
-#'     # [1] "1: 4"
-#'     # [1] "2: 5"
-#'     # [1] "3: 6"
-#'     # [1] 3 4 5
+#'     #> [1] "1: 4"
+#'     #> [1] "2: 5"
+#'     #> [1] "3: 6"
+#'     #> [1] 3 4 5
 each = function (f, x) {
     if (missing(x))
         return(Curry(each, f))
@@ -206,18 +206,18 @@ each = function (f, x) {
 #'     x = rbind(c(1, 2), c(3, 4))
 #'     colnames(x) = c('a', 'b')
 #'     each_col(function (c) print(sum(c)), x)
-#'     # [1] 4
-#'     # [1] 6
-#'     #      a b
-#'     # [1,] 1 2
-#'     # [2,] 3 4
+#'     #> [1] 4
+#'     #> [1] 6
+#'     #>      a b
+#'     #> [1,] 1 2
+#'     #> [2,] 3 4
 #'     f = f
 #'     each_col(function(c, i) print(strf('%s: %s', i, sum(c))), x)
-#'     # [1] "a: 4"
-#'     # [1] "b: 6"
-#'     #      a b
-#'     # [1,] 1 2
-#'     # [2,] 3 4
+#'     #> [1] "a: 4"
+#'     #> [1] "b: 6"
+#'     #>      a b
+#'     #> [1,] 1 2
+#'     #> [2,] 3 4
 each_col = function (f, x) {
     if (missing(x))
         return(Curry(each_col, f))
@@ -239,17 +239,17 @@ each_col = function (f, x) {
 #'     x = rbind(c(1, 2), c(3, 4))
 #'     rownames(x) = c('a', 'b')
 #'     each_row(function(r) print(sum(r)), x)
-#'     # [1] 3
-#'     # [1] 7
-#'     #   [,1]  [,2]
-#'     # a    1    2
-#'     # b    3    4
+#'     #> [1] 3
+#'     #> [1] 7
+#'     #>   [,1]  [,2]
+#'     #> a    1    2
+#'     #> b    3    4
 #'     each_row(function(r, i) print(strf('%s: %s', i, sum(r))), x)
-#'     # [1] "a: 3"
-#'     # [1] "b: 7"
-#'     #   a b
-#'     # a 1 2
-#'     # b 3 4
+#'     #> [1] "a: 3"
+#'     #> [1] "b: 7"
+#'     #>   a b
+#'     #> a 1 2
+#'     #> b 3 4
 each_row = function (f, x) {
     if (missing(x))
         return(Curry(each_row, f))
@@ -266,29 +266,29 @@ each_row = function (f, x) {
 #'
 #' @examples
 #'     or(TRUE, TRUE)
-#'     # [1] TRUE
+#'     #> [1] TRUE
 #'     or(FALSE, TRUE)
-#'     [1] TRUE
+#'     #> [1] TRUE
 #'     or(TRUE, FALSE)
-#'     # [1] TRUE
+#'     #> [1] TRUE
 #'     or(FALSE, (3 == 4))
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     or('Cat', 'Dog')
-#'     # [1] 'Cat'
+#'     #> [1] 'Cat'
 #'     or(FALSE, 'Cat')
-#'     # [1] 'Cat'
+#'     #> [1] 'Cat'
 #'     or('Cat', FALSE)
-#'     # [1] 'Cat'
+#'     #> [1] 'Cat'
 #'     or(c(FALSE, TRUE), 'Dog')
-#'     # [1] 'Dog'
+#'     #> [1] 'Dog'
 #'     or(c(TRUE, TRUE), FALSE)
-#'     # [1] TRUE TRUE
+#'     #> [1] TRUE TRUE
 #'     or(NULL, FALSE, 'Dog', 'Cat')
-#'     # [1] 'Dog'
+#'     #> [1] 'Dog'
 #'     or(TRUE, NULL, 'Dog')
-#'     # [1] TRUE
+#'     #> [1] TRUE
 #'     or(FALSE, NULL, 'Dog')
-#'     # [1] 'Dog'
+#'     #> [1] 'Dog'
 or = function (...) {
     for (i in list(...))
         if (!is.null(i) && (!is.logical(i) || is.logical(i) && all(i)))
@@ -302,29 +302,29 @@ or = function (...) {
 #'
 #' @examples
 #'     and(TRUE, TRUE)
-#'     # [1] TRUE
+#'     #> [1] TRUE
 #'     and(TRUE, FALSE)
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and(FALSE, TRUE)
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and(FALSE, (3 == 4))
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and('Cat', 'Dog')
-#'     # [1] 'Dog'
+#'     #> [1] 'Dog'
 #'     and(FALSE, 'Cat')
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and('Cat', FALSE)
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and(c(FALSE, TRUE), 'Dog')
-#'     # [1] FALSE, TRUE
+#'     #> [1] FALSE, TRUE
 #'     and(c(TRUE, TRUE), FALSE)
-#'     # [1] FALSE
+#'     #> [1] FALSE
 #'     and(NULL, FALSE, 'Dog', 'Cat')
-#'     # [1] NULL
+#'     #> [1] NULL
 #'     and(TRUE, NULL, 'Dog')
-#'     # [1] NULL
+#'     #> [1] NULL
 #'     and(FALSE, NULL, 'Dog')
-#'     # [1] FALSE
+#'     #> [1] FALSE
 and = function (...) {
     args = list(...)
 
@@ -345,6 +345,11 @@ and = function (...) {
     return(args[[1]])
 }
 
+#' @aliases sprintf
+strf = function (...) {
+    return(sprintf(...))
+}
+
 #' Compute a vector of breakpoints, ie the cutoff points to bin x.
 #'
 #' @param x Vector
@@ -355,7 +360,7 @@ and = function (...) {
 #'
 #' @examples
 #'    generate_breaks(range(1000))
-#'    # [1]    0  100  200  300  400  500  600  700  800  900 1000
+#'    #> [1]    0  100  200  300  400  500  600  700  800  900 1000
 #'
 #' @references
 #'     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
@@ -377,8 +382,8 @@ generate_breaks = function (x, method=nclass.Sturges) {
 #'
 #' @examples
 #'     discretize(range(10))
-#'     # [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
-#'     # Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
+#'     #> [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
+#'     #> Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
 #' @references
 #'     https://en.wikipedia.org/wiki/Data_binning
 #'     http://www.mathworks.com/help/matlab/ref/discretize.html
@@ -491,13 +496,6 @@ correlation_analysis = function (x) {
     return(correlations)
 }
 
-# string functions
-
-strf = function (...) {
-    # Alias for sprintf.
-    return(sprintf(...))
-}
-
 # math functions
 
 #' Return the sum of square error of a vector x: (n - 1) * var(x).
@@ -508,15 +506,15 @@ strf = function (...) {
 #' @examples
 #'     x = c(1, 2, 3, 4, 5)
 #'     length(x)
-#'     # [1] 5
+#'     #> [1] 5
 #'     var(x)
-#'     # [1] 2.5
+#'     #> [1] 2.5
 #'     ss(x)  # sum of square of x
-#'     # [1] 10
+#'     #> [1] 10
 #'     ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
-#'     # [1] 10
+#'     #> [1] 10
 #'     ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
-#'     # [1] 10 10
+#'     #> [1] 10 10
 ss = function (x, n=NA, VAR=FALSE) {
     if (VAR == FALSE) {
         if (is.vector(x))
@@ -540,80 +538,122 @@ ss = function (x, n=NA, VAR=FALSE) {
 #' maximum range of a point is 50% less and greater than IQR, respectively.
 #'
 #' If x is a matrix or data frame, find the thresholds on each column.
+#'
+#' @examples
+#'     outlier_thresholds(1:100)
+#'     #> lower upper
+#'     #> -48.5 149.5
+#'     a = c(462, 842, 912, 531, 215, 526, 140, 673, 610, 309)
+#'     b = c(21, 493, 549, 684, 401, 133, 433, 758, 567, 253)
+#'     x = cbind(a, b)
+#'     outlier_thresholds(x)
+#'     #> a       b
+#'     #> lower -117.75 -118.75
+#'     #> upper 1122.25  971.25
 outlier_thresholds = function (x, factor=1.5) {
-    if (is.matrix(x))
-        return(t(do.call(rbind,
-            apply(x, 2, function(y) outlier_thresholds(y, factor)
-        ))))
-    if (is.data.frame(x))
-        return(t(do.call(rbind.data.frame,
-            apply(x, 2, function(y) outlier_thresholds(y, factor)
-        ))))
-
+    if (is.matrix(x) || is.data.frame(x))
+        return(Col(Curry(outlier_thresholds, factor=factor), x))
     quartiles = values(quantile(x)[2:4])
-    first_quartile = quartiles[1]
-    third_quartile = quartiles[3]
-    iqr = third_quartile - first_quartile # same as IQR(x)
-
-    threshold = list()
-    threshold$lower = first_quartile - (iqr * factor)
-    threshold$upper = (iqr * factor) + third_quartile
+    iqr = quartiles[3] - quartiles[1] # same as IQR(x)
+    lower = quartiles[1] - (iqr * factor)
+    upper = (iqr * factor) + quartiles[3]
+    threshold = c(lower=lower, upper=upper)
     return(threshold)
 }
 
 #' Verify if x is an outlier based on lower and upper thresholds.
 #'
-#' If x is multivariate (vector), so the thresholds also must be.
+#' If x is multivariate (length(x) > 1), so the thresholds also must be.
+#'
+#' @examples
+#'     is.outlier(4, 1, 5)
+#'     #> [1] FALSE
+#'     is.outlier(0, 1, 5)
+#'     #> [1] TRUE
+#'     is.outlier(c(1, 2, 3), c(0, 0, 0), c(1, 2, 3))
+#'     #> [1] FALSE
+#'     is.outlier(x=c(1, 2, 3), lower=c(2, 0, 0), upper=c(1, 2, 3))
+#'     #> [1] TRUE  # x[1] < lower[1]
+#'     is.outlier(c(1, 2, 3), lower=c(0, 0, 0), upper=c(1, 2, 2))
+#'     #> [1] TRUE  # x[3] > lower[3]
 is.outlier = function (x, lower, upper) {
     thresholds = rbind(lower, upper)
-    if(length(x) > 0 & !is.null(colnames(thresholds)))  # x is multivariate
+    if(!is.null(colnames(thresholds)))
         x = x[colnames(thresholds)]
     if (any(x < thresholds['lower', ]) | any(x > thresholds['upper', ]))
         return(TRUE)
     return(FALSE)
 }
 
-#' Find outliers on a data matrix x. Default boxplot IQR factor == 1.5.
+#' Find outliers on a matrix x based on boxplot IQR factor.
 #'
-#' Return a boolean vector to indicate the outliers and the min and max
-#' thresholds for each feature used to find the outliers.
+#' @param x Matrix
+#' @param factor {numeric optional 1.5} Boxplot IQR factor
+#'
+#' @todo is.vector(x) == TRUE || is.matrix(x)
+#'
+#' @return Vector indicating the outliers; thresholds for each column; total
+#'     outliers.
+#'
+#' @examples
+#'     a = c(462, 842, 912, 531, 215, 526, 140, 673, 610, 309)
+#'     b = c(21, 493, 549, 684, 401, 133, 433, 758, 567, 253)
+#'     x = cbind(a, b)
+#'     result = find_outliers(x, factor=0.25)
+#'     result$outliers
+#'     #> [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+#'     result$thresholds
+#'     #>            a       b
+#'     #> lower 269.75 221.875
+#'     #> upper 734.75 630.625
+#'     result$total
+#'     #> [1] 8
 find_outliers = function (x, factor=1.5) {
-    features = colnames(x)
-    thresholds = outlier_thresholds(data[, features], factor=factor)
+    lim = outlier_thresholds(x, factor=factor)
+    cols = or(colnames(lim), 1:ncol(lim))
 
-    # select only features where the max and min thresholds are different in
-    # order to mantain the variability
-    thresholds.isdiff = diff(thresholds) != 0  # lower != upper
-    thresholds.features = names(thresholds.isdiff[, thresholds.isdiff == TRUE])
-    thresholds = thresholds[, thresholds.features]
-    features = thresholds.features
+    # select only features where the max and min thresholds are different
+    # lower != upper in order to mantain the variability
+    lim = lim[, cols[diff(lim) != 0]]
 
-    # boolean vector to indicate which data point p is an outlier or not
-    outliers = Row(
-        function(p) is.outlier(p, thresholds['lower', ], thresholds['upper', ]),
-        data[, features]
-    )
-
+    # indicate which element is an outlier TRUE or not FALSE
+    outliers = Row(function(e) is.outlier(e, lim['lower', ], lim['upper', ]), x)
     total = sum(outliers)
 
-    print('t(thresholds):')
-    print(t(thresholds))
-
-    print(strf('total outliers: %s', total))
-
-    result = list()
-    result$outliers = outliers
-    result$thresholds = thresholds
-    result$total = total
-    return(result)
+    return(list(outliers=outliers, thresholds=lim, total=total))
 }
 
-#' Indentify and remove outliers in a matrix x based on boxplot IQR factor.
+#' Remove outliers from a matrix x based on boxplot IQR factor.
+#'
+#' @param x Matrix
+#' @param cols {character optional} Predefined matrix columns to find outliers
+#' @param factor {numeric optional 1.5} Boxplot IQR factor
+#'
+#' @todo is.vector(x) == TRUE || is.matrix(x)
+#'
+#' @return x without outliers
+#'
+#' @examples
+#'     a = c(462, 842, 912, 531, 215, 526, 140, 673, 610, 309)
+#'     b = c(21, 493, 549, 684, 401, 133, 433, 758, 567, 253)
+#'     x = cbind(a, b)
+#'     result = find_outliers(x, factor=0.25)
+#'     result$outliers
+#'     #> [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+#'     result$thresholds
+#'     #>            a       b
+#'     #> lower 269.75 221.875
+#'     #> upper 734.75 630.625
+#'     result$total
+#'     #> [1] 8
 remove_outliers = function (x, cols=NULL, factor=1.5) {
-    cols = or(cols, names(x), colnames(x), range(length(x)))
-    outliers = find_outliers(x[, cols], factor=3)
-    x = x[!outliers$outliers, ]
-    return(x)
+    cols = or(cols, colnames(x), 1:ncol(x))
+    result = find_outliers(x[, cols], factor=factor)
+    print('Thresholds:')
+    print(t(result$thresholds))
+    print('Total outliers:')
+    print(t(result$total))
+    return(x[!result$outliers, ])
 }
 
 #' Select the features of an data matrix x based on min > f(x) < max
@@ -699,7 +739,7 @@ cor.mtest = function(x, method='pearson', ...) {
     return(r)
 }
 
-#' @alias corrplot
+#' @aliases corrplot
 cor.plot = function (x, ...) {
     if (!require('corrplot')) {
         install.packages('corrplot', dependencies=TRUE)
@@ -792,7 +832,7 @@ mhist = function (x, y, palette=rainbow) {
 #'     tot.withinss = sum(kmeans(data, 5)$withinss)
 #'     betweenss = abs(tot.withinss - totss)
 #'     (betweenss / totss) == betweenss.rate(kmeans(data, 5))
-#'     [1] TRUE
+#'     #> [1] TRUE
 betweenss.rate = function (fit) {
     return(fit$betweenss / fit$totss)
 }
