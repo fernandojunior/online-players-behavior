@@ -1,7 +1,7 @@
 library('modules')
 
 import('fun', attach=TRUE)
-import('outliers', attach=TRUE)
+# import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
 import_package('cluster', attach=TRUE)  # clusplot
