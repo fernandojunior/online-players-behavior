@@ -203,67 +203,6 @@ each = function (f, x) {
     return(x)
 }
 
-#' Iterate over the columns of x and execute a function f on each one.
-#'
-#' Curring: each_col(f, x) == each_col(f)(x)
-#'
-#' @return x
-#'
-#' @examples
-#'     x = cbind(a=c(1, 2), b=c(3, 4))
-#'     each_col(function (c) print(sum(c)), x)
-#'     #> [1] 3
-#'     #> [1] 7
-#'     #>      a b
-#'     #> [1,] 1 3
-#'     #> [2,] 2 4
-#'     each_col(function(c, i) print(paste(i, sum(c))), x)
-#'     #> [1] "a 3"
-#'     #> [1] "b 7"
-#'     #>      a b
-#'     #> [1,] 1 3
-#'     #> [2,] 2 4
-each_col = function (f, x) {
-    if (missing(x))
-        return(Curry(each_col, f))
-    indices = or(names(x), colnames(x), range(ncol(x)))
-    if (length(or(formals(f), 1)) == 1)
-        xxx = Col(f, x)
-    else
-        each(function (i) f(x[, i], i), indices)
-    return(x)
-}
-
-#' Iterate over the rows of x and execute a function f on each one.
-#'
-#' Curring: each_row(f, x) == each_row(f)(x)
-#'
-#' @return x
-#'
-#' @examples
-#'     x = rbind(a=c(1, 2), b=c(3, 4))
-#'     each_row(function(r) print(sum(r)), x)
-#'     #> [1] 3
-#'     #> [1] 7
-#'     #>   [,1]  [,2]
-#'     #> a    1    2
-#'     #> b    3    4
-#'     each_row(function(r, i) print(paste(i, sum(r))), x)
-#'     #> [1] "a 3"
-#'     #> [1] "b 7"
-#'     #> [,1] [,2]
-#'     #> a    1    2
-#'     #> b    3    4
-each_row = function (f, x) {
-    if (missing(x))
-        return(Curry(each_row, f))
-    if (length(or(formals(f), 1)) == 1)
-        xxx = Row(f, x)
-    else
-        each(function (i) f(x[i, ], i), or(rownames(x), range(nrow(x))))
-    return(x)
-}
-
 #' Apply the logical operator OR on the arguments.
 #'
 #' Similar to `any`

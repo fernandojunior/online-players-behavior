@@ -62,8 +62,7 @@ features.numeric = c(
 # can see from the above plot that some features has outliers in the data.
 save_plot(function () {
     par(mfrow=c(3, 6))
-    each_col(function(x, i) boxplot(x, main=i), data[, features.numeric])
-    return()
+    each(function(i) boxplot(data[, i], main=i), features.numeric)
 }, 'outliers-for-each-one', path=PLOT_DIR, width=16, height=9, close=TRUE)
 
 # indentify and remove extreme (IQR factor = 3) outliers.
