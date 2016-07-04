@@ -1,7 +1,8 @@
 # helper functions
 
-import('fun', attach=TRUE)
 import_package('corrplot', attach=TRUE)  # corrplot
+import('fun', attach=TRUE)
+import('correlation', attach=c('correlation_matrix'))
 
 #' Compute a vector of breakpoints, ie the cutoff points to bin x.
 #'
@@ -60,6 +61,26 @@ counter_by = function (x, y) {
     return(z)
 }
 
+# cluster functions
+
+#' Between-cluster Sum of Square Error rate of a k-means fit.
+#'
+#' It represents the total SSE rate minimized from the data after
+#' partitioning in k clusters.
+#'
+#' @todo Refactor `betweenss.rate` to betweenss.prop
+#'
+#' @examples
+#'     data = sample(range(1000), 100)
+#'     totss = sum(ss(data))
+#'     tot.withinss = sum(kmeans(data, 5)$withinss)
+#'     betweenss = abs(tot.withinss - totss)
+#'     (betweenss / totss) == betweenss.rate(kmeans(data, 5))
+#'     #> [1] TRUE
+betweenss.rate = function (fit) {
+    return(fit$betweenss / fit$totss)
+}
+
 #' Perform a cluster analysis on a data matrix x for each k = {1:kmax}
 #' number of clusters.
 #'
@@ -116,7 +137,11 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     return(apply(tests, 2, mean))  # summary
 }
 
+# correlation functions
+
 #' Perform a correlation analysis on a matrix x.
+#'
+#' @todo Examples.
 #'
 #' @references
 #'     https://rpubs.com/gaston/dendrograms
@@ -124,7 +149,7 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
 correlation_analysis = function (x) {
     # Correlation matrix of x using Spearman method, which does not require the
     # features follow a normal distribuition or linear correlation.
-    correlations = cor.mtest(x, method='spearman', exact=FALSE)
+    correlations = correlation_matrix(x, method='spearman', exact=FALSE)
 
     par(mfrow=c(1, 2))
 
@@ -147,6 +172,13 @@ correlation_analysis = function (x) {
     )
 
     return(correlations)
+}
+
+#' Rank the features of a correlation matrix x.
+#'
+#' It is based on the mean of correlations for each feature.
+cor.rank = function (x) {
+    return(Compose(abs, Curry(colMeans, na.rm=TRUE) , sort, rev, names)(x))
 }
 
 # math functions
@@ -193,72 +225,6 @@ filter_features = function (x, f, min=NULL, max=NULL) {
 
     features = names(features[features == TRUE])
     return(features)
-}
-
-# correlation functions
-
-#' Count the number of items from a list or vector of correlations x.
-#'
-#' If x is a matrix or data frame, count the number of items for each column.
-cor.counter = function (x) {
-    if (is.matrix(x) | is.data.frame(x))
-        return(apply(x, 2, cor.counter))
-    return(counter(x))
-}
-
-#' Mean of a list or vector of correlations x.
-#'
-#' If x is a matrix or data frame, calculate the mean for each column.
-cor.mean = function (x) {
-    if (is.matrix(x) | is.data.frame(x))
-        return(apply(x, 2, cor.mean))
-    return(mean(x[!x %in% NA]))
-}
-
-#' Correlation rank of the attributes of a correlation matrix.
-#'
-#' It is based on the mean of correlations for each one.
-cor.rank = function (correlation_matrix, decreasing=TRUE) {
-    return(names(sort(cor.mean(correlation_matrix), decreasing=decreasing)))
-}
-
-#' Peform a cor.test between paired features of a multivariate data set x.
-cor.mtest = function(x, method='pearson', ...) {
-    features = colnames(x)
-    n = length(features)
-
-    basematrix = matrix(NA, n, n)
-    colnames(basematrix) = rownames(basematrix) = features
-
-    r = list()
-    r$estimates = r$p.values = basematrix
-
-    # A correlation of the diagonal correlation matrix is a correlation of a
-    # data attribute with itself. So, the diagonal must be NA to prevent wrong
-    # behaviors as in dendrogram and box plots.
-    diag(r$estimates) = NA
-
-    diag(r$p.values) = 0
-
-    if (method == 'pearson') {
-        r$conf.int = list()
-        r$conf.int$lower = r$conf.int$upper = basematrix
-        diag(r$conf.int$lower) = diag(r$conf.int$upper) = 1
-    }
-
-    for (i in 1:(n - 1)) {
-        for (j in (i + 1):n) {
-            tmp = cor.test(x[, i], x[, j], method=method, ...)
-            r$estimates[i, j] = r$estimates[j, i] = tmp$estimate
-            r$p.values[i, j] = r$p.values[j, i] = tmp$p.value
-            if ('conf.int' %in% names(tmp)) {
-                r$conf.int$lower[i, j] = r$conf.int$lower[j, i] = tmp$conf.int[1]
-                r$conf.int$upper[i, j] = r$conf.int$upper[j, i] = tmp$conf.int[2]
-            }
-        }
-    }
-
-    return(r)
 }
 
 # plots
@@ -326,24 +292,4 @@ mhist = function (x, y, palette=rainbow) {
         hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, main='', xlab=xlab)
     }
     legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
-}
-
-# k-means functions
-
-#' Between-cluster Sum of Square Error rate of a k-means fit.
-#'
-#' It represents the total SSE rate minimized from the data after
-#' partitioning in k clusters.
-#'
-#' @todo Refactor `betweenss.rate` to betweenss.prop
-#'
-#' @examples
-#'     data = sample(range(1000), 100)
-#'     totss = sum(ss(data))
-#'     tot.withinss = sum(kmeans(data, 5)$withinss)
-#'     betweenss = abs(tot.withinss - totss)
-#'     (betweenss / totss) == betweenss.rate(kmeans(data, 5))
-#'     #> [1] TRUE
-betweenss.rate = function (fit) {
-    return(fit$betweenss / fit$totss)
 }

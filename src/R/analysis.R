@@ -132,7 +132,8 @@ correlations = save_plot(function () {
 write.csv(correlations$estimates, "../data/correlations.csv")
 
 # Correlation matrix features ranked by the mean of correlations for each one
-features.ranked = cor.rank(abs(correlations$estimates))
+features.ranked = cor.rank(correlations$estimates)
+
 #> [1] "goldEarned"                  "totalDamageDealt"
 #> [3] "totalDamageDealtToChampions" "kills"
 #> [5] "physicalDamageDealt"         "largestKillingSpree"
