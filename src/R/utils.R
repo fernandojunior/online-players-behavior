@@ -291,3 +291,22 @@ mhist = function (x, y, palette=rainbow) {
 pca_plot = function (x, ...) {
     scatterplot3d(prcomp(x, center=TRUE)$x[, 1:3], ...)
 }
+
+#' Transform a matrix x into a key/value pairs matrix
+#'     a = c(462, 842, 912)
+#'     b = c(21, 493, 549)
+#'     x = data.frame(a, b)
+#'     rowify(x)
+#'     #>   id key value
+#'     #> 1  1   a   462
+#'     #> 2  2   a   842
+#'     #> 3  3   a   912
+#'     #> 4  1   b    21
+#'     #> 5  2   b   493
+#'     #> 6  3   b   549
+pairify = function (x) {
+    parse = function (y) {
+        return(cbind(id=1:nrow(x), key=y, value=x[, y]))
+    }
+    return(data.frame(do.call(rbind, Map(parse, colnames(x)))))
+}
