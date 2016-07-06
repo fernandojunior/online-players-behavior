@@ -1,15 +1,15 @@
+options(scipen=999)
+
 library('modules')
+
+import_package('cluster', attach=TRUE)  # clusplot
+import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 
 import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
-import_package('cluster', attach=TRUE)  # clusplot
-import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
-
-options(scipen=999)
-
-PLOT_DIR = '../output'
+CLOSE_PLOT = TRUE
 
 # Load data -------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ features.info = c(
     'winner'
 )
 
-features.boolean = c(
+features.logic = c(
     'firstBloodKill',
     'firstTowerKill',
     'firstTowerAssist'
@@ -61,9 +61,11 @@ features.numeric = c(
 # Boxplots to analyze the outliers of all numeric features individually. As we
 # can see from the above plot that some features has outliers in the data.
 save_plot(function () {
-    par(mfrow=c(3, 6))
+    cols = 6
+    rows = trunc(length(features.numeric)/cols)
+    par(mfrow=c(rows, cols))
     each(function(i) boxplot(data[, i], main=i), features.numeric)
-}, 'outliers-for-each-one', path=PLOT_DIR, width=16, height=9, close=TRUE)
+}, '../output/outliers-for-each-one', width=16, height=9, close=CLOSE_PLOT)
 
 # indentify and remove extreme (IQR factor = 3) outliers.
 data = remove_outliers(data, cols=features.numeric, factor=3)
@@ -94,45 +96,33 @@ data = remove_outliers(data, cols=features.numeric, factor=3)
 #> [1] 74656
 
 # As data were looked up by participants, some matches were left with less than
-# 10 participants. So, these inconsistent matches need to be removed.
-
-# Number of participants by match ID
-participants_by_match = counter(data$matchId)
-
-# Matches (IDs) that do not contain all 10 participants
-inconsistent_matches = names(participants_by_match[participants_by_match < 10])
-
-# Removing inconsistent matches from data
-data = data[!(data$matchId %in% inconsistent_matches), ]
+# 10 participants. So, these invalid matches need to be removed.
+find_invalid_matches = Compose(counter, Curry(Filter, Curry(`>`, 10)), keys)
+data = data[!data$matchId %in% find_invalid_matches(data$matchId), ]
+write.csv(data, "../data/treated.csv", row.names=FALSE)
 # nrow(data)
 #> [1] 35140
 
-write.csv(data, "../data/treated.csv", row.names=FALSE)
-
 # Data normalization (z-score) ------------------------------------------------
+
 # Since the features are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the
-# integer features using Z-score. Boolean features do not need be normalized.
-data.normalized = cbind(
-    data[, features.boolean],
-    scale(data[, features.numeric])
-)
-
+# integer features using Z-score. Logic features do not need be normalized.
+data.normalized = cbind(data[, features.logic], scale(data[, features.numeric]))
 write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 
 # Correlation analysis --------------------------------------------------------
+
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
-
 correlations = save_plot(function () {
     return(correlation_analysis(data.normalized))
-}, 'correlation', path=PLOT_DIR, width=16, height=9, close=TRUE)
-
+}, '../output/correlation', width=16, height=9, close=CLOSE_PLOT)
 write.csv(correlations$estimates, "../data/correlations.csv")
 
 # Correlation matrix features ranked by the mean of correlations for each one
-features.ranked = cor.rank(correlations$estimates)
-
+rank_features = Compose(abs, Curry(colMeans, na.rm=TRUE), sort, rev, names)
+features.ranked = rank_features(correlations$estimates)
 #> [1] "goldEarned"                  "totalDamageDealt"
 #> [3] "totalDamageDealtToChampions" "kills"
 #> [5] "physicalDamageDealt"         "largestKillingSpree"
@@ -149,15 +139,15 @@ features.ranked = cor.rank(correlations$estimates)
 
 # The features with high affinity (dendogram plot) and high correlation
 # (heatmap plot) > 0.7 are redundants. The following are redundant features and
-# boolean features.
+# logic features.
 features.unselect = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
     'totalDamageDealtToChampions',  # (goldErned, totalDamageDealtToChampions)
     'largestMultiKill',  # (Kills, LargestMultiKill)
     'largestKillingSpree',  # (Kills, LargestMultiKill), LargestKillingSpree
-    'firstTowerAssist',  # boolean
-    'firstBloodKill',  # boolean
-    'firstTowerKill'  #  boolean
+    'firstTowerAssist',  # logic
+    'firstBloodKill',  # logic
+    'firstTowerKill'  #  logic
 )
 
 # Ranked feature selection.
@@ -184,36 +174,28 @@ fits = save_plot(function () {
     main = 'K-means - Error curve'
     result = cluster_analysis(data.reduced, kmax=30, main=main)
     return(result$fits)
-}, 'k-means-error-curve', path=PLOT_DIR, close=TRUE)
+}, '../output/k-means-error-curve', close=CLOSE_PLOT)
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it. Let's add some extra components and save it.
 fit = fits[7, ]
-
-# Between-cluster SSE rate
-fit$betweenss.rate = betweenss.rate(fit)
-
-# Number of clusters
-fit$k = length(fit$size)
-
-# Variance for each cluster
-fit$withinvar = 1 / (fit$size - 1) * fit$withinss
+fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
+fit$k = length(fit$size)  # Number of clusters
+fit$withinvar = 1 / (fit$size - 1) * fit$withinss  # Variance for each cluster
 
 # Saving all components
 each(function (x, i) write.csv(x, strf('../output/fit/%s.csv', i)), fit)
-
 write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
+
+# Write or load labeled data --------------------------------------------------
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
-write.csv(labeled, "../data/labeled.csv", row.names=FALSE)
+write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
+# labeled = read.csv('../data/labeled.csv')
 
-# Load previous labeled data
-# cluster = read.csv('../output/fit/cluster.csv')$x
-# labeled = cbind(data[, features.info], label=cluster, data.reduced)
-
-# Spliting labeled data between winners and losers
+# Discriminate labeled data between winners and losers
 winners = labeled[labeled$winner == 1, ]
 losers = labeled[labeled$winner == 0, ]
 
@@ -237,7 +219,7 @@ h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 h2.p.values = map(
     function (k) {
         x = rowSums(winners[winners$label == k, features.selection])
-        y = rowSums(losers[ losers$label == k, features.selection])
+        y = rowSums(losers[losers$label == k, features.selection])
         wilcox.test(x , y, paired=FALSE)$p.value
     },
     range(fit$k)
@@ -247,130 +229,106 @@ save_plot(function () {
     par(mfrow=c(1, 2))
     plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
     plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-}, 'hypothesis', path=PLOT_DIR, width=16, height=9, close=TRUE)
+}, '../output/hypothesis', width=16, height=9, close=CLOSE_PLOT)
 
 # Exploring labeled data ------------------------------------------------------
 
 # A sample with n = 80 random points from labeled data
-data.sampled = labeled[sample(range(nrow(labeled)), 80), ]
 
 # Clusplot of sampled data
 save_plot(function () {
+    sampled = labeled[sample(range(nrow(labeled)), 80), ]
     main = 'Exploring - Cluster plot n=80'
-    x = data.sampled[, features.selection]
-    lb = data.sampled$label
-    lb.d = sort(unique(data.sampled$label))
+    x = sampled
+    lb = sampled$label
+    lb.d = sort(unique(sampled$label))
     clusplot(x, lb, main=main, labels=4, col.clus=lb.d, col.p=lb, lines=0)
-}, 'exploring-cluster-plot-n-80', path=PLOT_DIR, close=TRUE)
+}, '../output/exploring-cluster-plot-n-80', close=CLOSE_PLOT)
 
 # Plot of labeled data. Only the top selected features
 save_plot(function () {
     main = 'Exploring - Scatter plot'
     plot(labeled[, features.topselection], main=main, col=labeled$label)
-}, 'exploring-scatter-plot', path=PLOT_DIR, close=TRUE)
+}, '../output/exploring-scatter-plot', close=CLOSE_PLOT)
 
 # Only winners
 save_plot(function () {
     main = 'Exploring - Scatter plot winners'
     plot(winners[, features.topselection], main=main, col=winners$label)
-}, 'exploring-scatter-plot-winners', path=PLOT_DIR, close=TRUE)
+}, '../output/exploring-scatter-plot-winners', close=CLOSE_PLOT)
 
 # Only losers
 save_plot(function () {
     main = 'Exploring - Scatter plot losers'
     plot(losers[, features.topselection], main=main, col=losers$label)
-}, 'exploring-scatter-plot-losers', path=PLOT_DIR, close=TRUE)
+}, '../output/exploring-scatter-plot-losers', close=CLOSE_PLOT)
 
-# PCA of labeled data
-labeled.pca = prcomp(labeled[, features.selection], center=TRUE)
-winners.pca = prcomp(winners[, features.selection], center=TRUE)
-losers.pca = prcomp(losers[, features.selection], center=TRUE)
-
-# Selecting principal components to view
-pca_indices = range(3)
-
-# 3-D visualization of principal components of the labeled data
+# 3-D visualization of 3 principal components of the labeled data
 save_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-10, 10)
-    angule = 95
-    scatterplot3d(
-        labeled.pca$x[, pca_indices],
+    angle = 95
+    pca_plot(
+        labeled[, features.selection],
         main='Exploring - PCA',
         color=labeled$label,
-        angle=angule,
-        xlim=lim,
-        ylim=lim,
-        zlim=lim
+        angle=angle,
+        xlim=lim, ylim=lim, zlim=lim
     )
-    scatterplot3d(
-        winners.pca$x[, pca_indices],
+    pca_plot(
+        winners[, features.selection],
         main='Exploring - PCA winners',
         color=winners$label,
-        angle=angule,
-        xlim=lim,
-        ylim=lim,
-        zlim=lim
+        angle=angle,
+        xlim=lim, ylim=lim, zlim=lim
     )
-    scatterplot3d(
-        losers.pca$x[, pca_indices],
+    pca_plot(
+        losers[, features.selection],
         main='Exploring - PCA losers',
         color=losers$label,
-        angle=angule,
-        xlim=lim,
-        ylim=lim,
-        zlim=lim
+        angle=angle,
+        xlim=lim, ylim=lim, zlim=lim
     )
-}, 'exploring-pca', path=PLOT_DIR, width=18, height=9, close=TRUE)
+}, '../output/exploring-pca', width=18, height=9, close=CLOSE_PLOT)
 
 # In general, we can clearly observe the k clusters found in k-means clustering.
 # We can also observe that some clusters are more perceptible than others when
 # the labeled data is discriminated between winners and losers.
 
 # Centroid analysis -----------------------------------------------------------
-centers_by_label = function (x, features) {
-    "Given a data set x, return the feature centers by label.
 
-    The labeled feature centers are converted into a list, then joined by row.
-    "
-    label = x[, 'label']
+#' Given a data set x, return the feature means by label.
+#'
+#'The labeled col means are converted into a list, then joined by row.
+means_by_label = function (x, cols) {
+    by = 'label'
+    label = x[, by]
     labels = sort(unique(label))
-    centers = aggregate(. ~ label, x[, features], mean)
-    feature_center_by_label = function(feature) {
-        cbind(
-            feature_id=indexof(feature, features),
-            label=labels,
-            center=centers[, feature]
-        )
+    means = aggregate(. ~ label, x[, cols], mean)
+    col_mean_by_label = function (c) {
+        return(cbind(col_id=indexof(c, cols), label=labels, mean=means[, c]))
     }
     return(as.data.frame(do.call(
-        rbind,
-        lapply(setdiff(features, 'label'), feature_center_by_label)
+        rbind, lapply(setdiff(cols, 'label'), col_mean_by_label)
     )))
 }
 
-plot_centers_by_label = function (x, features, main) {
-    xlab = paste(sapply(
-        range(length(features)),
-        function(i) paste(i, features[i])
-    ), collapse=', ')
-
-    plot(x$feature_id, x$center, col=x$label, pch=paste(x$label), main=main,
-         xlab=xlab, ylab='centers', ylim=c(-2, 2)
-    )
-
+plot_means_by_label = function (x, cols, main) {
+    xlab = paste(map(function(i) paste(i, cols[i]), 1:length(cols)), collapse=', ')
+    plot(x$col_id, x$mean, col=x$label, pch=paste(x$label), main=main,
+         xlab=xlab, ylab='means', ylim=c(-2, 2))
 }
 
-labeled.centers = centers_by_label(labeled, features.selection)
-winners.centers = centers_by_label(winners, features.selection)
-losers.centers = centers_by_label(losers, features.selection)
+labeled.means = means_by_label(labeled, features.selection)
+winners.means = means_by_label(winners, features.selection)
+losers.means = means_by_label(losers, features.selection)
 
 save_plot(function () {
     par(mfrow=c(3,1))
-    plot_centers_by_label(labeled.centers, features.selection, 'Exploring - Centers')
-    plot_centers_by_label(winners.centers, features.selection, 'Exploring - Centers winners')
-    plot_centers_by_label(losers.centers, features.selection, 'Exploring - Centers losers')
-}, 'exploring-centers', path=PLOT_DIR, width=16, height=9, close=TRUE)
+    plot_means_by_label(labeled.means, features.selection, 'Exploring - Centers')
+    plot_means_by_label(winners.means, features.selection, 'Exploring - Centers winners')
+    plot_means_by_label(losers.means, features.selection, 'Exploring - Centers losers')
+}, '../output/exploring-centers', width=16, height=9, close=CLOSE_PLOT)
 
 # TODO barplot to compare clusters
 

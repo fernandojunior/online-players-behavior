@@ -174,13 +174,6 @@ correlation_analysis = function (x) {
     return(correlations)
 }
 
-#' Rank the features of a correlation matrix x.
-#'
-#' It is based on the mean of correlations for each feature.
-cor.rank = function (x) {
-    return(Compose(abs, Curry(colMeans, na.rm=TRUE) , sort, rev, names)(x))
-}
-
 # math functions
 
 #' Return the sum of square error of a vector x: (n - 1) * var(x).
@@ -292,4 +285,9 @@ mhist = function (x, y, palette=rainbow) {
         hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, main='', xlab=xlab)
     }
     legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
+}
+
+#' 3-D visualization of 3 principal components of a matrix x
+pca_plot = function (x, ...) {
+    scatterplot3d(prcomp(x, center=TRUE)$x[, 1:3], ...)
 }

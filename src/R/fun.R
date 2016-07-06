@@ -2,6 +2,17 @@
 
 # library('modules')
 
+#' @aliases
+#' @todo axis = c(1, 2)
+concat = function (...) {
+    return(cbind(...))
+}
+
+#' @aliases names
+keys = function (...) {
+    return(names(...))
+}
+
 #' @aliases sprintf
 strf = function (...) {
     return(sprintf(...))
