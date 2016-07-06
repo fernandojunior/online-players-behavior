@@ -292,6 +292,41 @@ pca_plot = function (x, ...) {
     scatterplot3d(prcomp(x, center=TRUE)$x[, 1:3], ...)
 }
 
+#' Summary each col of x by y using a function f to render single plots in one.
+#'
+#' @param x Matrix
+#' @param y Grouping vector
+#' @param f Function to summarize the columns of x
+#' @param ... Optional aruments for `plot`
+#'
+#' @examples
+#'     a = c(462, 842, 912, 531)
+#'     b = c(21, 493, 549, 684)
+#'     c = (a + b)/2
+#'     g = c(1, 1, 3, 3)
+#'     x = data.frame(a, b, c)
+#'     aggregate_plot(x, g, mean)
+aggregate_plot = function (x, y, f, ...) {
+    cols = or(colnames(x), 1:ncol(x))
+    pretty_cols = map(function(i) strf('%s#%s', cols[i], i), 1:length(cols))
+    agg = pairify(aggregate(. ~ y, x[, cols], f)[, cols])
+    agg$key = Map(function (key) indexof(key, cols), agg$key)
+    args = list(...)
+    args$x = agg$key
+    args$y = agg$value
+    args$col=agg$id
+    args$pch = paste(agg$id)
+    args$xlab = paste(pretty_cols, collapse=', ')
+    args$ylab = or(args$ylab, as.character(substitute(f)))
+    args$xaxt = "n"
+    do.call(plot, args)
+    axis(1, at=1:length(cols), labels=cols)
+    colors = unique(args$col)
+    legend("bottomright", legend=colors, col=colors, lwd=5, title='Group = y')
+}
+
+# parsers ---------------------------------------------------------------------
+
 #' Transform a matrix x into a key/value pairs matrix
 #'
 #' @seealso tidyr::spread
