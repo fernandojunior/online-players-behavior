@@ -308,7 +308,9 @@ pca_plot = function (x, ...) {
 #'     aggregate_plot(x, g, mean)
 aggregate_plot = function (x, y, f, ...) {
     cols = or(colnames(x), 1:ncol(x))
-    pretty_cols = map(function(i) strf('%s#%s', cols[i], i), 1:length(cols))
+    cols_range = 1:length(cols)
+    cols_id = map(function (x) strf('#%s', x), cols_range)
+    cols_pretty = map(function(i) strf('%s#%s', cols[i], i), cols_range)
     agg = pairify(aggregate(. ~ y, x[, cols], f)[, cols])
     agg$key = Map(function (key) indexof(key, cols), agg$key)
     args = list(...)
@@ -316,13 +318,15 @@ aggregate_plot = function (x, y, f, ...) {
     args$y = agg$value
     args$col=agg$id
     args$pch = paste(agg$id)
-    args$xlab = paste(pretty_cols, collapse=', ')
+    args$xlab = paste(cols_pretty, collapse=', ')
     args$ylab = or(args$ylab, as.character(substitute(f)))
     args$xaxt = "n"
     do.call(plot, args)
-    axis(1, at=1:length(cols), labels=cols)
+    axis(1, at=cols_range, labels=cols_id)
+    position = "bottomright"
     colors = unique(args$col)
-    legend("bottomright", legend=colors, col=colors, lwd=5, title='Group = y')
+    title = 'Group = y'
+    legend(position, legend=colors, col=colors, lwd=5, title=title, cex=0.8)
 }
 
 # parsers ---------------------------------------------------------------------

@@ -193,6 +193,9 @@ write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
+
+# cluster = read.csv('../data/cluster.csv')$x
+# labeled = cbind(data[, features.info], label=cluster, data.reduced)
 # labeled = read.csv('../data/labeled.csv')
 
 # Discriminate labeled data between winners and losers
@@ -296,38 +299,13 @@ save_plot(function () {
 # the labeled data is discriminated between winners and losers.
 
 # Centroid analysis -----------------------------------------------------------
-
-#' Given a data set x, return the feature means by label.
-#'
-#'The labeled col means are converted into a list, then joined by row.
-means_by_label = function (x, cols) {
-    by = 'label'
-    label = x[, by]
-    labels = sort(unique(label))
-    means = aggregate(. ~ label, x[, cols], mean)
-    col_mean_by_label = function (c) {
-        return(cbind(col_id=indexof(c, cols), label=labels, mean=means[, c]))
-    }
-    return(as.data.frame(do.call(
-        rbind, lapply(setdiff(cols, 'label'), col_mean_by_label)
-    )))
-}
-
-plot_means_by_label = function (x, cols, main) {
-    xlab = paste(map(function(i) paste(i, cols[i]), 1:length(cols)), collapse=', ')
-    plot(x$col_id, x$mean, col=x$label, pch=paste(x$label), main=main,
-         xlab=xlab, ylab='means', ylim=c(-2, 2))
-}
-
-labeled.means = means_by_label(labeled, features.selection)
-winners.means = means_by_label(winners, features.selection)
-losers.means = means_by_label(losers, features.selection)
-
+# Given a data set x, summarize the mean for each feature by label.
 save_plot(function () {
     par(mfrow=c(3,1))
-    plot_means_by_label(labeled.means, features.selection, 'Exploring - Centers')
-    plot_means_by_label(winners.means, features.selection, 'Exploring - Centers winners')
-    plot_means_by_label(losers.means, features.selection, 'Exploring - Centers losers')
+    ylim = c(-2, 2)
+    aggregate_plot(labeled[, features.selection], labeled$label, mean, ylim=ylim)
+    aggregate_plot(winners[, features.selection], winners$label, mean, ylim=ylim)
+    aggregate_plot(losers[, features.selection], losers$label, mean, ylim=ylim)
 }, '../output/exploring-centers', width=16, height=9, close=CLOSE_PLOT)
 
 # TODO barplot to compare clusters
