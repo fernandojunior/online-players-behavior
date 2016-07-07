@@ -220,3 +220,19 @@ plot(
     labels=data[sample(range(nrow(data.normalized)), 100), 'summonerId'],
     # col=kmeans(data.normalized, 8)$cluster[r]
 )
+
+
+# TODO barplot to compare clusters
+
+# TODO function for outliers analysis
+
+# TODO As the match duration varies between the matches, the features must be divided by match duration.
+
+# TODO remove duplicated summonerIds and choose only a participant for each match
+
+# TODO win rate analysis
+# (counter(winners$label) - counter(losers$label)) / (counter(winners$label) + counter(losers$label))
+
+# TODO Champ analisys
+# sort(table(winners[, 'championId']), decreasing=TRUE)
+# sort(table(winners[winners$label == 3, 'championId']), decreasing=TRUE)

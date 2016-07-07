@@ -1,6 +1,7 @@
 # helper functions
 
 import_package('corrplot', attach=TRUE)  # corrplot
+import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 

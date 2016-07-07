@@ -1,6 +1,5 @@
 # Functions to handle outliers
 
-# library(modules)
 import('fun', attach=c('or', 'Col', 'Curry', 'values', 'Row', 'strf'))
 
 #' Find the lower and upper outlier thresholds of x.

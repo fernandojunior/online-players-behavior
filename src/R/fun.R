@@ -1,7 +1,5 @@
 # Fun functions and aliases for functional programming
 
-# library('modules')
-
 #' @aliases
 #' @todo axis = c(1, 2)
 concat = function (...) {

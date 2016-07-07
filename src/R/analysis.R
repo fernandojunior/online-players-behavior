@@ -1,10 +1,6 @@
 options(scipen=999)
 
 library('modules')
-
-import_package('cluster', attach=TRUE)  # clusplot
-import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
-
 import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
@@ -147,7 +143,7 @@ features.unselect = c(
     'largestKillingSpree',  # (Kills, LargestMultiKill), LargestKillingSpree
     'firstTowerAssist',  # logic
     'firstBloodKill',  # logic
-    'firstTowerKill'  #  logic
+    'firstTowerKill'  # logic
 )
 
 # Ranked feature selection.
@@ -219,14 +215,11 @@ h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 # continuity correction
 
 # Alternative hypothesis true for each cluster: p.value < 0.05
-h2.p.values = map(
-    function (k) {
-        x = rowSums(winners[winners$label == k, features.selection])
-        y = rowSums(losers[losers$label == k, features.selection])
-        wilcox.test(x , y, paired=FALSE)$p.value
-    },
-    range(fit$k)
-)
+h2.p.values = map(function (k) {
+    x = rowSums(winners[winners$label == k, features.selection])
+    y = rowSums(losers[losers$label == k, features.selection])
+    wilcox.test(x , y, paired=FALSE)$p.value
+}, range(fit$k))
 
 save_plot(function () {
     par(mfrow=c(1, 2))
@@ -235,18 +228,6 @@ save_plot(function () {
 }, '../output/hypothesis', width=16, height=9, close=CLOSE_PLOT)
 
 # Exploring labeled data ------------------------------------------------------
-
-# A sample with n = 80 random points from labeled data
-
-# Clusplot of sampled data
-save_plot(function () {
-    sampled = labeled[sample(range(nrow(labeled)), 80), ]
-    main = 'Exploring - Cluster plot n=80'
-    x = sampled
-    lb = sampled$label
-    lb.d = sort(unique(sampled$label))
-    clusplot(x, lb, main=main, labels=4, col.clus=lb.d, col.p=lb, lines=0)
-}, '../output/exploring-cluster-plot-n-80', close=CLOSE_PLOT)
 
 # Plot of labeled data. Only the top selected features
 save_plot(function () {
@@ -271,56 +252,26 @@ save_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-10, 10)
     angle = 95
-    pca_plot(
-        labeled[, features.selection],
-        main='Exploring - PCA',
-        color=labeled$label,
-        angle=angle,
-        xlim=lim, ylim=lim, zlim=lim
-    )
-    pca_plot(
-        winners[, features.selection],
-        main='Exploring - PCA winners',
-        color=winners$label,
-        angle=angle,
-        xlim=lim, ylim=lim, zlim=lim
-    )
-    pca_plot(
-        losers[, features.selection],
-        main='Exploring - PCA losers',
-        color=losers$label,
-        angle=angle,
-        xlim=lim, ylim=lim, zlim=lim
-    )
+    cols = features.selection
+    pca_plot(labeled[, cols], main='PCA', color=labeled$label, angle=angle,
+             xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(winners[, cols], main='PCA winners', color=winners$label,
+             angle=angle, xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(losers[, cols], main='PCA losers', color=losers$label,
+             angle=angle, xlim=lim, ylim=lim, zlim=lim)
 }, '../output/exploring-pca', width=18, height=9, close=CLOSE_PLOT)
 
-# In general, we can clearly observe the k clusters found in k-means clustering.
-# We can also observe that some clusters are more perceptible than others when
-# the labeled data is discriminated between winners and losers.
+# In general, we can observe the k clusters found in k-means clustering. We can
+# also observe that some clusters are more perceptible than others when the
+# labeled data is discriminated between winners and losers.
 
 # Centroid analysis -----------------------------------------------------------
 # Given a data set x, summarize the mean for each feature by label.
 save_plot(function () {
     par(mfrow=c(3,1))
-    ylim = c(-2, 2)
-    aggregate_plot(labeled[, features.selection], labeled$label, mean, ylim=ylim)
-    aggregate_plot(winners[, features.selection], winners$label, mean, ylim=ylim)
-    aggregate_plot(losers[, features.selection], losers$label, mean, ylim=ylim)
+    lim = c(-2, 2)
+    cols = features.selection
+    aggregate_plot(labeled[, cols], labeled$label, mean, ylim=lim)
+    aggregate_plot(winners[, cols], winners$label, mean, ylim=lim)
+    aggregate_plot(losers[, cols], losers$label, mean, ylim=lim)
 }, '../output/exploring-centers', width=16, height=9, close=CLOSE_PLOT)
-
-# TODO barplot to compare clusters
-
-# TODO function to save plot using callback
-
-# TODO function for outliers analysis
-
-# TODO As the match duration varies between the matches, the features must be divided by match duration.
-
-# TODO remove duplicated summonerIds and choose only a participant for each match
-
-# TODO win rate analysis
-# (counter(winners$label) - counter(losers$label)) / (counter(winners$label) + counter(losers$label))
-
-# TODO Champ analisys
-# sort(table(winners[, 'championId']), decreasing=TRUE)
-# sort(table(winners[winners$label == 3, 'championId']), decreasing=TRUE)
