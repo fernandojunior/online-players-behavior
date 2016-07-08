@@ -33,7 +33,6 @@ Table of contents
 [⬆ back to top](data-visualization)
 
 ## Exploring labeled data
-![](exploring-cluster-plot-n-80.png) [⬆](data-visualization)
 ![](exploring-scatter-plot.png) [⬆](data-visualization)
 ![](exploring-scatter-plot-winners.png) [⬆](data-visualization)
 ![](exploring-scatter-plot-losers.png) [⬆](data-visualization)
