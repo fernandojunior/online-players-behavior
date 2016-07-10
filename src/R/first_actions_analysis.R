@@ -13,33 +13,30 @@ data = read.csv('../data/data20160609012259.csv')
 # > nrow(data)
 # [1] 85470
 
-features = c('firstBloodKill',
+features = c('winner', 'firstBloodKill',
 'firstInhibitorKill', 'firstTowerKill', 'firstInhibitorAssist', 'firstTowerAssist')
 
-summarized = aggregate(. ~ matchId + winner, data[, c('matchId', 'winner', features)], sum)
+teams = aggregate(. ~ matchId + winner, data[, c('matchId', features)], sum)
+counts = counter_by(. ~ winner, teams[, features])
+rownames(counts) = counts[, 1]
 
-par(mfrow=c(2, 3))
-for (feature in features) {
-    x = summarized[, feature]
-    y = summarized[, 'winner']
+par(mfrow=c(1, 5))
+for (feature in setdiff(features, 'winner')) {
     palette = rainbow
-    counts = counter_by(x, y)
-    rownames(counts) = c('false', 'true')
-
-    # http://yatani.jp/teaching/doku.php?id=hcistats:chisquare
-    test = chisq.test(counts)
-    rate = abs(apply(counts, 2, diff))/apply(counts, 2, sum)
+    counts_ = counts[feature]
+    counts_names = colnames(counts_[[1]])
+    test = chisq.test(counts_)
+    rate = abs(apply(counts_, 2, diff))/apply(counts_, 2, sum)
     legends = map(function (item) {
-        strf('%s; %s%%', item, (100 * round(rate[indexof(item, colnames(counts))], 2)))
-    }, colnames(counts))
-
+        strf('%s; %s%%', item, (100 * round(rate[indexof(item, counts_names)], 2)))
+    }, counts_names)
+    print(counts_)
     main = strf('X = %s', feature)
     xlab = 'Y = winner; domain(Y) = {false, true}'
     ylab = 'C = counts(distinct:X, by:Y)'
-    ylim = c(0, sum(counts[1, ]))
-    print(ylim)
-    colors = adjustcolor(palette(length(colnames(counts))), alpha.f = 0.3)
-    plt = barplot(t(counts), col=colors, main=main, beside=TRUE, ylim=ylim, ylab=ylab, xlab=xlab)
-    text(plt, t(counts) + 300, labels=t(counts), col="black", srt=60, cex=0.5)
+    ylim = c(0, sum(counts_[1, ]))
+    colors = adjustcolor(palette(length(counts_names)), alpha.f = 0.3)
+    plt = barplot(t(counts_), col=colors, main=main, beside=TRUE, ylim=ylim, ylab=ylab, xlab=xlab)
+    text(plt, t(counts_) + 300, labels=t(counts_), col="black", srt=60, cex=0.5)
     legend("topright", legend=legends, col=colors, lwd = 5, title='domain(X); abs(rate(C))', cex=0.5)
 }
