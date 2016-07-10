@@ -93,8 +93,8 @@ data = remove_outliers(data, cols=features.numeric, factor=3)
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these invalid matches need to be removed.
-find_invalid_matches = Compose(counter, Curry(Filter, Curry(`>`, 10)), keys)
-data = data[!data$matchId %in% find_invalid_matches(data$matchId), ]
+filter_invalid_matches = Compose(counter, Curry(Filter, Curry(`>`, 10)), keys)
+data = data[!data$matchId %in% filter_invalid_matches(data$matchId), ]
 write.csv(data, "../data/treated.csv", row.names=FALSE)
 # nrow(data)
 #> [1] 35140
@@ -174,14 +174,9 @@ fits = save_plot(function () {
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
-# vary so much after it. Let's add some extra components and save it.
+# vary so much after it.
 fit = fits[7, ]
-fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
-fit$k = length(fit$size)  # Number of clusters
-fit$withinvar = 1 / (fit$size - 1) * fit$withinss  # Variance for each cluster
-
-# Saving all components
-each(function (x, i) write.csv(x, strf('../output/fit/%s.csv', i)), fit)
+each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
 
 # Write or load labeled data --------------------------------------------------
