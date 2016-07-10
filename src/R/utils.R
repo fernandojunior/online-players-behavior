@@ -85,11 +85,14 @@ betweenss.rate = function (fit) {
 #' analyzing the curve of a generated graph from a clustering conducted for
 #' each possible.
 cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
-    # K-means clustering for each k
-    fits = t(map(
-        function(k) kmeans(data, k, algorithm='Lloyd', iter.max=200),
-        range(kmax)
-    ))
+    # K-means clustering for each number of k = {1:kmax}
+    fits = t(map(function(k) {
+        fit = kmeans(data, k, algorithm='Lloyd', iter.max=200)
+        fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
+        fit$k = length(fit$size)  # Number of clusters
+        fit$withinvar = 1/(fit$size-1)*fit$withinss  # Variance in each cluster
+        return(fit)
+    }, range(kmax)))
 
     # Total within-cluster SSE for each k-means clustering
     twss = Row(function(fit) fit$tot.withinss, fits)
@@ -104,11 +107,7 @@ cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
         legend('topright', legend=legend_, bty="n", cex=0.7)
     }
 
-    result = list()
-    result$fits = fits
-    result$twss = twss
-    result$twss.prop = twss.prop
-    return(result)
+    return(list(fits=fits, twss=twss, twss.prop=twss.prop))
 }
 
 #' Perform ntests cluster analysis on a matrix x for each k = {1:kmax}.
