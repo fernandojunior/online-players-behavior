@@ -194,21 +194,11 @@ values = function (x) {
 #'     #> [1] 4
 #'     #> [1] 5
 #'     #> [1] 3 4 5
-#'     each(function (x, i) print(paste(i, x + 1)), x)
-#'     #> [1] "1 4"
-#'     #> [1] "2 5"
-#'     #> [1] "3 6"
-#'     #> [1] 3 4 5
 each = function (f, x) {
     if (missing(x))
         return(Curry(each, f))
-    indices = or(names(x), range(length(x)))
-    if (length(or(formals(f), 1)) == 1)
-        for (i in indices)
-            f(x[i])
-    else
-        for (i in indices)
-            f(x[i], i)
+    for (i in or(names(x), range(length(x))))
+        f(x[i])
     return(x)
 }
 
