@@ -46,20 +46,13 @@ discretize = function (x, breaks=generate_breaks(x)) {
     return(cut(x, breaks=breaks))
 }
 
-#' Discriminate a dataset x by y to (distinct) count its subsets.
-counter_by = function (x, y) {
-    x.domain = sort(unique(x))
-    y.domain = sort(unique(y))
-    z = matrix(0, nrow=length(y.domain), ncol=length(x.domain))
-    colnames(z) = x.domain
-    rownames(z) = y.domain
-    for (i in range(length(y.domain))) {
-        counts = counter(x[y == y.domain[i]])
-        for (j in names(counts)) {
-            z[i, j] = counts[j]
-        }
-    }
-    return(z)
+#' Aggregate a dataset with a function FUN=counter
+#'
+#' Same as `aggregate(x, by=y, counter)` or `aggregate(x ~ y, data, counter)`
+#'
+#' @seealso aggregate
+counter_by = function (...) {
+    return(Curry(aggregate, FUN=counter)(...))
 }
 
 # cluster functions
