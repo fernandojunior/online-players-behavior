@@ -286,3 +286,26 @@ and = function (...) {
 
     return(args[[1]])
 }
+
+#' Verify if x in a interval [min:max]: min <= x <= max
+#'
+#' Similar to `findInterval(x, c(min, max), rightmost.closed=TRUE) == 1`
+#'
+#' @param x, min, max Numeric value or vector
+#'
+#' @return Logic
+#'
+#' @examples
+#'     interval(4, 1, 5)
+#'     #> [1] TRUE
+#'     interval(0, 1, 5)
+#'     #> [1] FALSE
+#'     interval(c(1, 2, 3), c(0, 0, 0), c(1, 2, 3))
+#'     #> [1] TRUE
+#'     interval(x=c(1, 2, 3), min=c(2, 0, 0), max=c(3, 2, 3))
+#'     #> [1] FALSE  # x[1] < lower[1]
+#'     interval(c(1, 2, 3), min=c(0, 0, 0), max=c(1, 2, 2))
+#'     #> [1] FALSE  # x[3] > lower[3]
+interval = function (x, min, max) {
+    return(all(min <= x) & all(x <= max))
+}
