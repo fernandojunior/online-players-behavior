@@ -89,7 +89,7 @@ data = data[!outliers$outliers, ]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these invalid matches need to be removed.
-filter_invalid_matches = Compose(counter, Curry(Filter, Curry(`>`, 10)), keys)
+filter_invalid_matches = Compose(counter, Curry(Filter, Curry(gt, 10)), keys)
 data = data[!data$matchId %in% filter_invalid_matches(data$matchId), ]
 write.csv(data, '../data/treated.csv', row.names=FALSE)
 # nrow(data)
