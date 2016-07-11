@@ -130,7 +130,22 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     return(apply(tests, 2, mean))  # summary
 }
 
-# correlation functions
+#' Perform outlier analysis on a matrix x.
+#'
+#' Render a boxplot for each column to analyze the outliers of x. Also
+#' indentify outliers with `find_outliers`.
+#'
+#' @return Results from find_outliers
+#'
+#' @seealso find_outliers
+outlier_analysis = function (x, factor=1.5) {
+    cols = or(colnames(x), 1:ncol(x))
+    ncols = 6
+    nrows = trunc(length(cols)/ncols)
+    par(mfrow=c(nrows, ncols))
+    each(function(i) boxplot(x[, i], main=i), cols)
+    return(find_outliers(x, factor=factor))
+}
 
 #' Perform a correlation analysis on a matrix x.
 #'
