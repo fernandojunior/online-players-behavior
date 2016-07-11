@@ -89,8 +89,8 @@ data = data[!outliers$outliers, ]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these invalid matches need to be removed.
-filter_invalid_matches = Compose(counter, Curry(Filter, Curry(gt, 10)), keys)
-data = data[!data$matchId %in% filter_invalid_matches(data$matchId), ]
+valid_matches = names(Filter(Curry(eq, 10), counter(data$matchId)))
+data = data[data$matchId %in% valid_matches, ]
 write.csv(data, '../data/treated.csv', row.names=FALSE)
 # nrow(data)
 #> [1] 35140
@@ -108,13 +108,12 @@ write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
 correlations = save_plot(function () {
-    return(correlation_analysis(data.normalized))
+    return(correlation_analysis(data.normalized)$estimates)
 }, '../output/correlation', width=16, height=9, close=CLOSE_PLOT)
 write.csv(correlations$estimates, '../data/correlations.csv')
 
-# Correlation matrix features ranked by the mean of correlations for each one
-rank_features = Compose(abs, Curry(colMeans, na.rm=TRUE), sort, rev, names)
-features.ranked = rank_features(correlations$estimates)
+# Rank the hightly correlated features by mean of correlations for each one
+features.ranked = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 #> [1] "goldEarned"                  "totalDamageDealt"
 #> [3] "totalDamageDealtToChampions" "kills"
 #> [5] "physicalDamageDealt"         "largestKillingSpree"
@@ -153,7 +152,7 @@ features.selection = setdiff(features.ranked, features.unselect)
 #> [13] "totalHeal"                  "deaths"
 
 # Top 3 hightly correled features of the selection
-features.topselection = features.selection[1:3]
+features.top = features.selection[1:3]
 
 # Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection]
@@ -171,7 +170,6 @@ fits = save_plot(function () {
 # vary so much after it.
 fit = fits[[7]]
 each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
-write.csv(fit$cluster, '../data/cluster.csv', row.names=FALSE)
 
 # Write or load labeled data --------------------------------------------------
 
@@ -179,7 +177,7 @@ write.csv(fit$cluster, '../data/cluster.csv', row.names=FALSE)
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
 write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 
-# cluster = read.csv('../data/cluster.csv')$x
+# cluster = read.csv('../output/fit/cluster.csv')$x
 # labeled = cbind(data[, features.info], label=cluster, data.reduced)
 # labeled = read.csv('../data/labeled.csv')
 
@@ -221,19 +219,19 @@ save_plot(function () {
 # Plot of labeled data. Only the top selected features
 save_plot(function () {
     main = 'Exploring - Scatter plot'
-    plot(labeled[, features.topselection], main=main, col=labeled$label)
+    plot(labeled[, features.top], main=main, col=labeled$label)
 }, '../output/exploring-scatter-plot', close=CLOSE_PLOT)
 
 # Only winners
 save_plot(function () {
     main = 'Exploring - Scatter plot winners'
-    plot(winners[, features.topselection], main=main, col=winners$label)
+    plot(winners[, features.top], main=main, col=winners$label)
 }, '../output/exploring-scatter-plot-winners', close=CLOSE_PLOT)
 
 # Only losers
 save_plot(function () {
     main = 'Exploring - Scatter plot losers'
-    plot(losers[, features.topselection], main=main, col=losers$label)
+    plot(losers[, features.top], main=main, col=losers$label)
 }, '../output/exploring-scatter-plot-losers', close=CLOSE_PLOT)
 
 # 3-D visualization of 3 principal components of the labeled data
