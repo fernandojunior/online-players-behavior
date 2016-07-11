@@ -26,6 +26,24 @@ indexof = function (e, l) {
     return(match(e, l))
 }
 
+#' @aliases `==`
+eq = `==`
+
+#' @aliases `!=`
+ne = `!=`
+
+#' @aliases `<`
+lt = `<`
+
+#' @aliases `<=`
+le = `<=`
+
+#' @aliases `>`
+gt = `>`
+
+#' @aliases `>=`
+ge = `>=`
+
 #' @deprecated Cuz override the built-in funtion range.
 #'
 #' @aliases seq.int
