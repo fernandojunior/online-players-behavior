@@ -91,7 +91,7 @@ data = data[!outliers$outliers, ]
 # 10 participants. So, these invalid matches need to be removed.
 filter_invalid_matches = Compose(counter, Curry(Filter, Curry(`>`, 10)), keys)
 data = data[!data$matchId %in% filter_invalid_matches(data$matchId), ]
-write.csv(data, "../data/treated.csv", row.names=FALSE)
+write.csv(data, '../data/treated.csv', row.names=FALSE)
 # nrow(data)
 #> [1] 35140
 
@@ -101,7 +101,7 @@ write.csv(data, "../data/treated.csv", row.names=FALSE)
 # different. In order to maintain uniform scalability we normalize the
 # integer features using Z-score. Logic features do not need be normalized.
 data.normalized = cbind(data[, features.logic], scale(data[, features.numeric]))
-write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
+write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
 
 # Correlation analysis --------------------------------------------------------
 
@@ -110,7 +110,7 @@ write.csv(data.normalized, "../data/normalized.csv", row.names=FALSE)
 correlations = save_plot(function () {
     return(correlation_analysis(data.normalized))
 }, '../output/correlation', width=16, height=9, close=CLOSE_PLOT)
-write.csv(correlations$estimates, "../data/correlations.csv")
+write.csv(correlations$estimates, '../data/correlations.csv')
 
 # Correlation matrix features ranked by the mean of correlations for each one
 rank_features = Compose(abs, Curry(colMeans, na.rm=TRUE), sort, rev, names)
@@ -171,7 +171,7 @@ fits = save_plot(function () {
 # vary so much after it.
 fit = fits[[7]]
 each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
-write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
+write.csv(fit$cluster, '../data/cluster.csv', row.names=FALSE)
 
 # Write or load labeled data --------------------------------------------------
 
@@ -241,13 +241,12 @@ save_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-10, 10)
     angle = 95
-    cols = features.selection
-    pca_plot(labeled[, cols], main='PCA', color=labeled$label, angle=angle,
-             xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(winners[, cols], main='PCA winners', color=winners$label,
+    pca_plot(labeled[, features.selection], main='PCA', color=labeled$label,
              angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(losers[, cols], main='PCA losers', color=losers$label,
-             angle=angle, xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(winners[, features.selection], main='PCA winners',
+             color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(losers[, features.selection], main='PCA losers',
+             color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
 }, '../output/exploring-pca', width=18, height=9, close=CLOSE_PLOT)
 
 # In general, we can observe the k clusters found in k-means clustering. We can
@@ -259,8 +258,7 @@ save_plot(function () {
 save_plot(function () {
     par(mfrow=c(3,1))
     lim = c(-2, 2)
-    cols = features.selection
-    aggregate_plot(labeled[, cols], labeled$label, mean, ylim=lim)
-    aggregate_plot(winners[, cols], winners$label, mean, ylim=lim)
-    aggregate_plot(losers[, cols], losers$label, mean, ylim=lim)
+    plot_by(labeled[, features.selection], labeled$label, mean, ylim=lim)
+    plot_by(winners[, features.selection], winners$label, mean, ylim=lim)
+    plot_by(losers[, features.selection], losers$label, mean, ylim=lim)
 }, '../output/exploring-centers', width=16, height=9, close=CLOSE_PLOT)

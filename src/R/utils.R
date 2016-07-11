@@ -116,7 +116,7 @@ cluster_analysis = function (x, kmax=20, show=TRUE) {
         ylab = 'tot.withinss(k)/tot.withinss(k=1)'
         legends = paste(colnames(x), collapse='\n')
         plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
-        legend('topright', legend=legends, bty="n", cex=0.7)
+        legend('topright', legend=legends, bty='n', cex=0.7)
     }
 
     return(list(fits=fits, twss=twss))
@@ -135,9 +135,9 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     tests.summary = apply(tests, 2, mean)
 
     ylab = 'mean(tot.withinss(k)/tot.withinss(k=1))'
-    legend_ = strf('random features: %s, tests: %s', ncol, ntests)
+    legends = strf('random features: %s, tests: %s', ncol, ntests)
     plot(tests.summary, ylim=c(0, 1), ylab=ylab, xlab='k')
-    legend('topright', legend=legend_, bty="n", cex=0.7)
+    legend('topright', legend=legends, bty='n', cex=0.7)
 
     return(apply(tests, 2, mean))  # summary
 }
@@ -283,7 +283,7 @@ chist = function (x, y, palette=rainbow) {
         else
             hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, xlab='x', main='')
     }
-    legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
+    legend('topright', legend=y.domain, col = colors,  lwd = 5, title = 'y')
 }
 
 #' Discriminate a dataset x by y to draw multiple histogram plots.
@@ -304,7 +304,7 @@ mhist = function (x, y, palette=rainbow) {
         xlab = strf('x[y == %s]', value)
         hist(subset, col=col, xlim=xlim, ylim=ylim, breaks=breaks, main='', xlab=xlab)
     }
-    legend("topright", legend=y.domain, col = colors,  lwd = 5, title = "y")
+    legend('topright', legend=y.domain, col = colors,  lwd = 5, title = 'y')
 }
 
 #' 3-D visualization of 3 principal components of a matrix x
@@ -312,11 +312,11 @@ pca_plot = function (x, ...) {
     scatterplot3d(prcomp(x, center=TRUE)$x[, 1:3], ...)
 }
 
-#' Summary each col of x by y using a function f to render single plots in one.
+#' Render paired single plots in one of a summarized matrix x.
 #'
 #' @param x Matrix
 #' @param y Grouping vector
-#' @param f Function to summarize the columns of x
+#' @param f Function to summarize x
 #' @param ... Optional aruments for `plot`
 #'
 #' @examples
@@ -325,25 +325,24 @@ pca_plot = function (x, ...) {
 #'     c = (a + b)/2
 #'     g = c(1, 1, 3, 3)
 #'     x = data.frame(a, b, c)
-#'     aggregate_plot(x, g, mean)
-aggregate_plot = function (x, y, f, ...) {
+#'     plot_by(x, g, mean)
+plot_by = function (x, y, f, ...) {
     cols = or(colnames(x), 1:ncol(x))
-    cols_range = 1:length(cols)
-    cols_id = Map(function (x) strf('#%s', x), cols_range)
-    cols_pretty = Map(function(i) strf('%s#%s', cols[i], i), cols_range)
-    agg = pairify(aggregate(. ~ y, x[, cols], f)[, cols])
-    agg$key = Map(function (key) indexof(key, cols), agg$key)
+    labels = Map(function (x) strf('#%s', x), 1:length(cols))
+    named_labels = Map(function(i) strf('%s#%s', cols[i], i), 1:length(cols))
+    grouped = pairify(aggregate(. ~ y, x, f)[, cols])
+    grouped$key = Map(function (key) indexof(key, cols), grouped$key)
     args = list(...)
-    args$x = agg$key
-    args$y = agg$value
-    args$col=agg$id
-    args$pch = paste(agg$id)
-    args$xlab = paste(cols_pretty, collapse=', ')
+    args$x = grouped$key
+    args$y = grouped$value
+    args$col = sort(unique(y))
+    args$pch = paste(grouped$id)
+    args$xlab = paste(named_labels, collapse=', ')
     args$ylab = or(args$ylab, as.character(substitute(f)))
-    args$xaxt = "n"
+    args$xaxt = 'n'
     do.call(plot, args)
-    axis(1, at=cols_range, labels=cols_id)
-    position = "bottomright"
+    axis(1, at=1:length(labels), labels=labels)
+    position = 'bottomright'
     colors = unique(args$col)
     title = 'Group = y'
     legend(position, legend=colors, col=colors, lwd=5, title=title, cex=0.8)
