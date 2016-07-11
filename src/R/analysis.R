@@ -54,18 +54,14 @@ features.numeric = c(
 )
 
 # Treatment of outliers -------------------------------------------------------
-# Boxplots to analyze the outliers of all numeric features individually. As we
-# can see from the above plot that some features has outliers in the data.
-save_plot(function () {
-    cols = 6
-    rows = trunc(length(features.numeric)/cols)
-    par(mfrow=c(rows, cols))
-    each(function(i) boxplot(data[, i], main=i), features.numeric)
-}, '../output/outliers-for-each-one', width=16, height=9, close=CLOSE_PLOT)
 
-# indentify and remove extreme (IQR factor = 3) outliers.
-data = remove_outliers(data, cols=features.numeric, factor=3)
-#> [1] "Thresholds:"
+# Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
+outliers = save_plot(function () {
+    return(outlier_analysis(data[, features.numeric], factor=3))
+}, '../output/outliers-for-each-one', width=16, height=9, close=CLOSE_PLOT)
+# outliers$total
+#> [1] 10814
+# t(outliers$thresholds)
 #>                                  lower    upper
 #> kills                           -19.00     30.0
 #> assists                         -19.00     37.0
@@ -85,9 +81,9 @@ data = remove_outliers(data, cols=features.numeric, factor=3)
 #> largestKillingSpree             -12.00     16.0
 #> largestCriticalStrike         -1653.00   2204.0
 #> totalHeal                     -7896.00  11865.0
-#> [1] "Total outliers:"
-#>       [,1]
-#> [1,] 10814
+
+# filter extreme outliers
+data = data[!outliers$outliers, ]
 # nrow(data)
 #> [1] 74656
 
