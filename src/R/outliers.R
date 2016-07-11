@@ -1,6 +1,6 @@
 # Functions to handle outliers
 
-import('fun', attach=c('or', 'Col', 'Curry', 'values', 'Row', 'strf'))
+import('fun', attach=c('or', 'Col', 'Curry', 'values', 'Row', 'strf', 'interval'))
 
 #' Find the lower and upper outlier thresholds of x.
 #'
@@ -35,30 +35,6 @@ outlier_thresholds = function (x, factor=1.5) {
     return(threshold)
 }
 
-#' Verify if x is an outlier based on lower and upper thresholds.
-#'
-#' If x is multivariate (length(x) > 1), so the thresholds also must be.
-#'
-#' @examples
-#'     is.outlier(4, 1, 5)
-#'     #> [1] FALSE
-#'     is.outlier(0, 1, 5)
-#'     #> [1] TRUE
-#'     is.outlier(c(1, 2, 3), c(0, 0, 0), c(1, 2, 3))
-#'     #> [1] FALSE
-#'     is.outlier(x=c(1, 2, 3), lower=c(2, 0, 0), upper=c(1, 2, 3))
-#'     #> [1] TRUE  # x[1] < lower[1]
-#'     is.outlier(c(1, 2, 3), lower=c(0, 0, 0), upper=c(1, 2, 2))
-#'     #> [1] TRUE  # x[3] > lower[3]
-is.outlier = function (x, lower, upper) {
-    thresholds = rbind(lower, upper)
-    if(!is.null(colnames(thresholds)))
-        x = x[colnames(thresholds)]
-    if (any(x < thresholds['lower', ]) | any(x > thresholds['upper', ]))
-        return(TRUE)
-    return(FALSE)
-}
-
 #' Find outliers on a matrix x based on boxplot IQR factor.
 #'
 #' @param x Matrix
@@ -84,14 +60,16 @@ is.outlier = function (x, lower, upper) {
 #'     #> [1] 8
 find_outliers = function (x, factor=1.5) {
     lim = outlier_thresholds(x, factor=factor)
-    cols = or(colnames(lim), 1:ncol(lim))
 
     # select only features where the max and min thresholds are different
     # lower != upper in order to mantain the variability
-    lim = lim[, cols[diff(lim) != 0]]
+    cols = diff(lim) != 0
+    lim[cols]
+    x = x[, cols]
 
     # indicate which element is an outlier TRUE or not FALSE
-    outliers = Row(function(e) is.outlier(e, lim['lower', ], lim['upper', ]), x)
+    is_outlier = function (e) !interval(e, lim['lower', ], lim['upper', ])
+    outliers = Row(is_outlier, x)
     total = sum(outliers)
 
     return(list(outliers=outliers, thresholds=lim, total=total))
