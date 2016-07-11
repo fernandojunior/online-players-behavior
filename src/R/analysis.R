@@ -159,19 +159,17 @@ features.topselection = features.selection[1:3]
 data.reduced = data.normalized[, features.selection]
 
 # Learning model (K-means) ----------------------------------------------------
-# Perform a cluster analysis on reduced data using k-means
 
-# Analyse the knee of the error curve to find the optimal k
+# Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
+# render a knee of the error curve plot to find the optimal k
 fits = save_plot(function () {
-    main = 'K-means - Error curve'
-    result = cluster_analysis(data.reduced, kmax=30, main=main)
-    return(result$fits)
+    return(cluster_analysis(data.reduced, kmax=30)$fits)
 }, '../output/k-means-error-curve', close=CLOSE_PLOT)
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it.
-fit = fits[7, ]
+fit = fits[[7]]
 each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 write.csv(fit$cluster, "../data/cluster.csv", row.names=FALSE)
 
@@ -206,11 +204,11 @@ h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 # continuity correction
 
 # Alternative hypothesis true for each cluster: p.value < 0.05
-h2.p.values = map(function (k) {
+h2.p.values = values(Map(function (k) {
     x = rowSums(winners[winners$label == k, features.selection])
     y = rowSums(losers[losers$label == k, features.selection])
     wilcox.test(x , y, paired=FALSE)$p.value
-}, range(fit$k))
+}, range(fit$k)))
 
 save_plot(function () {
     par(mfrow=c(1, 2))

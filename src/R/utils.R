@@ -75,39 +75,51 @@ betweenss.rate = function (fit) {
     return(fit$betweenss / fit$totss)
 }
 
-#' Perform a cluster analysis on a data matrix x for each k = {1:kmax}
-#' number of clusters.
+#' Perform a cluster analysis on a matrix x.
 #'
-#' The analysis is based on k-means. K-means clustering model aims to
-#' partition the data into k clusters, so as to minimize the sum of squared
-#' error (SSE or SS). To find the optimal k we can use the the knee of the
-#' error curve method, which tries to find an appropriate number of clusters
-#' analyzing the curve of a generated graph from a clustering conducted for
-#' each possible.
-cluster_analysis = function (data, kmax=20, main='Error curve', show=TRUE) {
+#' Apply `kmeans` on x for each k = {1:kmax} number of clusters. Also render a
+#' knee of error curve plot based on the within cluster sum of squared erros in
+#' order to find the optimal k.
+#'
+#' K-means clustering model aims to partition the data into k clusters, so as
+#' to minimize the sum of squared error (SSE or SS). To find the optimal k we
+#' can use the the knee of the error curve method, which tries to find an
+#' appropriate number of clusters analyzing the curve of a generated graph from
+#' a clustering conducted for each possible.
+#'
+#' @param x Numeric matrix
+#' @param kmax Max number of cluster
+#' @param show Render (TRUE) or not (FALSE) the knee of error curve plot
+#'
+#' @return $fits: A list with the `kmeans` results for each k = {1:kmax} as
+#'     size, withinss, tot.withinss, etc.; $twss: Numeric vector with the total
+#'     within cluster sum of squared erros `tot.withinss` of the fits
+#'
+#' @seealso kmeans
+cluster_analysis = function (x, kmax=20, show=TRUE) {
     # K-means clustering for each number of k = {1:kmax}
-    fits = t(map(function(k) {
-        fit = kmeans(data, k, algorithm='Lloyd', iter.max=200)
+    fits = Map(function(k) {
+        fit = kmeans(x, k, algorithm='Lloyd', iter.max=200)
         fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
         fit$k = length(fit$size)  # Number of clusters
         fit$withinvar = 1/(fit$size-1)*fit$withinss  # Variance in each cluster
         return(fit)
-    }, range(kmax)))
+    }, 1:kmax)
 
     # Total within-cluster SSE for each k-means clustering
-    twss = Row(function(fit) fit$tot.withinss, fits)
+    twss = values(Map(function (fit) fit$tot.withinss, fits))
     twss.prop = twss/twss[1]
 
+    # Plot to analyze the knee of error curve
     if (show == TRUE) {
-        # Plot to analyze the knee of error curve
+        main = 'K-means - Error curve'
         ylab = 'tot.withinss(k)/tot.withinss(k=1)'
+        legends = paste(colnames(x), collapse='\n')
         plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
-        features = colnames(data)
-        legend_ = paste(features, collapse='\n')
-        legend('topright', legend=legend_, bty="n", cex=0.7)
+        legend('topright', legend=legends, bty="n", cex=0.7)
     }
 
-    return(list(fits=fits, twss=twss, twss.prop=twss.prop))
+    return(list(fits=fits, twss=twss))
 }
 
 #' Perform ntests cluster analysis on a matrix x for each k = {1:kmax}.
@@ -317,8 +329,8 @@ pca_plot = function (x, ...) {
 aggregate_plot = function (x, y, f, ...) {
     cols = or(colnames(x), 1:ncol(x))
     cols_range = 1:length(cols)
-    cols_id = map(function (x) strf('#%s', x), cols_range)
-    cols_pretty = map(function(i) strf('%s#%s', cols[i], i), cols_range)
+    cols_id = Map(function (x) strf('#%s', x), cols_range)
+    cols_pretty = Map(function(i) strf('%s#%s', cols[i], i), cols_range)
     agg = pairify(aggregate(. ~ y, x[, cols], f)[, cols])
     agg$key = Map(function (key) indexof(key, cols), agg$key)
     args = list(...)

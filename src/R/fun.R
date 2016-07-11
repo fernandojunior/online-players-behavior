@@ -45,6 +45,8 @@ range = function (...) {
 #'
 #' Curring: map(f, x) == map(f)(x)
 #'
+#' @deprecated Use `Map`
+#'
 #' @param f Function to apply.
 #' @param x Vector or matrix.
 #'
@@ -290,6 +292,8 @@ and = function (...) {
 #' Verify if x in a interval [min:max]: min <= x <= max
 #'
 #' Similar to `findInterval(x, c(min, max), rightmost.closed=TRUE) == 1`
+#'
+#' @todo a < x < b: (x - a)  *  (b - x) > 0
 #'
 #' @param x, min, max Numeric value or vector
 #'

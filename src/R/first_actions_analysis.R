@@ -27,7 +27,7 @@ for (feature in setdiff(features, 'winner')) {
     counts_names = colnames(counts_[[1]])
     test = chisq.test(counts_)
     rate = abs(apply(counts_, 2, diff))/apply(counts_, 2, sum)
-    legends = map(function (item) {
+    legends = Map(function (item) {
         strf('%s; %s%%', item, (100 * round(rate[indexof(item, counts_names)], 2)))
     }, counts_names)
     print(counts_)
