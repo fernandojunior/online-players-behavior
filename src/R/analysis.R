@@ -5,7 +5,7 @@ import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
-CLOSE_PLOT = TRUE
+RENDER_PLOT_CLOSE = TRUE
 
 # Load data -------------------------------------------------------------------
 
@@ -56,9 +56,9 @@ features.numeric = c(
 # Treatment of outliers -------------------------------------------------------
 
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
-outliers = save_plot(function () {
+outliers = render_plot(function () {
     return(outlier_analysis(data[, features.numeric], factor=3))
-}, '../output/outliers-for-each-one', width=16, height=9, close=CLOSE_PLOT)
+}, '../output/outliers-for-each-one', width=16, height=9)
 # outliers$total
 #> [1] 10814
 # t(outliers$thresholds)
@@ -107,10 +107,10 @@ write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
 
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
-correlations = save_plot(function () {
+correlations = render_plot(function () {
     return(correlation_analysis(data.normalized)$estimates)
-}, '../output/correlation', width=16, height=9, close=CLOSE_PLOT)
-write.csv(correlations$estimates, '../data/correlations.csv')
+}, '../output/correlation', width=16, height=9)
+write.csv(correlations, '../data/correlations.csv')
 
 # Rank the hightly correlated features by mean of correlations for each one
 features.ranked = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
@@ -161,9 +161,9 @@ data.reduced = data.normalized[, features.selection]
 
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
-fits = save_plot(function () {
+fits = render_plot(function () {
     return(cluster_analysis(data.reduced, kmax=30)$fits)
-}, '../output/k-means-error-curve', close=CLOSE_PLOT)
+}, '../output/k-means-error-curve')
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
@@ -208,34 +208,34 @@ h2.p.values = values(Map(function (k) {
     wilcox.test(x , y, paired=FALSE)$p.value
 }, range(fit$k)))
 
-save_plot(function () {
+render_plot(function () {
     par(mfrow=c(1, 2))
     plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
     plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-}, '../output/hypothesis', width=16, height=9, close=CLOSE_PLOT)
+}, '../output/hypothesis', width=16, height=9)
 
 # Exploring labeled data ------------------------------------------------------
 
 # Plot of labeled data. Only the top selected features
-save_plot(function () {
+render_plot(function () {
     main = 'Exploring - Scatter plot'
     plot(labeled[, features.top], main=main, col=labeled$label)
-}, '../output/exploring-scatter-plot', close=CLOSE_PLOT)
+}, '../output/exploring-scatter-plot')
 
 # Only winners
-save_plot(function () {
+render_plot(function () {
     main = 'Exploring - Scatter plot winners'
     plot(winners[, features.top], main=main, col=winners$label)
-}, '../output/exploring-scatter-plot-winners', close=CLOSE_PLOT)
+}, '../output/exploring-scatter-plot-winners')
 
 # Only losers
-save_plot(function () {
+render_plot(function () {
     main = 'Exploring - Scatter plot losers'
     plot(losers[, features.top], main=main, col=losers$label)
-}, '../output/exploring-scatter-plot-losers', close=CLOSE_PLOT)
+}, '../output/exploring-scatter-plot-losers')
 
 # 3-D visualization of 3 principal components of the labeled data
-save_plot(function () {
+render_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-10, 10)
     angle = 95
@@ -245,7 +245,7 @@ save_plot(function () {
              color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
     pca_plot(losers[, features.selection], main='PCA losers',
              color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-}, '../output/exploring-pca', width=18, height=9, close=CLOSE_PLOT)
+}, '../output/exploring-pca', width=18, height=9)
 
 # In general, we can observe the k clusters found in k-means clustering. We can
 # also observe that some clusters are more perceptible than others when the
@@ -253,10 +253,10 @@ save_plot(function () {
 
 # Centroid analysis -----------------------------------------------------------
 # Given a data set x, summarize the mean for each feature by label.
-save_plot(function () {
+render_plot(function () {
     par(mfrow=c(3,1))
     lim = c(-2, 2)
     plot_by(labeled[, features.selection], labeled$label, mean, ylim=lim)
     plot_by(winners[, features.selection], winners$label, mean, ylim=lim)
     plot_by(losers[, features.selection], losers$label, mean, ylim=lim)
-}, '../output/exploring-centers', width=16, height=9, close=CLOSE_PLOT)
+}, '../output/exploring-centers', width=16, height=9)

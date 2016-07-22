@@ -242,21 +242,51 @@ filter_features = function (x, f, min=NULL, max=NULL) {
 
 # plots
 
-#' Save a plot, renderized by a f function, in a PNG file.
+#' Render a plot in a function f to a PNG file.
 #'
-#' @param f Function to render the plot.
-#' @param filename Name of the output file.
-#' @param path Optional prefix path for filename
-#' @param width Width of the plotting window, in inches.
-#' @param height Height of the plotting window, in inches.
-#' @param close Indicate if the plotting window must be closed or not.
-save_plot = function (f, filename, path='', width=9, height=9, close=FALSE) {
+#' @param f Function with a plot.
+#' @param filename {character optional 'Rplot'} Name of the output file.
+#' @param width {numeric optional 9} Width of the plotting window in inches.
+#' @param height {numeric optional 9} Height of the plotting window in inches.
+#' @param close {logic optional FALSE} Indicate if the plotting window must be
+#'     closed or not. Configurable with `RENDER_PLOT_CLOSE` variable
+#' @param save {logic optional TRUE} Indicate if the plotting window must be
+#'     saved or not. Configurable with `RENDER_PLOT_SAVE` variable
+#'
+#' @return Results from f
+#'
+#' @examples
+#'     render_plot(function () plot(1:10))
+#'     #> [1] "Plot saved at Rplot.png"
+#'     #> NULL
+#'     render_plot(function () plot(1:10), filename='test')
+#'     #> [1] "Plot saved at test.png"
+#'     #> NULL
+#'     render_plot(function () plot(1:10), filename='test2.png', height=4)
+#'     #> [1] "Plot saved at test2.png"
+#'     #> NULL
+#'     render_plot(function () plot(1:10), save=FALSE, width=10, height=4)
+#'     #> NULL
+#'     render_plot(function () plot(1:10), save=FALSE, close=TRUE)
+#'     #> NULL
+#'     RENDER_PLOT_SAVE = FALSE
+#'     RENDER_PLOT_CLOSE = TRUE
+#'     render_plot(function () plot(1:10))
+#'     #> NULL
+render_plot = function (f, filename='Rplot', width=9, height=9, close=FALSE,
+                        save=TRUE) {
+    if (exists("RENDER_PLOT_CLOSE") && !is.null(RENDER_PLOT_CLOSE))
+        close = RENDER_PLOT_CLOSE
+    if (exists("RENDER_PLOT_SAVE") && !is.null(RENDER_PLOT_SAVE))
+        save = RENDER_PLOT_SAVE
     x11(width=width, height=height)
-    path = if (path != '') strf('%s/', path) else path
-    filename = strf('%s%s.png', path, filename)
     result = f()
-    savePlot(filename=filename, type='png')
-    print(strf('Plot saved at %s', filename))
+    if (!is.null(filename) && save == TRUE) {
+        if (!endsWith(filename, '.png'))
+            filename = strf('%s.png', filename)
+        savePlot(filename=filename, type='png')
+        print(strf('Plot saved at %s', filename))
+    }
     if (close == TRUE)
         dev.off()
     return(result)
