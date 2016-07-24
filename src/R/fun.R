@@ -331,3 +331,67 @@ and = function (...) {
 interval = function (x, min, max) {
     return(all(min <= x) & all(x <= max))
 }
+
+#' Transform a matrix x into a key/value pairs matrix
+#'
+#' @seealso tidyr::spread
+#'
+#' @examples
+#'     a = c(462, 842, 912)
+#'     b = c(21, 493, 549)
+#'     x = data.frame(a, b)
+#'     pairify(x)
+#'     #>   id key value
+#'     #> 1  1   a   462
+#'     #> 2  2   a   842
+#'     #> 3  3   a   912
+#'     #> 4  1   b    21
+#'     #> 5  2   b   493
+#'     #> 6  3   b   549
+pairify = function (x) {
+    parse = function (y) {
+        return(data.frame(id=1:nrow(x), key=y, value=x[, y], row.names=NULL))
+    }
+    return(data.frame(do.call(rbind, Map(parse, colnames(x))), row.names=NULL))
+}
+
+#' Discretize a numeric vector x by grouping into a smaller number of bins.
+#'
+#' It can be used to transform x into a categorical one.
+#'
+#' @param x {numeric} Vector to discretize.
+#' @param breaks {numeric optional generate_breaks(x)} Cutoff points to bin x.
+#'
+#' @examples
+#'     discretize(range(10))
+#'     #> [1] (0,2] (0,2] (2,4] (2,4] (4,6] (4,6] (6,8] (6,8]
+#'     #> Levels: (0,2] (2,4] (4,6] (6,8]
+#' @references
+#'     https://en.wikipedia.org/wiki/Data_binning
+#'     http://www.mathworks.com/help/matlab/ref/discretize.html
+discretize = function (x, breaks=generate_breaks(x)) {
+    return(cut(x, breaks=breaks))
+}
+
+#' Compute a vector of breakpoints, ie the cutoff points to bin x.
+#'
+#' @param x Vector
+#' @param method {function optional nclass.Sturges} Method to compute number
+#'     of bins.
+#'
+#' @return Breakpoints
+#'
+#' @examples
+#'    generate_breaks(range(1000))
+#'    #> [1]    0  100  200  300  400  500  600  700  800  900 1000
+#'
+#' @references
+#'     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
+#'     http://www.r-bloggers.com/basics-of-histograms/
+#'     https://stat.ethz.ch/pipermail/r-help/2014-March/372559.html
+generate_breaks = function (x, method=nclass.Sturges) {
+    xmin = min(x)
+    xmax = max(x)
+    bins = method(x)
+    return(pretty(xmin + range(0, bins) * (xmax - xmin)/bins, n=bins))
+}

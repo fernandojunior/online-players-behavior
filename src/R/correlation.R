@@ -8,7 +8,9 @@ import('fun', attach=c('or'))
 #' @param x Numeric matrix of data value.
 #' @param method {character optional 'pearson'} Character string indicating
 #'     which correlation coefficient is to be used for the test. One of
-#'     'pearson', 'kendall', or 'spearman'.
+#'     'pearson', 'kendall', or 'spearman'. Default is Spearman method, which
+#'     does not require the features follow a normal distribuition or linear
+#'     correlation.
 #' @param ... Arguments to pass in cor.test
 #'
 #' @return Correlations (estimates); p-values;  conf. intervals

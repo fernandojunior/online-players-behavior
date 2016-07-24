@@ -5,47 +5,6 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
-#' Compute a vector of breakpoints, ie the cutoff points to bin x.
-#'
-#' @param x Vector
-#' @param method {function optional nclass.Sturges} Method to compute number
-#'     of bins.
-#'
-#' @return Breakpoints
-#'
-#' @examples
-#'    generate_breaks(range(1000))
-#'    #> [1]    0  100  200  300  400  500  600  700  800  900 1000
-#'
-#' @references
-#'     https://en.wikipedia.org/wiki/Histogram#Number_of_bins_and_width
-#'     http://www.r-bloggers.com/basics-of-histograms/
-#'     https://stat.ethz.ch/pipermail/r-help/2014-March/372559.html
-generate_breaks = function (x, method=nclass.Sturges) {
-    x.min = min(x)
-    x.max = max(x)
-    bins = method(x)
-    return(pretty(x.min + range(0, bins) * (x.max - x.min)/bins, n=bins))
-}
-
-#' Discretize a numeric vector x by grouping into a smaller number of bins.
-#'
-#' It can be used to transform x into a categorical one.
-#'
-#' @param x {numeric} Vector to discretize.
-#' @param breaks {numeric optional generate_breaks(x)} Cutoff points to bin x.
-#'
-#' @examples
-#'     discretize(range(10))
-#'     #> [1] (0,2]  (0,2]  (2,4]  (2,4]  (4,6]  (4,6]  (6,8]  (6,8]  (8,10] (8,10]
-#'     #> Levels: (0,2] (2,4] (4,6] (6,8] (8,10]
-#' @references
-#'     https://en.wikipedia.org/wiki/Data_binning
-#'     http://www.mathworks.com/help/matlab/ref/discretize.html
-discretize = function (x, breaks=generate_breaks(x)) {
-    return(cut(x, breaks=breaks))
-}
-
 #' Aggregate a dataset with a function FUN=counter
 #'
 #' Same as `aggregate(x, by=y, counter)` or `aggregate(x ~ y, data, counter)`
@@ -68,7 +27,7 @@ counter_by = function (...) {
 #'     data = sample(range(1000), 100)
 #'     totss = sum(ss(data))
 #'     tot.withinss = sum(kmeans(data, 5)$withinss)
-#'     betweenss = abs(tot.withinss - totss)
+#'     betweenss = abs(totss - tot.withinss)
 #'     (betweenss / totss) == betweenss.rate(kmeans(data, 5))
 #'     #> [1] TRUE
 betweenss.rate = function (fit) {
@@ -159,32 +118,29 @@ outlier_analysis = function (x, factor=1.5) {
     return(find_outliers(x, factor=factor))
 }
 
-#' Perform a correlation analysis on a matrix x.
+#' Perform a correlation analysis on a matrix x using Spearman method.
+#'
+#' Estimates the correlation matrix and render dendrogram and corrplot for x
+#' to analyze the similarity of its columns.
 #'
 #' @todo Examples.
+#'
+#' @param x Numeric matrix
+#'
+#' @return Results from `correlation_matrix`.
+#'
+#' @seealso correlation_matrix, dendrogram, corrplot
 #'
 #' @references
 #'     https://rpubs.com/gaston/dendrograms
 #'     https://cran.r-project.org/web/packages/corrplot
 correlation_analysis = function (x) {
-    # Correlation matrix of x using Spearman method, which does not require the
-    # features follow a normal distribuition or linear correlation.
     correlations = correlation_matrix(x, method='spearman', exact=FALSE)
 
     par(mfrow=c(1, 2))
-
-    # Cluster dendrogram plot to analyze the affinity of each attribute based
-    # on the correlation matrix.
-    plot(
-        hclust(dist(correlations$estimates)),
-        main='[Correlation] Features Dendrogram'
-    )
-
-    # Heatmap plot of the correlation matrix. p.values greater than significance
-    # level at 0.05 are indicated.
+    dendrogram(correlations$estimates)
     corrplot(
         round(correlations$estimates, 1),
-        main='[Correlation] Features heatmap',
         p.mat=correlations$p.values,
         sig.level=0.05,
         method='number',
@@ -192,36 +148,6 @@ correlation_analysis = function (x) {
     )
 
     return(correlations)
-}
-
-# math functions
-
-#' Return the sum of square error of a vector x: (n - 1) * var(x).
-#'
-#' If VAR == TRUE, x is a variance value (or a list) of a sample data with n
-#' length.
-#'
-#' @examples
-#'     x = c(1, 2, 3, 4, 5)
-#'     length(x)
-#'     #> [1] 5
-#'     var(x)
-#'     #> [1] 2.5
-#'     ss(x)  # sum of square of x
-#'     #> [1] 10
-#'     ss(2.5, 5, VAR=TRUE)  # pass only the variance and the size of x
-#'     #> [1] 10
-#'     ss(c(2.5, 2.5), 5, VAR=TRUE)  # pass variances of a m. data n == 5
-#'     #> [1] 10 10
-ss = function (x, n=NA, VAR=FALSE) {
-    if (VAR == FALSE) {
-        if (is.vector(x))
-            n = length(x)
-        if (is.matrix(x))
-            n = nrow(x)
-        x = var(x)
-    }
-    return ((n - 1) * x)
 }
 
 #' Select the features of an data matrix x based on min > f(x) < max
@@ -378,27 +304,13 @@ plot_by = function (x, y, f, ...) {
     legend(position, legend=colors, col=colors, lwd=5, title=title, cex=0.8)
 }
 
-# parsers ---------------------------------------------------------------------
-
-#' Transform a matrix x into a key/value pairs matrix
-#'
-#' @seealso tidyr::spread
+#' Render a simple cluster dendrogram plot for x
 #'
 #' @examples
-#'     a = c(462, 842, 912)
-#'     b = c(21, 493, 549)
-#'     x = data.frame(a, b)
-#'     pairify(x)
-#'     #>   id key value
-#'     #> 1  1   a   462
-#'     #> 2  2   a   842
-#'     #> 3  3   a   912
-#'     #> 4  1   b    21
-#'     #> 5  2   b   493
-#'     #> 6  3   b   549
-pairify = function (x) {
-    parse = function (y) {
-        return(data.frame(id=1:nrow(x), key=y, value=x[, y], row.names=NULL))
-    }
-    return(data.frame(do.call(rbind, Map(parse, colnames(x))), row.names=NULL))
+#'     plot(hclust(dist(sample(1:1000, 100))))
+#'
+#' @references
+#'     https://rpubs.com/gaston/dendrograms
+dendrogram = function (x) {
+    return(plot(hclust(dist(x))))
 }
