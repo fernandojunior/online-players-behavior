@@ -50,7 +50,7 @@ def collect(start, end, path, criterion, api_key, n=10000):
                       match['queueType'], match['matchVersion'])
             else:
                 print('Not valid: ', random_match_id, match['queueType'])
-                # find match id in neighborhood
+                # find valid match in neighborhood (match id window +- 50)
                 random_match_id += random.randrange(50) * random.choice([-1, 1])
 
         except Exception as e:
