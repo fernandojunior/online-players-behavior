@@ -9,7 +9,6 @@ import os.path
 import time
 import json
 from riotwatcher.riotwatcher import RiotWatcher, BRAZIL, LoLException
-import config
 import random
 
 
@@ -17,12 +16,12 @@ def valid_match(match, criterion={}):
     return all([match[key] == value for key, value in criterion.items()])
 
 
-def get_match(match_id, api_key=config.API_KEY):
+def get_match(match_id, api_key):
     api_client = RiotWatcher(key=api_key, default_region=BRAZIL)
     return api_client.get_match(match_id=match_id)
 
 
-def save_match(match, path=config.DUMP_DIR):
+def save_match(match, path):
     path = path if path[-1] is '/' else path + '/'
     filename = '%s%d%s' % (path, match['matchId'], ".json")
     if os.path.isfile(filename):
@@ -30,17 +29,16 @@ def save_match(match, path=config.DUMP_DIR):
 
     with open(filename, 'w') as f:
         json.dump(match, f)
-        # logger.info('Match saved: %s', match_id)
     return match
 
 
-def collect(start, end, path=config.DUMP_DIR, criterion=config.MATCH_FILTER,
-            api_key=config.API_KEY, n=10000):
+def collect(start, end, path, criterion, api_key, n=10000):
     collected = []
 
     random_match_id = random.randint(start, end)
     while len(os.listdir(path)) < n:
         if random_match_id in collected:
+            print('Game matchId already collected:', random_match_id)
             random_match_id = random.randint(start, end)
 
         try:
@@ -48,17 +46,20 @@ def collect(start, end, path=config.DUMP_DIR, criterion=config.MATCH_FILTER,
             collected.append(random_match_id)
             if valid_match(match, criterion):
                 save_match(match, path=path)
-                print('OK: ', len(os.listdir(path)), random_match_id, match['queueType'], match['matchVersion'])
+                print('OK: ', len(os.listdir(path)), random_match_id,
+                      match['queueType'], match['matchVersion'])
             else:
                 print('Not valid: ', random_match_id, match['queueType'])
+                # find match id in neighborhood
                 random_match_id += random.randrange(50) * random.choice([-1, 1])
 
-        except LoLException as e:
-            print('%s, %s' % (str(e), random_match_id))
-            if str(e) == 'Game data not found':
-                collected.append(random_match_id)
-            if str(e) == 'Too many requests':
+        except Exception as e:
+            error_message = str(e)
+            print('%s: %s' % (error_message, random_match_id))
+            if error_message == 'Too many requests':
                 time.sleep(5)   # connection time-out
+            else:
+                collected.append(random_match_id)
 
 if __name__ == '__main__':
     from optparse import OptionParser
