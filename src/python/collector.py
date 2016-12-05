@@ -2,64 +2,96 @@
 Collect LoL matches from Riot API at a specific match id range.
 
 How to use:
-python collector.py --start 710229426 --end 728819142 --path ../data/201602 --api_key SUA_CHAVE_AQUI
+$ python collector.py --start 710229426 --end 728819142 --path ../data/201602 --api_key SUA_CHAVE_AQUI
 '''
 import os
 import os.path
 import time
 import json
-from riotwatcher.riotwatcher import RiotWatcher, BRAZIL, LoLException
 import random
+import requests
+from riotwatcher.riotwatcher import RiotWatcher, BRAZIL
+
+
+riot_client = None
+
+
+def create_riot_client(api_key):
+    return RiotWatcher(key=api_key, default_region=BRAZIL)
+
+
+def rand(min, max):
+    ''' Generate a random integer number bewteen min and max '''
+    url = 'https://www.random.org/integers/?num=1&min=%d&max=%d&col=5&base=10&format=plain&rnd=new'  # noqa
+    try:
+        return int(requests.get(url % (min, max)).text)
+    except:
+        return random.randint(min, max)
+
+
+def get_match(match_id):
+    ''' Get a match from Riot API '''
+    try:
+        return riot_client.get_match(match_id=match_id)
+    except Exception as e:
+        if (str(e) == 'Too many requests'):
+            time.sleep(5)
+            return get_match(match_id)
+        else:
+            raise e
 
 
 def valid_match(match, criterion={}):
+    ''' Valid if a match is valid given a specific criterion '''
     return all([match[key] == value for key, value in criterion.items()])
 
 
-def get_match(match_id, api_key):
-    api_client = RiotWatcher(key=api_key, default_region=BRAZIL)
-    return api_client.get_match(match_id=match_id)
-
-
-def save_match(match, path):
-    path = path if path[-1] is '/' else path + '/'
-    filename = '%s%d%s' % (path, match['matchId'], ".json")
-    if os.path.isfile(filename):
-        raise LoLException('Game already saved')
-
+def save_match(match, filename):
+    ''' Save a match in a file '''
     with open(filename, 'w') as f:
         json.dump(match, f)
-    return match
 
 
-def collect(start, end, path, criterion, api_key, n=10000):
-    collected = []
+def collect(start, end, path, criterion, total=10000):
+    ''' Collect and save random matches bewteen start and end '''
+    searched = []
 
-    random_match_id = random.randint(start, end)
-    while len(os.listdir(path)) < n:
-        if random_match_id in collected:
-            print('Game matchId already collected:', random_match_id)
-            random_match_id = random.randint(start, end)
+    random_match_id = rand(start, end)
+    match_filenames = os.listdir(path)
+    while len(match_filenames) < total:
+        filename = '%s%d%s' % (path, random_match_id, ".json")
 
+        # game has already been searched or saved
+        if random_match_id in searched or random_match_id in match_filenames:
+            random_match_id = rand(start, end)
+            continue
+
+        searched.append(random_match_id)
+        match = None
+        messages = ['index: %s' % len(searched)]
         try:
-            match = get_match(random_match_id, api_key=api_key)
-            collected.append(random_match_id)
+            match = get_match(random_match_id)
             if valid_match(match, criterion):
-                save_match(match, path=path)
-                print('OK: ', len(os.listdir(path)), random_match_id,
-                      match['queueType'], match['matchVersion'])
-            else:
-                print('Not valid: ', random_match_id, match['queueType'])
-                # find valid match in neighborhood (match id window +- 50)
-                random_match_id += random.randrange(50) * random.choice([-1, 1])
+                save_match(match, filename)
+                messages.append('status: OK')
+                random_match_id = rand(start, end)
+            else:  # search in neighborhood
+                messages.append('status: Not valid')
+                random_match_id += rand(1, 50) * random.choice([-1, 1])
 
-        except Exception as e:
-            error_message = str(e)
-            print('%s: %s' % (error_message, random_match_id))
-            if error_message == 'Too many requests':
-                time.sleep(5)   # connection time-out
-            else:
-                collected.append(random_match_id)
+            messages.append('matchId: %s Info:' % match['matchId'])
+            messages.extend([match['queueType'], match['matchVersion']])
+        except Exception as error:
+            messages.append('status: %s matchId: %s' % (error,  searched[-1]))
+            random_match_id = rand(start, end)
+
+        # update match filenames
+        match_filenames = os.listdir(path)
+        messages.append('total: %s' % len(match_filenames))
+
+        # print message for current random match ID
+        print(' '.join(str(m) for m in messages))
+
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -69,11 +101,20 @@ if __name__ == '__main__':
     parser.add_option("--path", type=str,  help="path to save macthes")
     parser.add_option("--api_key", type=str,  help="Riot API key")
     (options, args) = parser.parse_args()
+
+    riot_client = create_riot_client(api_key=options.api_key)
+
+    path = options.path
+    path = path if path[-1] is '/' else path + '/'
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     criterion = {
         'matchMode': 'CLASSIC',
         'season': 'SEASON2016',
         'region': 'BR',
         'queueType': 'TEAM_BUILDER_DRAFT_RANKED_5x5',
     }
-    collect(start=options.start, end=options.end, path=options.path,
-            criterion=criterion, api_key=options.api_key)
+
+    collect(start=options.start, end=options.end, path=path,
+            criterion=criterion)
