@@ -20,8 +20,8 @@ def create_riot_client(api_key):
     return RiotWatcher(key=api_key, default_region=BRAZIL)
 
 
-def rand(min, max):
-    ''' Generate a random integer number bewteen min and max '''
+def rand(start, end):
+    ''' Generate a random integer number bewteen start and end '''
     url = 'https://www.random.org/integers/?num=1&min=%d&max=%d&col=5&base=10&format=plain&rnd=new'  # noqa
     try:
         return int(requests.get(url % (min, max)).text)
