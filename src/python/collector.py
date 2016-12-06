@@ -62,7 +62,7 @@ def collect(start, end, path, criterion, total=10000):
         filename = '%s%d%s' % (path, random_match_id, ".json")
 
         # game has already been searched or saved
-        if random_match_id in searched or random_match_id in match_filenames:
+        if random_match_id in searched or filename in match_filenames:
             random_match_id = rand(start, end)
             continue
 
