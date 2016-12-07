@@ -24,9 +24,9 @@ def rand(start, end):
     ''' Generate a random integer number bewteen start and end '''
     url = 'https://www.random.org/integers/?num=1&min=%d&max=%d&col=5&base=10&format=plain&rnd=new'  # noqa
     try:
-        return int(requests.get(url % (min, max)).text)
+        return int(requests.get(url % (start, end)).text)
     except:
-        return random.randint(min, max)
+        return random.randint(start, end)
 
 
 def get_match(match_id):
