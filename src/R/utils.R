@@ -112,7 +112,7 @@ many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
 outlier_analysis = function (x, factor=1.5) {
     cols = or(colnames(x), 1:ncol(x))
     ncols = 6
-    nrows = trunc(length(cols)/ncols)
+    nrows = ceiling(length(cols)/ncols)
     par(mfrow=c(nrows, ncols))
     each(function(i) boxplot(x[, i], main=i), cols)
     return(find_outliers(x, factor=factor))
@@ -150,7 +150,7 @@ correlation_analysis = function (x) {
     return(correlations)
 }
 
-#' Select the features of an data matrix x based on min > f(x) < max
+#' Select the features of a matrix x such that min > f(x) < max thresholds
 filter_features = function (x, f, min=NULL, max=NULL) {
     y = apply(x, 2, f)
 
