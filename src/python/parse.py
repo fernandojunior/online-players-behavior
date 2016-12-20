@@ -71,7 +71,10 @@ headers += PARTICIPANT_STATS  # participant statistics headers
 write(headers, file_)
 
 # Match loop
+count = 0
 for match in find(MATCH_FILTER):
+    count = count + 1
+    print(count)
     match_creation = milisecondsToDatetime(match['matchCreation'])
 
     # looking up match by participants
