@@ -59,20 +59,20 @@ outlier_thresholds = function (x, factor=1.5) {
 #'     result$total
 #'     #> [1] 8
 find_outliers = function (x, factor=1.5) {
-    lim = outlier_thresholds(x, factor=factor)
+    thresholds = outlier_thresholds(x, factor=factor)
 
     # select only features where the max and min thresholds are different
     # lower != upper in order to mantain the variability
-    cols = diff(lim) != 0
-    lim[cols]
+    cols = diff(thresholds) != 0
+    thresholds = thresholds[, cols]
     x = x[, cols]
 
     # indicate which element is an outlier TRUE or not FALSE
-    is_outlier = function (e) !interval(e, lim['lower', ], lim['upper', ])
+    is_outlier = function (e) !interval(e, thresholds['lower', ], thresholds['upper', ])
     outliers = Row(is_outlier, x)
     total = sum(outliers)
 
-    return(list(outliers=outliers, thresholds=lim, total=total))
+    return(list(outliers=outliers, thresholds=thresholds, total=total))
 }
 
 #' Remove outliers from a matrix x based on boxplot IQR factor.
