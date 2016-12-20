@@ -5,6 +5,7 @@ import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
+RENDER_PLOT_SAVE = FALSE
 RENDER_PLOT_CLOSE = TRUE
 
 # Load data -------------------------------------------------------------------
@@ -16,117 +17,193 @@ data = read.csv('../data/data.csv')
 # nrow(data)
 # [1] 85470
 
+# Remove duplicated rows by summonerId to decrease bias
+data = data[!duplicated(data[, 'summonerId']),]
+# > nrow(data)
+# [1] 54681
+
 features = names(data)
 
 features.info = c(
     'matchId',
-    'matchCreation',
-    'summonerId',
+    'matchMode',
+    'queueType',
+    'season',
     'championId',
-    'winner'
+    'summonerId',
+    'matchDuration',
+    'matchCreation', 'matchCreationYear', 'matchCreationMonth', 'matchCreationDay', 'matchCreationHour',
+    'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6',
+    'combatPlayerScore', 'objectivePlayerScore', 'totalPlayerScore', 'totalScoreRank', 'unrealKills'  # ARAM
 )
 
-features.logic = c(
+features.target = 'winner'
+
+features.logical = c(
+    'firstBloodAssist',
     'firstBloodKill',
-    'firstTowerKill',
-    'firstTowerAssist'
+    'firstInhibitorAssist',
+    'firstInhibitorKill',
+    'firstTowerAssist',
+    'firstTowerKill'
 )
 
-features.numeric = c(
-    'kills',
-    'assists',
-    'deaths',
-    'goldEarned',
-    'totalDamageDealt',
-    'magicDamageDealt',
-    'physicalDamageDealt',
-    'totalDamageDealtToChampions',
-    'totalDamageTaken',
-    'minionsKilled',
-    'neutralMinionsKilled',
-    'totalTimeCrowdControlDealt',
-    'wardsPlaced',
-    'towerKills',
-    'largestMultiKill',
-    'largestKillingSpree',
-    'largestCriticalStrike',
+features.categorical = c('champLevel')
+
+features.numeric = setdiff(features, c(
+    features.target,
+    features.info,
+    features.logical,
+    features.categorical
+))
+# [1] "assists"                         "deaths"
+# [3] "doubleKills"                     "goldEarned"
+# [5] "goldSpent"                       "inhibitorKills"
+# [7] "killingSprees"                   "kills"
+# [9] "largestCriticalStrike"           "largestKillingSpree"
+# [11] "largestMultiKill"                "magicDamageDealt"
+# [13] "magicDamageDealtToChampions"     "magicDamageTaken"
+# [15] "minionsKilled"                   "neutralMinionsKilled"
+# [17] "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [19] "pentaKills"                      "physicalDamageDealt"
+# [21] "physicalDamageDealtToChampions"  "physicalDamageTaken"
+# [23] "quadraKills"                     "sightWardsBoughtInGame"
+# [25] "totalDamageDealt"                "totalDamageDealtToChampions"
+# [27] "totalDamageTaken"                "totalHeal"
+# [29] "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [31] "towerKills"                      "tripleKills"
+# [33] "trueDamageDealt"                 "trueDamageDealtToChampions"
+# [35] "trueDamageTaken"                 "visionWardsBoughtInGame"
+# [37] "wardsKilled"                     "wardsPlaced"
+
+features.ong = c(
+    'firstBloodKill', 'firstTowerKill', 'firstTowerAssist',
+    'kills', 'assists', 'deaths', 'goldEarned','totalDamageDealt',
+    'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions',
+    'totalDamageTaken', 'minionsKilled', 'neutralMinionsKilled',
+    'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
+    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike',
     'totalHeal'
 )
+
+features.ong.numeric = c(
+    'goldEarned', 'kills', 'physicalDamageDealt', 'minionsKilled',
+    'totalDamageTaken', 'towerKills', 'largestCriticalStrike',
+    'neutralMinionsKilled', 'assists', 'totalTimeCrowdControlDealt',
+    'magicDamageDealt', 'wardsPlaced', 'totalHeal', 'deaths'
+)
+
+# features with low variance
+features.low_variance = filter_features(data[, features.numeric], var, max=8)
+#  [1] "doubleKills"             "inhibitorKills"
+#  [3] "killingSprees"           "largestKillingSpree"
+#  [5] "largestMultiKill"        "pentaKills"
+#  [7] "quadraKills"             "sightWardsBoughtInGame"
+#  [9] "towerKills"              "tripleKills"
+# [11] "visionWardsBoughtInGame" "wardsKilled"
+
+# Pre-select features with relevant variance
+features.selection = setdiff(features.numeric, features.low_variance)
+# [1] "assists"                         "deaths"
+# [3] "goldEarned"                      "goldSpent"
+# [5] "kills"                           "largestCriticalStrike"
+# [7] "magicDamageDealt"                "magicDamageDealtToChampions"
+# [9] "magicDamageTaken"                "minionsKilled"
+# [11] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
+# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"
+# [15] "physicalDamageDealtToChampions"  "physicalDamageTaken"
+# [17] "totalDamageDealt"                "totalDamageDealtToChampions"
+# [19] "totalDamageTaken"                "totalHeal"
+# [21] "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [23] "trueDamageDealt"                 "trueDamageDealtToChampions"
+# [25] "trueDamageTaken"                 "wardsPlaced"
 
 # Treatment of outliers -------------------------------------------------------
 
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
 outliers = render_plot(function () {
-    return(outlier_analysis(data[, features.numeric], factor=3))
-}, '../output/outliers-for-each-one', width=16, height=9)
+    return(outlier_analysis(data[, features.selection], factor=3))
+}, '../output/outliers-for-each-one', width=16, height=12)
 # outliers$total
-#> [1] 10814
-# t(outliers$thresholds)
-#>                                  lower    upper
-#> kills                           -19.00     30.0
-#> assists                         -19.00     37.0
-#> deaths                          -11.00     24.0
-#> goldEarned                    -7465.00  29957.0
-#> totalDamageDealt            -229216.25 433109.8
-#> magicDamageDealt            -112411.75 169991.0
-#> physicalDamageDealt         -260943.50 380499.8
-#> totalDamageDealtToChampions  -33290.00  66089.0
-#> totalDamageTaken             -25844.25  69949.0
-#> minionsKilled                  -347.00    556.0
-#> neutralMinionsKilled            -59.00     81.0
-#> totalTimeCrowdControlDealt    -1023.00   1567.0
-#> wardsPlaced                     -17.00     32.0
-#> towerKills                       -3.00      4.0
-#> largestMultiKill                 -2.00      5.0
-#> largestKillingSpree             -12.00     16.0
-#> largestCriticalStrike         -1653.00   2204.0
-#> totalHeal                     -7896.00  11865.0
+#> [1] 11083
+# > t(outliers$thresholds)
+#                                   lower  upper
+# assists                             -19     37
+# deaths                              -11     24
+# goldEarned                        -7491  30008
+# goldSpent                         -7420  27895
+# kills                               -19     30
+# largestCriticalStrike             -1644   2192
+# magicDamageDealt                -110875 168117
+# magicDamageDealtToChampions      -26558  39151
+# magicDamageTaken                 -15235  30482
+# minionsKilled                      -351    559
+# neutralMinionsKilled                -59     81
+# neutralMinionsKilledEnemyJungle      -9     12
+# neutralMinionsKilledTeamJungle      -48     64
+# physicalDamageDealt             -259807 378810
+# physicalDamageDealtToChampions   -34075  49036
+# physicalDamageTaken              -18829  45690
+# totalDamageDealt                -232569 435658
+# totalDamageDealtToChampions      -33410  66123
+# totalDamageTaken                 -26110  70511
+# totalHeal                         -7933  11940
+# totalTimeCrowdControlDealt        -1026   1571
+# trueDamageDealt                  -15569  21020
+# trueDamageDealtToChampions        -3132   4176
+# trueDamageTaken                   -2193   3554
+# wardsPlaced                         -17     32
 
-# filter extreme outliers
+# Pre-select features where lower and upper thresholds are different
+features.selection = colnames(outliers$thresholds)
+
+# remove extreme outliers
 data = data[!outliers$outliers, ]
 # nrow(data)
-#> [1] 74656
+#> [1] 43595
 
 # As data were looked up by participants, some matches were left with less than
-# 10 participants. So, these invalid matches need to be removed.
+# 10 participants. So, these invalid (incomplete) matches need to be removed.
 valid_matches = names(Filter(Curry(eq, 10), counter(data$matchId)))
 data = data[data$matchId %in% valid_matches, ]
-write.csv(data, '../data/treated.csv', row.names=FALSE)
+# write.csv(data, '../data/treated.csv', row.names=FALSE)
 # nrow(data)
-#> [1] 35140
+#> [1] 2400
 
-# Data normalization (z-score) ------------------------------------------------
+# TODO Data normalization (z-score) -------------------------------------------
 
 # Since the features are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the
 # integer features using Z-score. Logic features do not need be normalized.
-data.normalized = cbind(data[, features.logic], scale(data[, features.numeric]))
-write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
+data.normalized = scale(data[, features.selection])
+#write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
 
-# Correlation analysis --------------------------------------------------------
+# TODO Correlation analysis ---------------------------------------------------
 
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
 correlations = render_plot(function () {
     return(correlation_analysis(data.normalized)$estimates)
 }, '../output/correlation', width=16, height=9)
-write.csv(correlations, '../data/correlations.csv')
+#write.csv(correlations, '../data/correlations.csv')
 
 # Rank the hightly correlated features by mean of correlations for each one
 features.ranked = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
-#> [1] "goldEarned"                  "totalDamageDealt"
-#> [3] "totalDamageDealtToChampions" "kills"
-#> [5] "physicalDamageDealt"         "largestKillingSpree"
-#> [7] "minionsKilled"               "largestMultiKill"
-#> [9] "totalDamageTaken"            "towerKills"
-#> [11] "largestCriticalStrike"       "neutralMinionsKilled"
-#> [13] "assists"                     "totalTimeCrowdControlDealt"
-#> [15] "magicDamageDealt"            "wardsPlaced"
-#> [17] "totalHeal"                   "deaths"
-#> [19] "firstTowerKill"              "firstBloodKill"
-#> [21] "firstTowerAssist"
+# [1] "goldSpent"                       "goldEarned"
+# [3] "totalDamageDealt"                "totalDamageDealtToChampions"
+# [5] "physicalDamageDealt"             "totalDamageTaken"
+# [7] "physicalDamageDealtToChampions"  "kills"
+# [9] "physicalDamageTaken"             "neutralMinionsKilled"
+# [11] "neutralMinionsKilledEnemyJungle" "minionsKilled"
+# [13] "trueDamageDealtToChampions"      "neutralMinionsKilledTeamJungle"
+# [15] "totalTimeCrowdControlDealt"      "trueDamageDealt"
+# [17] "magicDamageDealt"                "assists"
+# [19] "magicDamageTaken"                "magicDamageDealtToChampions"
+# [21] "largestCriticalStrike"           "trueDamageTaken"
+# [23] "totalHeal"                       "deaths"
+# [25] "wardsPlaced"
 
-# Dimensionality reduction ----------------------------------------------------
+# TODO Dimensionality reduction ----------------------------------------------------
 
 # The features with high affinity (dendogram plot) and high correlation
 # (heatmap plot) > 0.7 are redundants. The following are redundant features and
@@ -157,7 +234,7 @@ features.top = features.selection[1:3]
 # Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection]
 
-# Learning model (K-means) ----------------------------------------------------
+# TODO Learning model (K-means) -----------------------------------------------
 
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
@@ -171,7 +248,7 @@ fits = render_plot(function () {
 fit = fits[[7]]
 each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 
-# Write or load labeled data --------------------------------------------------
+# TODO Write or load labeled data ---------------------------------------------
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
@@ -185,7 +262,7 @@ write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 winners = labeled[labeled$winner == 1, ]
 losers = labeled[labeled$winner == 0, ]
 
-# Statistical analysis of the results -----------------------------------------
+# TODO Statistical analysis of the results ------------------------------------
 
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
@@ -251,7 +328,7 @@ render_plot(function () {
 # also observe that some clusters are more perceptible than others when the
 # labeled data is discriminated between winners and losers.
 
-# Centroid analysis -----------------------------------------------------------
+# TODO Centroid analysis ------------------------------------------------------
 # Given a data set x, summarize the mean for each feature by label.
 render_plot(function () {
     par(mfrow=c(3,1))
