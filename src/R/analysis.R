@@ -5,8 +5,8 @@ import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
-RENDER_PLOT_SAVE = FALSE
-RENDER_PLOT_CLOSE = TRUE
+RENDER_PLOT_SAVE = TRUE
+RENDER_PLOT_CLOSE = FALSE
 
 # Load data -------------------------------------------------------------------
 
@@ -32,9 +32,23 @@ features.info = c(
     'championId',
     'summonerId',
     'matchDuration',
-    'matchCreation', 'matchCreationYear', 'matchCreationMonth', 'matchCreationDay', 'matchCreationHour',
-    'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6',
-    'combatPlayerScore', 'objectivePlayerScore', 'totalPlayerScore', 'totalScoreRank', 'unrealKills'  # ARAM
+    'matchCreation',
+    'matchCreationYear',
+    'matchCreationMonth',
+    'matchCreationDay',
+    'matchCreationHour',
+    'item0',
+    'item1',
+    'item2',
+    'item3',
+    'item4',
+    'item5',
+    'item6',
+    'combatPlayerScore',
+    'objectivePlayerScore',
+    'totalPlayerScore',
+    'totalScoreRank',
+    'unrealKills'  # ARAM
 )
 
 features.target = 'winner'
@@ -123,9 +137,9 @@ features.selection = setdiff(features.numeric, features.low_variance)
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
 outliers = render_plot(function () {
     return(outlier_analysis(data[, features.selection], factor=3))
-}, '../output/outliers-for-each-one', width=16, height=12)
+}, '../output/outliers-for-each-one2', width=16, height=12)
 # outliers$total
-#> [1] 11083
+#> [1] 11086
 # > t(outliers$thresholds)
 #                                   lower  upper
 # assists                             -19     37
@@ -156,6 +170,19 @@ outliers = render_plot(function () {
 
 # Pre-select features where lower and upper thresholds are different
 features.selection = colnames(outliers$thresholds)
+# [1] "assists"                         "deaths"
+# [3] "goldEarned"                      "goldSpent"
+# [5] "kills"                           "largestCriticalStrike"
+# [7] "magicDamageDealt"                "magicDamageDealtToChampions"
+# [9] "magicDamageTaken"                "minionsKilled"
+# [11] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
+# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"
+# [15] "physicalDamageDealtToChampions"  "physicalDamageTaken"
+# [17] "totalDamageDealt"                "totalDamageDealtToChampions"
+# [19] "totalDamageTaken"                "totalHeal"
+# [21] "totalTimeCrowdControlDealt"      "trueDamageDealt"
+# [23] "trueDamageDealtToChampions"      "trueDamageTaken"
+# [25] "wardsPlaced"
 
 # remove extreme outliers
 data = data[!outliers$outliers, ]
@@ -170,12 +197,38 @@ data = data[data$matchId %in% valid_matches, ]
 # nrow(data)
 #> [1] 2400
 
-# TODO Data normalization (z-score) -------------------------------------------
+# Data normalization (relative) -------------------------------------------
 
-# Since the features are of different varieties, their scales are also
-# different. In order to maintain uniform scalability we normalize the
-# integer features using Z-score. Logic features do not need be normalized.
-data.normalized = scale(data[, features.selection])
+# As the match duration varies between the matches, the features were divided
+# by match duration to compute players performance per minute.
+data.performance = data[, features.numeric]/data[, 'matchDuration']
+
+# team performance per minute
+team.performance = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner')], data.performance),  FUN=sum)
+
+# What is the player performance in relation to the team?
+# As the player performance varies between the matches and the features also
+# are of different varieties, the player performance was divided by team
+# performance to compute relative performance, wich can ranges from 0 to 1, and
+# thus scale up the data in a uniform way. Relative performance of the players
+# in their respective teams:
+data.relative_performance = as.data.frame(t(map(function (i) {
+    x = cbind(data[i, c('matchId', 'winner')], data.performance[i, ])
+    t = team.performance[team.performance$matchId == x$matchId & team.performance$winner == x$winner, ]
+    x[, features.selection]/t[, features.selection]
+}, 1:nrow(data.performance))))
+
+# test players relative performance of a team
+# team.performance[team.performance$matchId==456157093, c('matchId', 'winner', 'assists')]
+# test = data.frame(cbind(matchId=data$matchId, assists=data.performance$assists, rel=data.relative_performance$assists))
+# test[test$matchId==456157093, ]
+# unlist(test[test$matchId==456157093, 'assists']) / team.performance[1, 'assists']
+
+# Boolean features do not need be normalized.
+data.normalized = cbind(
+    data[, features.logical],
+    data.relative_performance
+)
 #write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
 
 # TODO Correlation analysis ---------------------------------------------------
