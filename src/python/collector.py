@@ -2,7 +2,7 @@
 Collect LoL matches from Riot API at a specific match id range.
 
 How to use:
-$ python collector.py --start 710229426 --end 728819142 --path ../data/201602 --api_key SUA_CHAVE_AQUI
+$ python collector.py --start 710229426 --end 728819142 --path --total 10000 ../data/201602 --api_key SUA_CHAVE_AQUI
 '''
 import os
 import os.path
@@ -80,7 +80,7 @@ def collect(start, end, path, criterion, total=10000):
                 random_match_id += rand(1, 50) * random.choice([-1, 1])
 
             messages.append('matchId: %s Info:' % match['matchId'])
-            messages.extend([match['queueType'], match['matchVersion']])
+            messages.extend([match['queueType'], match['matchVersion'], match['matchMode'], match['season'], match['region']])
         except Exception as error:
             messages.append('status: %s matchId: %s' % (error,  searched[-1]))
             random_match_id = rand(start, end)
@@ -99,6 +99,7 @@ if __name__ == '__main__':
     parser.add_option("--start", type=int,  help="starting match id")
     parser.add_option("--end", type=int,  help="ending match id")
     parser.add_option("--path", type=str,  help="path to save macthes")
+    parser.add_option("--total", type=int,  help="total matches to collect")
     parser.add_option("--api_key", type=str,  help="Riot API key")
     (options, args) = parser.parse_args()
 
@@ -111,10 +112,10 @@ if __name__ == '__main__':
 
     criterion = {
         'matchMode': 'CLASSIC',
-        'season': 'SEASON2016',
+        'season': 'PRESEASON2017',
         'region': 'BR',
-        'queueType': 'TEAM_BUILDER_DRAFT_RANKED_5x5',
+        'queueType': 'TEAM_BUILDER_RANKED_SOLO',
     }
 
     collect(start=options.start, end=options.end, path=path,
-            criterion=criterion)
+            criterion=criterion, total=options.total)
