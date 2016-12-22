@@ -136,6 +136,7 @@ outlier_analysis = function (x, factor=1.5) {
 #'     https://cran.r-project.org/web/packages/corrplot
 correlation_analysis = function (x) {
     correlations = correlation_matrix(x, method='spearman', exact=FALSE)
+    correlations$estimates[is.na(correlations$estimates)] <- 0
 
     par(mfrow=c(1, 2))
     dendrogram(correlations$estimates)
