@@ -168,7 +168,7 @@ outliers = render_plot(function () {
 # trueDamageTaken                   -2193   3554
 # wardsPlaced                         -17     32
 
-# Pre-select features where lower and upper thresholds are different
+# Select only features where lower != upper from outlier analysis
 features.selection = colnames(outliers$thresholds)
 # [1] "assists"                         "deaths"
 # [3] "goldEarned"                      "goldSpent"
@@ -197,7 +197,7 @@ data = data[data$matchId %in% valid_matches, ]
 # nrow(data)
 #> [1] 2400
 
-# Data normalization (relative) -------------------------------------------
+# Data normalization ----------------------------------------------------------
 
 # As the match duration varies between the matches, the features were divided
 # by match duration to compute players performance per minute.
@@ -205,6 +205,7 @@ data.performance = data[, features.numeric]/data[, 'matchDuration']
 
 # team performance per minute
 team.performance = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner')], data.performance),  FUN=sum)
+team.performance.logical = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner', features.logical)]),  FUN=max)
 
 # What is the player performance in relation to the team?
 # As the player performance varies between the matches and the features also
@@ -220,16 +221,17 @@ data.relative_performance = as.data.frame(t(map(function (i) {
 
 # test players relative performance of a team
 # team.performance[team.performance$matchId==456157093, c('matchId', 'winner', 'assists')]
-# test = data.frame(cbind(matchId=data$matchId, assists=data.performance$assists, rel=data.relative_performance$assists))
+# test = data.frame(cbind(matchId=data$matchId, winner=data$winner, assists=data.performance$assists, rel=data.relative_performance$assists))
 # test[test$matchId==456157093, ]
-# unlist(test[test$matchId==456157093, 'assists']) / team.performance[1, 'assists']
+# unlist(test[test$matchId==456157093 & test$winner==0, 'assists']) / team.performance[team.performance$matchId==456157093 & team.performance$winner==0, 'assists']
 
-# Boolean features do not need be normalized.
-data.normalized = cbind(
-    data[, features.logical],
-    data.relative_performance
-)
-#write.csv(data.normalized, '../data/normalized.csv', row.names=FALSE)
+# Boolean features do not need be normalized
+data.normalized = na.omit(sapply(data.relative_performance, as.numeric))
+
+# Since the team performances are of different varieties, their scales are also
+# different. In order to maintain uniform scalability we normalize the integer
+# features using Z-score. TODO weighted
+team.normalized = na.omit(scale(sapply(team.performance[, features.selection], as.numeric)))
 
 # TODO Correlation analysis ---------------------------------------------------
 
@@ -237,8 +239,11 @@ data.normalized = cbind(
 # require the features follow a normal distribuition or linear correlation.
 correlations = render_plot(function () {
     return(correlation_analysis(data.normalized)$estimates)
-}, '../output/correlation', width=16, height=9)
-#write.csv(correlations, '../data/correlations.csv')
+}, '../output/correlation2', width=16, height=9)
+
+correlations = render_plot(function () {
+    return(correlation_analysis(team.normalized)$estimates)
+}, '../output/correlation3', width=16, height=9)
 
 # Rank the hightly correlated features by mean of correlations for each one
 features.ranked = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
