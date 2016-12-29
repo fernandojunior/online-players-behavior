@@ -207,6 +207,11 @@ data.performance = data[, features.numeric]/data[, 'matchDuration']
 team.performance = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner')], data.performance),  FUN=sum)
 team.performance.logical = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner', features.logical)]),  FUN=max)
 
+team.performance = sapply(team.performance[, features.numeric], as.numeric)
+team.performance[is.nan(team.performance)] <- 0
+team.performance.logical = sapply(team.performance.logical, as.numeric)
+team.performance = cbind(team.performance.logical, team.performance)
+
 # What is the player performance in relation to the team?
 # As the player performance varies between the matches and the features also
 # are of different varieties, the player performance was divided by team
@@ -216,14 +221,12 @@ team.performance.logical = aggregate(. ~ matchId + winner, data=cbind(data[, c('
 data.relative_performance = as.data.frame(t(map(function (i) {
     x = cbind(data[i, c('matchId', 'winner')], data.performance[i, ])
     t = team.performance[team.performance$matchId == x$matchId & team.performance$winner == x$winner, ]
-    x[, features.selection]/t[, features.selection]
+    x[, features.numeric]/t[, features.numeric]
 }, 1:nrow(data.performance))))
 
-# test players relative performance of a team
-# team.performance[team.performance$matchId==456157093, c('matchId', 'winner', 'assists')]
-# test = data.frame(cbind(matchId=data$matchId, winner=data$winner, assists=data.performance$assists, rel=data.relative_performance$assists))
-# test[test$matchId==456157093, ]
-# unlist(test[test$matchId==456157093 & test$winner==0, 'assists']) / team.performance[team.performance$matchId==456157093 & team.performance$winner==0, 'assists']
+data.relative_performance = sapply(data.relative_performance, as.numeric)
+data.relative_performance[is.nan(data.relative_performance)] <- 0
+data.relative_performance = cbind(data[, features.logical], data.relative_performance)
 
 # Boolean features do not need be normalized
 data.normalized = na.omit(sapply(data.relative_performance, as.numeric))
@@ -231,74 +234,101 @@ data.normalized = na.omit(sapply(data.relative_performance, as.numeric))
 # Since the team performances are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the integer
 # features using Z-score. TODO weighted
-team.normalized = na.omit(scale(sapply(team.performance[, features.selection], as.numeric)))
+team.normalized = na.omit(scale(sapply(team.performance[, features.numeric], as.numeric)))
 
-# TODO Correlation analysis ---------------------------------------------------
+# Correlation analysis --------------------------------------------------------
 
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
 correlations = render_plot(function () {
-    return(correlation_analysis(data.normalized)$estimates)
-}, '../output/correlation2', width=16, height=9)
+    return(correlation_analysis(data.normalized[, features.selection])$estimates)
+}, '../output/correlation-player', width=18, height=12)
 
 correlations = render_plot(function () {
-    return(correlation_analysis(team.normalized)$estimates)
-}, '../output/correlation3', width=16, height=9)
+    return(correlation_analysis(team.normalized[, features.selection])$estimates)
+}, '../output/correlation-team', width=18, height=12)
 
-# Rank the hightly correlated features by mean of correlations for each one
-features.ranked = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
-# [1] "goldSpent"                       "goldEarned"
-# [3] "totalDamageDealt"                "totalDamageDealtToChampions"
-# [5] "physicalDamageDealt"             "totalDamageTaken"
-# [7] "physicalDamageDealtToChampions"  "kills"
-# [9] "physicalDamageTaken"             "neutralMinionsKilled"
-# [11] "neutralMinionsKilledEnemyJungle" "minionsKilled"
-# [13] "trueDamageDealtToChampions"      "neutralMinionsKilledTeamJungle"
-# [15] "totalTimeCrowdControlDealt"      "trueDamageDealt"
-# [17] "magicDamageDealt"                "assists"
-# [19] "magicDamageTaken"                "magicDamageDealtToChampions"
-# [21] "largestCriticalStrike"           "trueDamageTaken"
-# [23] "totalHeal"                       "deaths"
-# [25] "wardsPlaced"
+# Rank the most correlated features by mean of correlations for each one
+features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
+# [1] "goldEarned"                      "goldSpent"
+# [3] "totalDamageDealt"                "neutralMinionsKilledEnemyJungle"
+# [5] "kills"                           "totalDamageDealtToChampions"
+# [7] "assists"                         "physicalDamageDealt"
+# [9] "minionsKilled"                   "deaths"
+# [11] "physicalDamageDealtToChampions"  "neutralMinionsKilled"
+# [13] "magicDamageDealtToChampions"     "magicDamageDealt"
+# [15] "largestCriticalStrike"           "totalTimeCrowdControlDealt"
+# [17] "totalHeal"                       "wardsPlaced"
+# [19] "trueDamageDealt"                 "totalDamageTaken"
+# [21] "neutralMinionsKilledTeamJungle"  "physicalDamageTaken"
+# [23] "magicDamageTaken"                "trueDamageDealtToChampions"
+# [25] "trueDamageTaken"
 
-# TODO Dimensionality reduction ----------------------------------------------------
+# Dimensionality reduction ----------------------------------------------------
 
-# The features with high affinity (dendogram plot) and high correlation
-# (heatmap plot) > 0.7 are redundants. The following are redundant features and
-# logic features.
+# Features with high similarity (dendogram plot) and high correlation (heatmap
+# plot) > 0.7 are redundants.
 features.unselect = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
-    'totalDamageDealtToChampions',  # (goldErned, totalDamageDealtToChampions)
-    'largestMultiKill',  # (Kills, LargestMultiKill)
-    'largestKillingSpree',  # (Kills, LargestMultiKill), LargestKillingSpree
-    'firstTowerAssist',  # logic
-    'firstBloodKill',  # logic
-    'firstTowerKill'  # logic
+    'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
+    'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
+    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
+    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
+    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
+    'trueDamageDealt', # trueDamageDealt x trueDamageDealtToChampions
+    'goldEarned', # goldEarned x goldSpent
+    'goldSpent' # goldSpent x kills
 )
 
-# Ranked feature selection.
-features.selection = setdiff(features.ranked, features.unselect)
-#> [1] "goldEarned"                 "kills"
-#> [3] "physicalDamageDealt"        "minionsKilled"
-#> [5] "totalDamageTaken"           "towerKills"
-#> [7] "largestCriticalStrike"      "neutralMinionsKilled"
-#> [9] "assists"                    "totalTimeCrowdControlDealt"
-#> [11] "magicDamageDealt"           "wardsPlaced"
-#> [13] "totalHeal"                  "deaths"
+# Remove redundant features (high similarity and correlation) to avoid
+# multicollinearity.
+features.selection = setdiff(features.selection, features.unselect)
+# [1] "neutralMinionsKilledEnemyJungle" "kills"
+# [3] "assists"                         "minionsKilled"
+# [5] "deaths"                          "physicalDamageDealtToChampions"
+# [7] "magicDamageDealtToChampions"     "largestCriticalStrike"
+# [9] "totalTimeCrowdControlDealt"      "totalHeal"
+# [11] "wardsPlaced"                     "neutralMinionsKilledTeamJungle"
+# [13] "physicalDamageTaken"             "magicDamageTaken"
+# [15] "trueDamageDealtToChampions"      "trueDamageTaken"
 
 # Top 3 hightly correled features of the selection
 features.top = features.selection[1:3]
+# [1] "neutralMinionsKilledEnemyJungle" "kills"
+# [3] "assists"
 
 # Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection]
+
+correlations = render_plot(function () {
+    return(correlation_analysis(data.reduced)$estimates)
+}, '../output/correlation-player-thin', width=18, height=12)
 
 # TODO Learning model (K-means) -----------------------------------------------
 
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
-    return(cluster_analysis(data.reduced, kmax=30)$fits)
-}, '../output/k-means-error-curve')
+    return(cluster_analysis(data.reduced, kmax=120)$fits)
+}, '../output/k-means-error-curve2')
+
+# render_plot(function () {
+#     x = data.reduced
+#     return(bagging_cluster_analysis(x, kmax=120, ntests=ncol(x)))
+# }, '../output/k-means-error-curve2.2')
+
+render_plot(function () {
+    return(cluster_analysis(data.normalized[, features.ong], kmax=120)$fits)
+}, '../output/k-means-error-curve-ong')
+
+render_plot(function () {
+    return(cluster_analysis(data.normalized[, features.ong.numeric], kmax=120)$fits)
+}, '../output/k-means-error-curve-ong-numeric')
+
+render_plot(function () {
+    x = data.normalized
+    return(bagging_cluster_analysis(x, kmax=120, ncol=ncol(x), ntests=ncol(x)))
+}, '../output/k-means-error-curve-mean')
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
