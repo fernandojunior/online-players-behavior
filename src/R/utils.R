@@ -58,7 +58,7 @@ betweenss.rate = function (fit) {
 cluster_analysis = function (x, kmax=20, show=TRUE) {
     # K-means clustering for each number of k = {1:kmax}
     fits = Map(function(k) {
-        fit = kmeans(x, k, algorithm='Lloyd', iter.max=200)
+        fit = kmeans(x, k, algorithm='Lloyd', iter.max=300)
         fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
         fit$k = length(fit$size)  # Number of clusters
         fit$withinvar = 1/(fit$size-1)*fit$withinss  # Variance in each cluster
@@ -67,38 +67,44 @@ cluster_analysis = function (x, kmax=20, show=TRUE) {
 
     # Total within-cluster SSE for each k-means clustering
     twss = values(Map(function (fit) fit$tot.withinss, fits))
-    twss.prop = twss/twss[1]
+
+    # Relative TWSS
+    twss.rel = twss/twss[1]
 
     # Plot to analyze the knee of error curve
     if (show == TRUE) {
         main = 'K-means - Error curve'
         ylab = 'tot.withinss(k)/tot.withinss(k=1)'
         legends = paste(colnames(x), collapse='\n')
-        plot(twss.prop, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
+        plot(twss.rel, main=main, xlab='k', ylab=ylab, ylim=c(0, 1))
         legend('topright', legend=legends, bty='n', cex=0.7)
     }
 
-    return(list(fits=fits, twss=twss))
+    return(list(fits=fits, twss=twss, twss.rel=twss.rel))
 }
 
-#' Perform ntests cluster analysis on a matrix x for each k = {1:kmax}.
-#'
+#' Perform ntests cluster analysis on a matrix x for a given kmax to find the
+#' mean error curve. For each ntests, a random feature subspace is selected to
+#' be clusterized and, then, compute the relative TWSS for k = {1, ... kmax}.
+#' At the end, the relative TWSS for all tests are summarized by the mean.
+#' TODO: handle ncol when null
 #' If ncol != NULL, ncol columns of x are chosen randomly to the analysis.
 #' In the end, the tests are summarized by mean.
-many_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
-    tests = matrix(0, nrow=ntests, ncol=kmax)
+bagging_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
+    twss.rel = matrix(0, nrow=ntests, ncol=kmax)
     for (i in range(ntests)) {
         cols = if (is.null(ncol)) colnames(x) else sample(colnames(x), ncol)
-        tests[i, ] = cluster_analysis(x[, cols], kmax=kmax, show=FALSE)$twss.prop
+        twss.rel[i, ] = cluster_analysis(x[, cols], kmax=kmax, show=FALSE)$twss.rel
     }
-    tests.summary = apply(tests, 2, mean)
+    twss.rel.mean = apply(twss.rel, 2, mean)
 
+    main = 'K-menas - Mean error curve (bagging)'
     ylab = 'mean(tot.withinss(k)/tot.withinss(k=1))'
     legends = strf('random features: %s, tests: %s', ncol, ntests)
-    plot(tests.summary, ylim=c(0, 1), ylab=ylab, xlab='k')
+    plot(twss.rel.mean, main=main, ylim=c(0, 1), ylab=ylab, xlab='k')
     legend('topright', legend=legends, bty='n', cex=0.7)
 
-    return(apply(tests, 2, mean))  # summary
+    return(twss.rel.mean)  # summary
 }
 
 #' Perform outlier analysis on a matrix x.
