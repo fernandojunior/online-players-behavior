@@ -80,7 +80,7 @@ cluster_analysis = function (x, kmax=20, show=TRUE) {
         legend('topright', legend=legends, bty='n', cex=0.7)
     }
 
-    return(list(fits=fits, twss=twss, twss.rel=twss.rel))
+    return(list(fits=fits, twss=twss, 'twss.rel'=twss.rel))
 }
 
 #' Perform ntests cluster analysis on a matrix x for a given kmax to find the
