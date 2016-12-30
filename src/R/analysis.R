@@ -207,11 +207,6 @@ data.performance = data[, features.numeric]/data[, 'matchDuration']
 team.performance = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner')], data.performance),  FUN=sum)
 team.performance.logical = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner', features.logical)]),  FUN=max)
 
-team.performance = sapply(team.performance[, features.numeric], as.numeric)
-team.performance[is.nan(team.performance)] <- 0
-team.performance.logical = sapply(team.performance.logical, as.numeric)
-team.performance = cbind(team.performance.logical, team.performance)
-
 # What is the player performance in relation to the team?
 # As the player performance varies between the matches and the features also
 # are of different varieties, the player performance was divided by team
@@ -226,15 +221,28 @@ data.relative_performance = as.data.frame(t(map(function (i) {
 
 data.relative_performance = sapply(data.relative_performance, as.numeric)
 data.relative_performance[is.nan(data.relative_performance)] <- 0
-data.relative_performance = cbind(data[, features.logical], data.relative_performance)
+
+team.performance = sapply(team.performance[, features.numeric], as.numeric)
+team.performance[is.nan(team.performance)] <- 0
+team.performance.logical = sapply(team.performance.logical[, features.logical], as.numeric)
 
 # Boolean features do not need be normalized
-data.normalized = na.omit(sapply(data.relative_performance, as.numeric))
+data.normalized = na.omit(cbind(
+    data[, features.logical],
+    data.relative_performance[, features.numeric]
+))
+
+normalize = function (x) {
+    return((x-min(x))/(max(x)-min(x)))
+}
 
 # Since the team performances are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the integer
 # features using Z-score. TODO weighted
-team.normalized = na.omit(scale(sapply(team.performance[, features.numeric], as.numeric)))
+team.normalized = na.omit(cbind(
+    team.performance.logical[, features.logical],
+    normalize(team.performance[, features.numeric])
+))
 
 # Correlation analysis --------------------------------------------------------
 
@@ -268,7 +276,7 @@ features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 
 # Features with high similarity (dendogram plot) and high correlation (heatmap
 # plot) > 0.7 are redundants.
-features.unselect = c(
+features.redundant = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
@@ -280,9 +288,21 @@ features.unselect = c(
     'goldSpent' # goldSpent x kills
 )
 
+features.redundant.team = c(
+    'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
+    'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
+    'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
+    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
+    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
+    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
+    'goldEarned', # goldEarned x goldSpent
+    'goldSpent', # goldSpent x kills
+    'assists' # assists x kills
+)
+
 # Remove redundant features (high similarity and correlation) to avoid
 # multicollinearity.
-features.selection = setdiff(features.selection, features.unselect)
+features.selection.player = setdiff(features.selection, features.redundant)
 # [1] "neutralMinionsKilledEnemyJungle" "kills"
 # [3] "assists"                         "minionsKilled"
 # [5] "deaths"                          "physicalDamageDealtToChampions"
@@ -292,17 +312,28 @@ features.selection = setdiff(features.selection, features.unselect)
 # [13] "physicalDamageTaken"             "magicDamageTaken"
 # [15] "trueDamageDealtToChampions"      "trueDamageTaken"
 
-# Top 3 hightly correled features of the selection
-features.top = features.selection[1:3]
+features.selection.team = setdiff(features.selection, features.redundant.team)
 # [1] "neutralMinionsKilledEnemyJungle" "kills"
-# [3] "assists"
+# [3] "minionsKilled"                   "deaths"
+# [5] "physicalDamageDealtToChampions"  "magicDamageDealtToChampions"
+# [7] "largestCriticalStrike"           "totalTimeCrowdControlDealt"
+# [9] "totalHeal"                       "wardsPlaced"
+# [11] "trueDamageDealt"                 "neutralMinionsKilledTeamJungle"
+# [13] "physicalDamageTaken"             "magicDamageTaken"
+# [15] "trueDamageDealtToChampions"      "trueDamageTaken"
 
 # Dimensionality reduction of the normalized data with selected features
-data.reduced = data.normalized[, features.selection]
+data.reduced = data.normalized[, features.selection.player]
+
+team.reduced = team.normalized[, features.selection.team]
 
 correlations = render_plot(function () {
     return(correlation_analysis(data.reduced)$estimates)
 }, '../output/correlation-player-thin', width=18, height=12)
+
+correlations = render_plot(function () {
+    return(correlation_analysis(team.reduced)$estimates)
+}, '../output/correlation-team-thin', width=18, height=12)
 
 # TODO Learning model (K-means) -----------------------------------------------
 
@@ -358,7 +389,7 @@ losers = labeled[labeled$winner == 0, ]
 # Kruskal-Wallis rank sum test
 
 # Alternative hypothesis true: p.value < 0.05
-h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
+h1 = kruskal.test(rowSums(labeled[, features.selection.player]), labeled$label)
 
 # Hypothesis 2. H2-0: For each cluster found in the learning model there is no
 # difference between the medians of the winning players and losing players;
@@ -368,8 +399,8 @@ h1 = kruskal.test(rowSums(labeled[, features.selection]), labeled$label)
 
 # Alternative hypothesis true for each cluster: p.value < 0.05
 h2.p.values = values(Map(function (k) {
-    x = rowSums(winners[winners$label == k, features.selection])
-    y = rowSums(losers[losers$label == k, features.selection])
+    x = rowSums(winners[winners$label == k, features.selection.player])
+    y = rowSums(losers[losers$label == k, features.selection.player])
     wilcox.test(x , y, paired=FALSE)$p.value
 }, range(fit$k)))
 
@@ -384,19 +415,19 @@ render_plot(function () {
 # Plot of labeled data. Only the top selected features
 render_plot(function () {
     main = 'Exploring - Scatter plot'
-    plot(labeled[, features.top], main=main, col=labeled$label)
+    plot(labeled[, features.selection.player[1:3]], main=main, col=labeled$label)
 }, '../output/exploring-scatter-plot')
 
 # Only winners
 render_plot(function () {
     main = 'Exploring - Scatter plot winners'
-    plot(winners[, features.top], main=main, col=winners$label)
+    plot(winners[, features.selection.player[1:3]], main=main, col=winners$label)
 }, '../output/exploring-scatter-plot-winners')
 
 # Only losers
 render_plot(function () {
     main = 'Exploring - Scatter plot losers'
-    plot(losers[, features.top], main=main, col=losers$label)
+    plot(losers[, features.selection.player[1:3]], main=main, col=losers$label)
 }, '../output/exploring-scatter-plot-losers')
 
 # 3-D visualization of 3 principal components of the labeled data
@@ -404,11 +435,11 @@ render_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-10, 10)
     angle = 95
-    pca_plot(labeled[, features.selection], main='PCA', color=labeled$label,
+    pca_plot(labeled[, features.selection.player], main='PCA', color=labeled$label,
              angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(winners[, features.selection], main='PCA winners',
+    pca_plot(winners[, features.selection.player], main='PCA winners',
              color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(losers[, features.selection], main='PCA losers',
+    pca_plot(losers[, features.selection.player], main='PCA losers',
              color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
 }, '../output/exploring-pca', width=18, height=9)
 
@@ -421,7 +452,7 @@ render_plot(function () {
 render_plot(function () {
     par(mfrow=c(3,1))
     lim = c(-2, 2)
-    plot_by(labeled[, features.selection], labeled$label, mean, ylim=lim)
-    plot_by(winners[, features.selection], winners$label, mean, ylim=lim)
-    plot_by(losers[, features.selection], losers$label, mean, ylim=lim)
+    plot_by(labeled[, features.selection.player], labeled$label, mean, ylim=lim)
+    plot_by(winners[, features.selection.player], winners$label, mean, ylim=lim)
+    plot_by(losers[, features.selection.player], losers$label, mean, ylim=lim)
 }, '../output/exploring-centers', width=16, height=9)
