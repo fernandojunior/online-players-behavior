@@ -223,18 +223,14 @@ data.relative_performance = sapply(data.relative_performance, as.numeric)
 data.relative_performance[is.nan(data.relative_performance)] <- 0
 
 team.performance = sapply(team.performance[, features.numeric], as.numeric)
-team.performance[is.nan(team.performance)] <- 0
 team.performance.logical = sapply(team.performance.logical[, features.logical], as.numeric)
+team.performance[is.nan(team.performance)] <- 0
 
 # Boolean features do not need be normalized
 data.normalized = na.omit(cbind(
     data[, features.logical],
     data.relative_performance[, features.numeric]
 ))
-
-normalize = function (x) {
-    return((x-min(x))/(max(x)-min(x)))
-}
 
 # Since the team performances are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the integer
@@ -335,42 +331,38 @@ correlations = render_plot(function () {
     return(correlation_analysis(team.reduced)$estimates)
 }, '../output/correlation-team-thin', width=18, height=12)
 
-# TODO Learning model (K-means) -----------------------------------------------
+# Cluster analysis (K-means) --------------------------------------------------
 
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
     return(cluster_analysis(data.reduced, kmax=120)$fits)
-}, '../output/k-means-error-curve2')
-
-# render_plot(function () {
-#     x = data.reduced
-#     return(bagging_cluster_analysis(x, kmax=120, ntests=ncol(x)))
-# }, '../output/k-means-error-curve2.2')
+}, '../output/k-means-error-curve-player')
 
 render_plot(function () {
-    return(cluster_analysis(data.normalized[, features.ong], kmax=120)$fits)
-}, '../output/k-means-error-curve-ong')
+    return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=40))
+}, '../output/k-means-error-curve-player-bagging')
+
+fits.team = render_plot(function () {
+    return(cluster_analysis(team.reduced, kmax=120)$fits)
+}, '../output/k-means-error-curve-team')
 
 render_plot(function () {
-    return(cluster_analysis(data.normalized[, features.ong.numeric], kmax=120)$fits)
-}, '../output/k-means-error-curve-ong-numeric')
-
-render_plot(function () {
-    x = data.normalized
-    return(bagging_cluster_analysis(x, kmax=120, ncol=ncol(x), ntests=ncol(x)))
-}, '../output/k-means-error-curve-mean')
+    return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.reduced), ntests=40))
+}, '../output/k-means-error-curve-team-bagging')
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it.
-fit = fits[[7]]
-each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
+fit = fits[[12]]
+# each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
+
+fit.team = fits.team[[18]]
 
 # TODO Write or load labeled data ---------------------------------------------
 
 # Associating each reduced data point with its info and label features
-labeled = cbind(data[, features.info], label=fit$cluster, data.reduced)
+labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.reduced)
 write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 
 # cluster = read.csv('../output/fit/cluster.csv')$x
@@ -408,7 +400,9 @@ render_plot(function () {
     par(mfrow=c(1, 2))
     plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
     plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-}, '../output/hypothesis', width=16, height=9)
+}, '../output/hypothesis-player', width=16, height=9)
+
+# TODO compare median between clusters
 
 # Exploring labeled data ------------------------------------------------------
 
