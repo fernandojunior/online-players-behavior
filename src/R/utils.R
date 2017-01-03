@@ -24,7 +24,7 @@ counter_by = function (...) {
 undersample = function (x, target, size) {
     y = x[, target]
     indices = values(Map(function (k) {
-        return(sample(rownames(winners[winners[, target] == k, ]), size))
+        return(sample(rownames(x[x[, target] == k, ]), size))
     }, unique(y)))
     return(x[rownames(x) %in% indices, ])
 }
