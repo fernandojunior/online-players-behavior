@@ -5,6 +5,11 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
+#' Normalize a dataset x
+normalize = function (x) {
+    return((x-min(x))/(max(x)-min(x)))
+}
+
 #' Aggregate a dataset with a function FUN=counter
 #'
 #' Same as `aggregate(x, by=y, counter)` or `aggregate(x ~ y, data, counter)`
@@ -58,7 +63,7 @@ betweenss.rate = function (fit) {
 cluster_analysis = function (x, kmax=20, show=TRUE) {
     # K-means clustering for each number of k = {1:kmax}
     fits = Map(function(k) {
-        fit = kmeans(x, k, algorithm='Lloyd', iter.max=300)
+        fit = kmeans(x, k, algorithm='Lloyd', iter.max=1500)
         fit$betweenss.rate = betweenss.rate(fit)  # Between-cluster SSE rate
         fit$k = length(fit$size)  # Number of clusters
         fit$withinvar = 1/(fit$size-1)*fit$withinss  # Variance in each cluster
@@ -87,9 +92,8 @@ cluster_analysis = function (x, kmax=20, show=TRUE) {
 #' mean error curve. For each ntests, a random feature subspace is selected to
 #' be clusterized and, then, compute the relative TWSS for k = {1, ... kmax}.
 #' At the end, the relative TWSS for all tests are summarized by the mean.
-#' TODO: handle ncol when null
-#' If ncol != NULL, ncol columns of x are chosen randomly to the analysis.
-#' In the end, the tests are summarized by mean.
+#'
+#' If ncol == NULL, all columns of x are chosen for the analysis.
 bagging_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
     twss.rel = matrix(0, nrow=ntests, ncol=kmax)
     for (i in range(ntests)) {
@@ -100,7 +104,11 @@ bagging_cluster_analysis = function (x, ncol=NULL, kmax=10, ntests=20) {
 
     main = 'K-menas - Mean error curve (bagging)'
     ylab = 'mean(tot.withinss(k)/tot.withinss(k=1))'
-    legends = strf('random features: %s, tests: %s', ncol, ntests)
+    legends = ''
+    if (is.null(ncol))
+        legends = strf('features: %s, tests: %s', ncol(x), ntests)
+    else
+        legends = strf('random features: %s, tests: %s', ncol, ntests)
     plot(twss.rel.mean, main=main, ylim=c(0, 1), ylab=ylab, xlab='k')
     legend('topright', legend=legends, bty='n', cex=0.7)
 
