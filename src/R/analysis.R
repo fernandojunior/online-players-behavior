@@ -340,7 +340,11 @@ fits = render_plot(function () {
 }, '../output/k-means-error-curve-player')
 
 render_plot(function () {
-    return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=40))
+    return(bagging_cluster_analysis(data.reduced, kmax=120, ntests=10))
+}, '../output/k-means-error-curve-player-avaraged')
+
+render_plot(function () {
+    return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=10))
 }, '../output/k-means-error-curve-player-bagging')
 
 fits.team = render_plot(function () {
@@ -348,7 +352,11 @@ fits.team = render_plot(function () {
 }, '../output/k-means-error-curve-team')
 
 render_plot(function () {
-    return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.reduced), ntests=40))
+    return(bagging_cluster_analysis(team.reduced, kmax=120, ntests=10))
+}, '../output/k-means-error-curve-team-avareged')
+
+render_plot(function () {
+    return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.reduced), ntests=10))
 }, '../output/k-means-error-curve-team-bagging')
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
@@ -369,9 +377,20 @@ write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 # labeled = cbind(data[, features.info], label=cluster, data.reduced)
 # labeled = read.csv('../data/labeled.csv')
 
+# Balancing/undersampling data ................................................
+
 # Discriminate labeled data between winners and losers
 winners = labeled[labeled$winner == 1, ]
 losers = labeled[labeled$winner == 0, ]
+
+# undersampling
+min_group_size = min(table(winners$label), table(losers$label))
+# [1] 40
+winners = undersample(winners, 'label', min_group_size)
+losers = undersample(losers, 'label', min_group_size)
+labeled = rbind(winners, losers)
+
+# TODO Balancing team data
 
 # TODO Statistical analysis of the results ------------------------------------
 
@@ -393,6 +412,8 @@ h1 = kruskal.test(rowSums(labeled[, features.selection.player]), labeled$label)
 h2.p.values = values(Map(function (k) {
     x = rowSums(winners[winners$label == k, features.selection.player])
     y = rowSums(losers[losers$label == k, features.selection.player])
+    # TODO print(paste(shapiro.test(x)$p.value, shapiro.test(y)$p.value))
+    # TODO print(t.test(x, y, paired=FALSE)$p.value)
     wilcox.test(x , y, paired=FALSE)$p.value
 }, range(fit$k)))
 
