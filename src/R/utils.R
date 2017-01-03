@@ -19,6 +19,16 @@ counter_by = function (...) {
     return(Curry(aggregate, FUN=counter)(...))
 }
 
+#' Undersample a dimensional dataset x for each class in a categorical target
+#' column with a specified sample size
+undersample = function (x, target, size) {
+    y = x[, target]
+    indices = values(Map(function (k) {
+        return(sample(rownames(winners[winners[, target] == k, ]), size))
+    }, unique(y)))
+    return(x[rownames(x) %in% indices, ])
+}
+
 # cluster functions
 
 #' Between-cluster Sum of Square Error rate of a k-means fit.
