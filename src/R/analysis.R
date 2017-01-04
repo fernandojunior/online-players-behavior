@@ -222,23 +222,30 @@ data.relative_performance = as.data.frame(t(map(function (i) {
 data.relative_performance = sapply(data.relative_performance, as.numeric)
 data.relative_performance[is.nan(data.relative_performance)] <- 0
 
-team.performance = sapply(team.performance[, features.numeric], as.numeric)
-team.performance.logical = sapply(team.performance.logical[, features.logical], as.numeric)
+team.performance = sapply(team.performance, as.numeric)
+team.performance.logical = sapply(team.performance.logical, as.numeric)
 team.performance[is.nan(team.performance)] <- 0
 
 # Boolean features do not need be normalized
 data.normalized = na.omit(cbind(
+    data[, c('matchId', 'winner')],
     data[, features.logical],
     data.relative_performance[, features.numeric]
 ))
 
 # Since the team performances are of different varieties, their scales are also
-# different. In order to maintain uniform scalability we normalize the integer
-# features using Z-score. TODO weighted
-team.normalized = na.omit(cbind(
+# different. In order to maintain uniform scalability we normalize the features.
+team = as.data.frame(na.omit(cbind(
+    team.performance[, c('matchId', 'winner')],
+    team.performance.logical[, features.logical],
+    team.performance[, features.numeric]
+)))
+
+team.normalized = as.data.frame(na.omit(cbind(
+    team.performance[, c('matchId', 'winner')],
     team.performance.logical[, features.logical],
     normalize(team.performance[, features.numeric])
-))
+)))
 
 # Correlation analysis --------------------------------------------------------
 
@@ -371,7 +378,8 @@ fit.team = fits.team[[18]]
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.reduced)
-write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
+labeled.team = cbind(team.normalized[, c('matchId', 'winner')], label=fit.team$cluster, team.reduced)
+# write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 
 # cluster = read.csv('../output/fit/cluster.csv')$x
 # labeled = cbind(data[, features.info], label=cluster, data.reduced)
@@ -383,12 +391,19 @@ write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 winners = labeled[labeled$winner == 1, ]
 losers = labeled[labeled$winner == 0, ]
 
+winners.team = labeled.team[labeled.team[, 'winner'] == 1, ]
+losers.team = labeled.team[labeled.team[, 'winner'] == 0, ]
+
 # undersampling
 min_group_size = min(table(winners$label), table(losers$label))
-# [1] 40
 winners = undersample(winners, 'label', min_group_size)
 losers = undersample(losers, 'label', min_group_size)
 labeled = rbind(winners, losers)
+
+min_group_size.team = min(table(winners.team[, 'label']), table(losers.team[, 'label']))
+winners.team = undersample(winners.team, 'label', min_group_size.team)
+losers.team = undersample(losers.team, 'label', min_group_size.team)
+labeled.team = rbind(winners.team, losers.team)
 
 # TODO Balancing team data
 
@@ -466,8 +481,16 @@ render_plot(function () {
 # Given a data set x, summarize the mean for each feature by label.
 render_plot(function () {
     par(mfrow=c(3,1))
-    lim = c(-2, 2)
+    lim = c(-1, 1)
     plot_by(labeled[, features.selection.player], labeled$label, mean, ylim=lim)
     plot_by(winners[, features.selection.player], winners$label, mean, ylim=lim)
     plot_by(losers[, features.selection.player], losers$label, mean, ylim=lim)
-}, '../output/exploring-centers', width=16, height=9)
+}, '../output/exploring-centers-player', width=16, height=9)
+
+render_plot(function () {
+    par(mfrow=c(3,1))
+    lim = c(-1, 1)
+    plot_by(labeled.team[, features.selection.team], labeled.team$label, mean, ylim=lim)
+    plot_by(winners.team[, features.selection.team], winners.team$label, mean, ylim=lim)
+    plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
+}, '../output/exploring-centers-team', width=16, height=9)
