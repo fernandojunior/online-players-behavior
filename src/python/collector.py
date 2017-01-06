@@ -43,7 +43,7 @@ def get_match(match_id):
 
 def valid_match(match, criterion={}):
     ''' Valid if a match is valid given a specific criterion '''
-    return all([match[key] == value for key, value in criterion.items()])
+    return all([match[k] == v or match[k] in v for k, v in criterion.items()])
 
 
 def save_match(match, filename):
@@ -112,9 +112,10 @@ if __name__ == '__main__':
 
     criterion = {
         'matchMode': 'CLASSIC',
-        'season': 'PRESEASON2017',
+        'season': ['SEASON2016', 'PRESEASON2017'],
         'region': 'BR',
-        'queueType': 'TEAM_BUILDER_RANKED_SOLO',
+        'queueType': ['TEAM_BUILDER_DRAFT_RANKED_5x5',
+                      'TEAM_BUILDER_RANKED_SOLO'],
     }
 
     collect(start=options.start, end=options.end, path=path,
