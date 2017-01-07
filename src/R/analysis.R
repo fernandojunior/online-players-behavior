@@ -13,7 +13,9 @@ RENDER_PLOT_CLOSE = FALSE
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
 # participants.
-data = read.csv('../data/data.csv')
+# data = read.csv('../data/data.csv')
+data = read.csv('../data/data20170105025503.csv')
+
 # nrow(data)
 # [1] 85470
 
@@ -54,12 +56,12 @@ features.info = c(
 features.target = 'winner'
 
 features.logical = c(
-    'firstBloodAssist',
-    'firstBloodKill',
+    # 'firstBloodAssist',
+    # 'firstBloodKill',
     'firstInhibitorAssist',
-    'firstInhibitorKill',
-    'firstTowerAssist',
-    'firstTowerKill'
+    'firstInhibitorKill'
+    # 'firstTowerAssist',
+    # 'firstTowerKill'
 )
 
 features.categorical = c('champLevel')
@@ -137,7 +139,7 @@ features.selection = setdiff(features.numeric, features.low_variance)
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
 outliers = render_plot(function () {
     return(outlier_analysis(data[, features.selection], factor=3))
-}, '../output/outliers-for-each-one2', width=16, height=12)
+}, '../output/outliers-for-each-one', width=16, height=12)
 # outliers$total
 #> [1] 11086
 # > t(outliers$thresholds)
@@ -286,7 +288,7 @@ features.redundant = c(
     'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
     'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
     'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
-    'trueDamageDealt', # trueDamageDealt x trueDamageDealtToChampions
+    # 'trueDamageDealt', # trueDamageDealt x trueDamageDealtToChampions
     'goldEarned', # goldEarned x goldSpent
     'goldSpent' # goldSpent x kills
 )
@@ -299,8 +301,8 @@ features.redundant.team = c(
     'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
     'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
     'goldEarned', # goldEarned x goldSpent
-    'goldSpent', # goldSpent x kills
-    'assists' # assists x kills
+    'goldSpent' # goldSpent x kills
+    #'assists' # assists x kills
 )
 
 # Remove redundant features (high similarity and correlation) to avoid
@@ -369,10 +371,10 @@ render_plot(function () {
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it.
-fit = fits[[12]]
+fit = fits[[10]]
 # each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 
-fit.team = fits.team[[18]]
+fit.team = fits.team[[7]]
 
 # TODO Write or load labeled data ---------------------------------------------
 
@@ -394,18 +396,51 @@ losers = labeled[labeled$winner == 0, ]
 winners.team = labeled.team[labeled.team[, 'winner'] == 1, ]
 losers.team = labeled.team[labeled.team[, 'winner'] == 0, ]
 
+# Clusters size analysis ......................................................
+
+clusters_size = as.data.frame(cbind(
+    all=table(labeled[, 'label']),
+    winners=table(winners[, 'label']),
+    losers=table(losers[, 'label'])
+))
+
+clusters_size.team = as.data.frame(cbind(
+    all=table(labeled.team[, 'label']),
+    winners=table(winners.team[, 'label']),
+    losers=table(losers.team[, 'label'])
+))
+
+# relative clusters size between winners and losers
+clusters_size.relative = as.data.frame(cbind(
+    winners=clusters_size$winners / clusters_size$all,
+    losers=clusters_size$losers / clusters_size$all
+))
+
+clusters_size.team.relative = as.data.frame(cbind(
+    winners=clusters_size.team$winners / clusters_size.team$all,
+    losers=clusters_size.team$losers / clusters_size.team$all
+))
+
+# Check if there are outliers in clusters size
+boxplot(values(clusters_size.relative))$stats
+
+boxplot(values(clusters_size.team.relative))$stats
+
+# Balancing team data ....................................................
+
+# min clusters size between winners and losers
+clusters_size.min = min(table(winners$label), table(losers$label))
+
+clusters_size.team.min = min(table(winners.team[, 'label']), table(losers.team[, 'label']))
+
 # undersampling
-min_group_size = min(table(winners$label), table(losers$label))
-winners = undersample(winners, 'label', min_group_size)
-losers = undersample(losers, 'label', min_group_size)
+winners = undersample(winners, 'label', clusters_size.min)
+losers = undersample(losers, 'label', clusters_size.min)
 labeled = rbind(winners, losers)
 
-min_group_size.team = min(table(winners.team[, 'label']), table(losers.team[, 'label']))
-winners.team = undersample(winners.team, 'label', min_group_size.team)
-losers.team = undersample(losers.team, 'label', min_group_size.team)
+winners.team = undersample(winners.team, 'label', clusters_size.team.min)
+losers.team = undersample(losers.team, 'label', clusters_size.team.min)
 labeled.team = rbind(winners.team, losers.team)
-
-# TODO Balancing team data
 
 # TODO Statistical analysis of the results ------------------------------------
 
@@ -463,7 +498,7 @@ render_plot(function () {
 # 3-D visualization of 3 principal components of the labeled data
 render_plot(function () {
     par(mfrow=c(1, 3))
-    lim = c(-10, 10)
+    lim = c(-2, 2)
     angle = 95
     pca_plot(labeled[, features.selection.player], main='PCA', color=labeled$label,
              angle=angle, xlim=lim, ylim=lim, zlim=lim)
@@ -489,7 +524,7 @@ render_plot(function () {
 
 render_plot(function () {
     par(mfrow=c(3,1))
-    lim = c(-1, 1)
+    lim = c(-0.1, 0.1)
     plot_by(labeled.team[, features.selection.team], labeled.team$label, mean, ylim=lim)
     plot_by(winners.team[, features.selection.team], winners.team$label, mean, ylim=lim)
     plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
