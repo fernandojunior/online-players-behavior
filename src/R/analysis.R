@@ -529,3 +529,21 @@ render_plot(function () {
     plot_by(winners.team[, features.selection.team], winners.team$label, mean, ylim=lim)
     plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
 }, '../output/exploring-centers-team', width=16, height=9)
+
+# TODO Relevant feature analisys by cluster .....................................
+
+each(function (k) {
+    plot_name = strf('../output/correlation-player-%s', k)
+    render_plot(function () {
+        correlation_analysis(labeled[labeled$label == k, features.selection.team])$estimates
+    }, plot_name, width=18, height=12)
+    return(NULL)
+}, unique(labeled$label))
+
+each(function (k) {
+    plot_name = strf('../output/correlation-team-%s', k)
+    render_plot(function () {
+        correlation_analysis(labeled.team[labeled.team$label == k, features.selection.team])$estimates
+    }, plot_name, width=18, height=12)
+    return(NULL)
+}, labeled.team$label)
