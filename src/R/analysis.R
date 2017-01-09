@@ -5,6 +5,7 @@ import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('utils', attach=TRUE)
 
+
 RENDER_PLOT_SAVE = TRUE
 RENDER_PLOT_CLOSE = FALSE
 
@@ -20,7 +21,7 @@ data = read.csv('../data/data20170105025503.csv')
 # [1] 85470
 
 # Remove duplicated rows by summonerId to decrease bias
-data = data[!duplicated(data[, 'summonerId']),]
+# data = data[!duplicated(data[, 'summonerId']),]
 # > nrow(data)
 # [1] 54681
 
@@ -481,32 +482,60 @@ render_plot(function () {
 render_plot(function () {
     main = 'Exploring - Scatter plot'
     plot(labeled[, features.selection.player[1:3]], main=main, col=labeled$label)
-}, '../output/exploring-scatter-plot')
+}, '../output/exploring-scatter-plot-player')
+
+render_plot(function () {
+    main = 'Exploring - Scatter plot'
+    plot(labeled.team[, features.selection.team[1:3]], main=main, col=labeled.team$label)
+}, '../output/exploring-scatter-plot-team')
 
 # Only winners
 render_plot(function () {
     main = 'Exploring - Scatter plot winners'
     plot(winners[, features.selection.player[1:3]], main=main, col=winners$label)
-}, '../output/exploring-scatter-plot-winners')
+}, '../output/exploring-scatter-plot-winners-player')
+
+render_plot(function () {
+    main = 'Exploring - Scatter plot winners'
+    plot(winners.team[, features.selection.team[1:3]], main=main, col=winners.team$label)
+}, '../output/exploring-scatter-plot-winners-team')
 
 # Only losers
 render_plot(function () {
     main = 'Exploring - Scatter plot losers'
     plot(losers[, features.selection.player[1:3]], main=main, col=losers$label)
-}, '../output/exploring-scatter-plot-losers')
+}, '../output/exploring-scatter-plot-losers-player')
+
+render_plot(function () {
+    main = 'Exploring - Scatter plot losers'
+    plot(losers.team[, features.selection.team[1:3]], main=main, col=losers.team$label)
+}, '../output/exploring-scatter-plot-losers-player')
 
 # 3-D visualization of 3 principal components of the labeled data
 render_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-2, 2)
-    angle = 95
+    angle = 0
     pca_plot(labeled[, features.selection.player], main='PCA', color=labeled$label,
              angle=angle, xlim=lim, ylim=lim, zlim=lim)
     pca_plot(winners[, features.selection.player], main='PCA winners',
              color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
     pca_plot(losers[, features.selection.player], main='PCA losers',
              color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-}, '../output/exploring-pca', width=18, height=9)
+}, '../output/exploring-pca-player', width=18, height=9)
+
+render_plot(function () {
+    par(mfrow=c(1, 3))
+    lim = c(-0.1, 0.1)
+    angle = 95
+    features = features.selection.team
+    pca_plot(labeled.team[, features], main='PCA', color=labeled.team$label,
+             angle=angle, xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(winners.team[, features], main='PCA winners',
+             color=winners.team$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
+    pca_plot(losers.team[, features], main='PCA losers',
+             color=losers.team$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
+}, '../output/exploring-pca-team', width=18, height=9)
 
 # In general, we can observe the k clusters found in k-means clustering. We can
 # also observe that some clusters are more perceptible than others when the
@@ -524,7 +553,7 @@ render_plot(function () {
 
 render_plot(function () {
     par(mfrow=c(3,1))
-    lim = c(-0.1, 0.1)
+    lim = c(-0.02, 0.02)
     plot_by(labeled.team[, features.selection.team], labeled.team$label, mean, ylim=lim)
     plot_by(winners.team[, features.selection.team], winners.team$label, mean, ylim=lim)
     plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
@@ -537,7 +566,6 @@ each(function (k) {
     render_plot(function () {
         correlation_analysis(labeled[labeled$label == k, features.selection.team])$estimates
     }, plot_name, width=18, height=12)
-    return(NULL)
 }, unique(labeled$label))
 
 each(function (k) {
@@ -545,5 +573,9 @@ each(function (k) {
     render_plot(function () {
         correlation_analysis(labeled.team[labeled.team$label == k, features.selection.team])$estimates
     }, plot_name, width=18, height=12)
-    return(NULL)
-}, labeled.team$label)
+}, unique(labeled.team$label))
+
+team.unnormalized = team[rownames(team) %in% rownames(labeled.team), ]
+
+# TODO install.packages('Fselector', dependencies=TRUE)
+# http://stackoverflow.com/questions/33241638/use-of-formula-in-information-gain-in-r
