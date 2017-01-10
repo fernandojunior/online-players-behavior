@@ -382,6 +382,10 @@ fit.team = fits.team[[7]]
 # Associating each reduced data point with its info and label features
 labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.reduced)
 labeled.team = cbind(team.normalized[, c('matchId', 'winner')], label=fit.team$cluster, team.reduced)
+
+data = cbind(data, label=labeled$label)
+team = cbind(team, label=labeled.team$label)
+
 # write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
 
 # cluster = read.csv('../output/fit/cluster.csv')$x
