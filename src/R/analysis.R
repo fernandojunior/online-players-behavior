@@ -1,4 +1,5 @@
 options(scipen=999)
+options("width"=200)
 
 library('modules')
 import('fun', attach=TRUE)
@@ -579,7 +580,49 @@ each(function (k) {
     }, plot_name, width=18, height=12)
 }, unique(labeled.team$label))
 
-team.unnormalized = team[rownames(team) %in% rownames(labeled.team), ]
+data.sampled = data[rownames(data) %in% rownames(labeled), ]
+team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
 
-# TODO install.packages('Fselector', dependencies=TRUE)
-# http://stackoverflow.com/questions/33241638/use-of-formula-in-information-gain-in-r
+information_gain(data.sampled, features.selection.player, 'winner', 'label')
+#                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
+# assists                          0.127  0.075  0.054  0.043  0.006  0.054  0.063  0.066  0.120   0.067
+# deaths                           0.107  0.140  0.048  0.102  0.021  0.082  0.130  0.094  0.143   0.117
+# kills                            0.028  0.036  0.008  0.053  0.005  0.065  0.117  0.067  0.025   0.091
+# largestCriticalStrike            0.000  0.002  0.000  0.000  0.000  0.006  0.053  0.000  0.000   0.024
+# magicDamageDealtToChampions      0.007  0.003  0.008  0.004  0.013  0.007  0.008  0.031  0.006   0.000
+# magicDamageTaken                 0.028  0.033  0.010  0.019  0.012  0.006  0.019  0.022  0.024   0.020
+# minionsKilled                    0.000  0.000  0.010  0.025  0.096  0.016  0.031  0.010  0.000   0.021
+# neutralMinionsKilledEnemyJungle  0.039  0.158  0.093  0.080  0.005  0.098  0.166  0.093  0.060   0.135
+# neutralMinionsKilledTeamJungle   0.000  0.000  0.011  0.000  0.000  0.000  0.006  0.003  0.000   0.007
+# physicalDamageDealtToChampions   0.008  0.004  0.009  0.011  0.024  0.021  0.072  0.007  0.006   0.043
+# physicalDamageTaken              0.006  0.000  0.010  0.000  0.105  0.000  0.003  0.003  0.007   0.007
+# totalHeal                        0.007  0.026  0.026  0.010  0.021  0.007  0.004  0.012  0.013   0.006
+# totalTimeCrowdControlDealt       0.000  0.010  0.010  0.003  0.019  0.008  0.040  0.000  0.000   0.008
+# totalUnitsHealed                 0.000  0.000  0.000  0.000  0.009  0.000  0.000  0.000  0.004   0.000
+# trueDamageDealt                  0.006  0.045  0.043  0.018  0.000  0.033  0.009  0.027  0.010   0.048
+# trueDamageDealtToChampions       0.003  0.000  0.003  0.012  0.000  0.006  0.000  0.003  0.000   0.013
+# trueDamageTaken                  0.007  0.014  0.011  0.005  0.008  0.000  0.000  0.003  0.011   0.005
+# wardsKilled                      0.000  0.000  0.003  0.000  0.000  0.000  0.000  0.000  0.000   0.000
+# wardsPlaced                      0.007  0.000  0.008  0.000  0.025  0.004  0.000  0.000  0.004   0.000
+
+information_gain(team.sampled, features.selection.team, 'winner', 'label')
+#                                 label1 label2 label3 label4 label5 label6 label7
+# assists                          0.213  0.175  0.261  0.273  0.137  0.285  0.000
+# deaths                           0.374  0.327  0.306  0.452  0.313  0.440  0.000
+# kills                            0.324  0.284  0.289  0.369  0.280  0.392  0.000
+# largestCriticalStrike            0.019  0.032  0.023  0.023  0.000  0.017  0.000
+# magicDamageDealtToChampions      0.053  0.000  0.049  0.080  0.042  0.053  0.000
+# magicDamageTaken                 0.094  0.058  0.022  0.078  0.092  0.057  0.000
+# minionsKilled                    0.085  0.079  0.081  0.167  0.058  0.109  0.149
+# neutralMinionsKilledEnemyJungle  0.371  0.313  0.321  0.325  0.278  0.354  0.035
+# neutralMinionsKilledTeamJungle   0.000  0.000  0.000  0.000  0.000  0.000  0.048
+# physicalDamageDealtToChampions   0.082  0.084  0.100  0.061  0.000  0.100  0.000
+# physicalDamageTaken              0.000  0.049  0.043  0.075  0.032  0.045  0.036
+# totalHeal                        0.063  0.038  0.046  0.031  0.050  0.048  0.051
+# totalTimeCrowdControlDealt       0.021  0.000  0.033  0.026  0.000  0.049  0.000
+# totalUnitsHealed                 0.000  0.000  0.000  0.000  0.030  0.017  0.041
+# trueDamageDealt                  0.041  0.065  0.051  0.035  0.081  0.037  0.044
+# trueDamageDealtToChampions       0.000  0.000  0.000  0.000  0.000  0.044  0.000
+# trueDamageTaken                  0.000  0.000  0.000  0.049  0.000  0.000  0.000
+# wardsKilled                      0.000  0.000  0.000  0.000  0.000  0.000  0.000
+# wardsPlaced                      0.020  0.000  0.027  0.030  0.000  0.000  0.023
