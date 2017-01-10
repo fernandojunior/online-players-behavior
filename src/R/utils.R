@@ -4,6 +4,7 @@ import_package('corrplot', attach=TRUE)  # corrplot
 import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
+import_package('FSelector', attach, attach=TRUE)
 
 #' Normalize a dataset x
 normalize = function (x) {
@@ -27,6 +28,28 @@ undersample = function (x, target, size) {
         return(sample(rownames(x[x[, target] == k, ]), size))
     }, unique(y)))
     return(x[rownames(x) %in% indices, ])
+}
+
+#' Compute the information gain matrix for a given dataset for each class label
+#' References:
+#' http://stackoverflow.com/questions/33241638/use-of-formula-in-information-gain-in-r
+#' http://stackoverflow.com/questions/1859554/what-is-entropy-and-information-gain
+information_gain = function (data, features, target, label) {
+    data = as.data.frame(data)
+    features = sort(features)
+    labels = sort(unique(data[, label]))
+
+    # matrix to collect the scores (information gain) for each feature x label
+    score_matrix = matrix(0, nrow=length(features), ncol=length(labels))
+    dimnames(score_matrix) <- list(features, colnames(score_matrix, do.NULL=FALSE, prefix = label))
+
+    # compute scores
+    for(i in labels) {
+        col = information.gain(as.formula(sprintf('%s ~ .', target)), data[data[, label] == i, c(features, target)])
+        score_matrix[, strf('%s%s', label, i)] = round(col[order(rownames(col)), ], digits=3)
+    }
+
+    return(score_matrix)
 }
 
 # cluster functions
