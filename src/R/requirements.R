@@ -10,3 +10,5 @@ devtools::install_github('hadley/devtools')
 devtools::install_github('klmr/modules')
 
 install.packages('FSelector', dependencies=TRUE)
+
+install.packages('ineq', dependencies=TRUE)

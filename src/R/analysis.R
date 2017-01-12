@@ -582,90 +582,113 @@ each(function (k) {
 data.sampled = data[rownames(data) %in% rownames(labeled), ]
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
 
-information_gain(data.sampled, features.selection.player, 'winner', 'label')
+t(information_gain(data.sampled, features.selection.player, 'winner', 'label')) * 100
 #                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                          0.127  0.075  0.054  0.043  0.006  0.054  0.063  0.066  0.120   0.067
-# deaths                           0.107  0.140  0.048  0.102  0.021  0.082  0.130  0.094  0.143   0.117
-# kills                            0.028  0.036  0.008  0.053  0.005  0.065  0.117  0.067  0.025   0.091
-# largestCriticalStrike            0.000  0.002  0.000  0.000  0.000  0.006  0.053  0.000  0.000   0.024
-# magicDamageDealtToChampions      0.007  0.003  0.008  0.004  0.013  0.007  0.008  0.031  0.006   0.000
-# magicDamageTaken                 0.028  0.033  0.010  0.019  0.012  0.006  0.019  0.022  0.024   0.020
-# minionsKilled                    0.000  0.000  0.010  0.025  0.096  0.016  0.031  0.010  0.000   0.021
-# neutralMinionsKilledEnemyJungle  0.039  0.158  0.093  0.080  0.005  0.098  0.166  0.093  0.060   0.135
-# neutralMinionsKilledTeamJungle   0.000  0.000  0.011  0.000  0.000  0.000  0.006  0.003  0.000   0.007
-# physicalDamageDealtToChampions   0.008  0.004  0.009  0.011  0.024  0.021  0.072  0.007  0.006   0.043
-# physicalDamageTaken              0.006  0.000  0.010  0.000  0.105  0.000  0.003  0.003  0.007   0.007
-# totalHeal                        0.007  0.026  0.026  0.010  0.021  0.007  0.004  0.012  0.013   0.006
-# totalTimeCrowdControlDealt       0.000  0.010  0.010  0.003  0.019  0.008  0.040  0.000  0.000   0.008
-# totalUnitsHealed                 0.000  0.000  0.000  0.000  0.009  0.000  0.000  0.000  0.004   0.000
-# trueDamageDealt                  0.006  0.045  0.043  0.018  0.000  0.033  0.009  0.027  0.010   0.048
-# trueDamageDealtToChampions       0.003  0.000  0.003  0.012  0.000  0.006  0.000  0.003  0.000   0.013
-# trueDamageTaken                  0.007  0.014  0.011  0.005  0.008  0.000  0.000  0.003  0.011   0.005
-# wardsKilled                      0.000  0.000  0.003  0.000  0.000  0.000  0.000  0.000  0.000   0.000
-# wardsPlaced                      0.007  0.000  0.008  0.000  0.025  0.004  0.000  0.000  0.004   0.000
+# assists                           12.7    7.5    5.4    4.3    0.6    5.4    6.3    6.6   12.0     6.7
+# deaths                            10.7   14.0    4.8   10.2    2.1    8.2   13.0    9.4   14.3    11.7
+# kills                              2.8    3.6    0.8    5.3    0.5    6.5   11.7    6.7    2.5     9.1
+# largestCriticalStrike              0.0    0.2    0.0    0.0    0.0    0.6    5.3    0.0    0.0     2.4
+# magicDamageDealtToChampions        0.7    0.3    0.8    0.4    1.3    0.7    0.8    3.1    0.6     0.0
+# magicDamageTaken                   2.8    3.3    1.0    1.9    1.2    0.6    1.9    2.2    2.4     2.0
+# minionsKilled                      0.0    0.0    1.0    2.5    9.6    1.6    3.1    1.0    0.0     2.1
+# neutralMinionsKilledEnemyJungle    3.9   15.8    9.3    8.0    0.5    9.8   16.6    9.3    6.0    13.5
+# neutralMinionsKilledTeamJungle     0.0    0.0    1.1    0.0    0.0    0.0    0.6    0.3    0.0     0.7
+# physicalDamageDealtToChampions     0.8    0.4    0.9    1.1    2.4    2.1    7.2    0.7    0.6     4.3
+# physicalDamageTaken                0.6    0.0    1.0    0.0   10.5    0.0    0.3    0.3    0.7     0.7
+# totalHeal                          0.7    2.6    2.6    1.0    2.1    0.7    0.4    1.2    1.3     0.6
+# totalTimeCrowdControlDealt         0.0    1.0    1.0    0.3    1.9    0.8    4.0    0.0    0.0     0.8
+# totalUnitsHealed                   0.0    0.0    0.0    0.0    0.9    0.0    0.0    0.0    0.4     0.0
+# trueDamageDealt                    0.6    4.5    4.3    1.8    0.0    3.3    0.9    2.7    1.0     4.8
+# trueDamageDealtToChampions         0.3    0.0    0.3    1.2    0.0    0.6    0.0    0.3    0.0     1.3
+# trueDamageTaken                    0.7    1.4    1.1    0.5    0.8    0.0    0.0    0.3    1.1     0.5
+# wardsKilled                        0.0    0.0    0.3    0.0    0.0    0.0    0.0    0.0    0.0     0.0
+# wardsPlaced                        0.7    0.0    0.8    0.0    2.5    0.4    0.0    0.0    0.4     0.0
 
-information_gain(team.sampled, features.selection.team, 'winner', 'label')
+t(information_gain(team.sampled, features.selection.team, 'winner', 'label')) * 100
 #                                 label1 label2 label3 label4 label5 label6 label7
-# assists                          0.213  0.175  0.261  0.273  0.137  0.285  0.000
-# deaths                           0.374  0.327  0.306  0.452  0.313  0.440  0.000
-# kills                            0.324  0.284  0.289  0.369  0.280  0.392  0.000
-# largestCriticalStrike            0.019  0.032  0.023  0.023  0.000  0.017  0.000
-# magicDamageDealtToChampions      0.053  0.000  0.049  0.080  0.042  0.053  0.000
-# magicDamageTaken                 0.094  0.058  0.022  0.078  0.092  0.057  0.000
-# minionsKilled                    0.085  0.079  0.081  0.167  0.058  0.109  0.149
-# neutralMinionsKilledEnemyJungle  0.371  0.313  0.321  0.325  0.278  0.354  0.035
-# neutralMinionsKilledTeamJungle   0.000  0.000  0.000  0.000  0.000  0.000  0.048
-# physicalDamageDealtToChampions   0.082  0.084  0.100  0.061  0.000  0.100  0.000
-# physicalDamageTaken              0.000  0.049  0.043  0.075  0.032  0.045  0.036
-# totalHeal                        0.063  0.038  0.046  0.031  0.050  0.048  0.051
-# totalTimeCrowdControlDealt       0.021  0.000  0.033  0.026  0.000  0.049  0.000
-# totalUnitsHealed                 0.000  0.000  0.000  0.000  0.030  0.017  0.041
-# trueDamageDealt                  0.041  0.065  0.051  0.035  0.081  0.037  0.044
-# trueDamageDealtToChampions       0.000  0.000  0.000  0.000  0.000  0.044  0.000
-# trueDamageTaken                  0.000  0.000  0.000  0.049  0.000  0.000  0.000
-# wardsKilled                      0.000  0.000  0.000  0.000  0.000  0.000  0.000
-# wardsPlaced                      0.020  0.000  0.027  0.030  0.000  0.000  0.023
+# assists                           21.3   17.5   26.1   27.3   13.7   28.5    0.0
+# deaths                            37.4   32.7   30.6   45.2   31.3   44.0    0.0
+# kills                             32.4   28.4   28.9   36.9   28.0   39.2    0.0
+# largestCriticalStrike              1.9    3.2    2.3    2.3    0.0    1.7    0.0
+# magicDamageDealtToChampions        5.3    0.0    4.9    8.0    4.2    5.3    0.0
+# magicDamageTaken                   9.4    5.8    2.2    7.8    9.2    5.7    0.0
+# minionsKilled                      8.5    7.9    8.1   16.7    5.8   10.9   14.9
+# neutralMinionsKilledEnemyJungle   37.1   31.3   32.1   32.5   27.8   35.4    3.5
+# neutralMinionsKilledTeamJungle     0.0    0.0    0.0    0.0    0.0    0.0    4.8
+# physicalDamageDealtToChampions     8.2    8.4   10.0    6.1    0.0   10.0    0.0
+# physicalDamageTaken                0.0    4.9    4.3    7.5    3.2    4.5    3.6
+# totalHeal                          6.3    3.8    4.6    3.1    5.0    4.8    5.1
+# totalTimeCrowdControlDealt         2.1    0.0    3.3    2.6    0.0    4.9    0.0
+# totalUnitsHealed                   0.0    0.0    0.0    0.0    3.0    1.7    4.1
+# trueDamageDealt                    4.1    6.5    5.1    3.5    8.1    3.7    4.4
+# trueDamageDealtToChampions         0.0    0.0    0.0    0.0    0.0    4.4    0.0
+# trueDamageTaken                    0.0    0.0    0.0    4.9    0.0    0.0    0.0
+# wardsKilled                        0.0    0.0    0.0    0.0    0.0    0.0    0.0
+# wardsPlaced                        2.0    0.0    2.7    3.0    0.0    0.0    2.3
 
-gini(data.sampled, features.selection.player, 'winner', 'label')
+t(gini(data.sampled, features.selection.player, 'winner', 'label')) * 100
 #                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                          0.037  0.024  0.023  0.019  0.006  0.020  0.020  0.022  0.040   0.021
-# deaths                           0.030  0.036  0.014  0.030  0.003  0.025  0.033  0.025  0.035   0.030
-# kills                            0.008  0.013  0.007  0.020  0.004  0.023  0.037  0.025  0.013   0.033
-# largestCriticalStrike            0.000  0.001  0.001  0.001  0.000  0.002  0.015  0.000  0.001   0.008
-# magicDamageDealtToChampions      0.004  0.002  0.002  0.003  0.003  0.003  0.002  0.009  0.003   0.001
-# magicDamageTaken                 0.008  0.010  0.002  0.006  0.002  0.003  0.006  0.006  0.008   0.008
-# minionsKilled                    0.000  0.000  0.000  0.004  0.008  0.004  0.005  0.002  0.001   0.003
-# neutralMinionsKilledEnemyJungle  0.001  0.051  0.009  0.006  0.001  0.010  0.016  0.006  0.004   0.010
-# neutralMinionsKilledTeamJungle   0.001  0.000  0.001  0.000  0.000  0.001  0.001  0.001  0.001   0.001
-# physicalDamageDealtToChampions   0.003  0.002  0.002  0.008  0.002  0.009  0.025  0.003  0.002   0.013
-# physicalDamageTaken              0.002  0.000  0.001  0.000  0.007  0.000  0.001  0.001  0.002   0.002
-# totalHeal                        0.002  0.007  0.007  0.008  0.002  0.003  0.003  0.003  0.005   0.002
-# totalTimeCrowdControlDealt       0.000  0.003  0.004  0.001  0.001  0.001  0.006  0.001  0.000   0.001
-# totalUnitsHealed                 0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.002   0.000
-# trueDamageDealt                  0.001  0.010  0.008  0.003  0.000  0.005  0.000  0.010  0.001   0.003
-# trueDamageDealtToChampions       0.000  0.000  0.000  0.005  0.000  0.000  0.000  0.000  0.000   0.000
-# trueDamageTaken                  0.000  0.001  0.000  0.000  0.000  0.000  0.001  0.000  0.000   0.000
-# wardsKilled                      0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000   0.000
-# wardsPlaced                      0.001  0.000  0.002  0.000  0.004  0.001  0.000  0.001  0.001   0.000
+# assists                           37.2   39.7   68.0   54.0   91.9   50.1   38.9   47.2   36.5    41.9
+# deaths                            38.0   35.3   63.7   45.2   88.4   41.0   29.7   40.8   32.5    36.0
+# kills                             56.5   42.2   69.7   48.9   91.8   47.3   34.6   44.8   51.7    42.1
+# largestCriticalStrike             97.3   79.0   85.2   94.3   97.8   77.3   26.3   95.4   92.5    29.9
+# magicDamageDealtToChampions       40.9   55.6   74.5   58.7   89.5   57.8   61.7   38.7   41.5    59.1
+# magicDamageTaken                  38.7   37.9   65.8   45.8   87.0   44.1   32.1   39.5   32.9    36.9
+# minionsKilled                     42.9   41.8   68.6   36.2   71.7   29.1   18.2   30.7   46.9    22.9
+# neutralMinionsKilledEnemyJungle   88.8   35.6   82.5   81.3   97.7   77.3   67.1   79.8   85.2    74.8
+# neutralMinionsKilledTeamJungle    92.8   20.3   44.5   75.2   97.1   75.2   60.9   68.8   87.7    70.0
+# physicalDamageDealtToChampions    41.8   49.3   73.4   63.0   84.1   40.3   31.4   49.5   53.4    35.0
+# physicalDamageTaken               32.4   22.4   49.4   44.1   80.5   36.2   23.9   38.1   26.8    28.6
+# totalHeal                         56.2   31.5   55.1   58.7   87.1   56.1   38.2   59.0   52.4    39.5
+# totalTimeCrowdControlDealt        53.0   32.2   58.3   62.6   88.0   63.8   51.9   59.1   51.0    64.3
+# totalUnitsHealed                  29.3   11.5    6.2   21.1   60.8   27.5   29.6   14.5   35.0    25.4
+# trueDamageDealt                   68.0   23.7   51.1   67.1   94.2   75.2   43.7   69.7   69.8    75.0
+# trueDamageDealtToChampions        82.5   47.6   72.8   50.7   96.6   79.4   37.2   66.0   74.7    79.0
+# trueDamageTaken                   58.7   52.3   74.7   59.1   93.0   57.7   51.3   55.0   53.7    55.9
+# wardsKilled                       68.3   58.8   82.2   77.7   97.7   75.9   65.5   74.6   36.4    69.9
+# wardsPlaced                       34.1   31.9   58.8   40.3   78.6   36.6   26.2   34.5   29.1    31.1
 
-gini(team.sampled, features.selection.team, 'winner', 'label')
+t(gini(team.sampled, features.selection.team, 'winner', 'label')) * 100
 #                                 label1 label2 label3 label4 label5 label6 label7
-# assists                          0.051  0.038  0.059  0.081  0.027  0.073  0.000
-# deaths                           0.077  0.067  0.060  0.125  0.062  0.114  0.001
-# kills                            0.065  0.053  0.059  0.092  0.046  0.094  0.001
-# largestCriticalStrike            0.005  0.008  0.006  0.007  0.004  0.006  0.000
-# magicDamageDealtToChampions      0.010  0.001  0.009  0.018  0.006  0.014  0.001
-# magicDamageTaken                 0.018  0.009  0.002  0.016  0.014  0.016  0.001
-# minionsKilled                    0.007  0.006  0.006  0.018  0.003  0.009  0.027
-# neutralMinionsKilledEnemyJungle  0.080  0.086  0.084  0.071  0.071  0.088  0.000
-# neutralMinionsKilledTeamJungle   0.001  0.001  0.002  0.000  0.000  0.000  0.001
-# physicalDamageDealtToChampions   0.013  0.016  0.018  0.009  0.001  0.017  0.001
-# physicalDamageTaken              0.000  0.005  0.006  0.010  0.004  0.005  0.005
-# totalHeal                        0.016  0.009  0.011  0.007  0.013  0.013  0.007
-# totalTimeCrowdControlDealt       0.005  0.001  0.008  0.005  0.001  0.009  0.001
-# totalUnitsHealed                 0.000  0.002  0.000  0.002  0.004  0.003  0.010
-# trueDamageDealt                  0.005  0.013  0.007  0.005  0.012  0.009  0.003
-# trueDamageDealtToChampions       0.000  0.001  0.001  0.002  0.002  0.006  0.000
-# trueDamageTaken                  0.001  0.001  0.002  0.013  0.001  0.006  0.001
-# wardsKilled                      0.000  0.000  0.000  0.000  0.000  0.001  0.001
-# wardsPlaced                      0.002  0.001  0.004  0.005  0.001  0.001  0.009
+# assists                           19.7   17.0   18.1   25.6   15.7   22.5   87.1
+# deaths                            14.2   15.2   14.2   19.4   13.7   17.8   70.8
+# kills                             14.3   13.2   14.7   18.8   11.6   16.7   72.9
+# largestCriticalStrike             31.3   32.4   29.0   37.1   27.2   35.0   69.2
+# magicDamageDealtToChampions       15.4    8.8   15.1   17.8   19.6   17.9   37.3
+# magicDamageTaken                  19.0   14.7    9.3   17.6   15.3   18.7   36.2
+# minionsKilled                      8.3    7.6    7.9    8.9    7.1    7.9   14.4
+# neutralMinionsKilledEnemyJungle   36.4   33.7   35.1   41.3   30.1   35.3   87.4
+# neutralMinionsKilledTeamJungle    14.4   14.7   14.9   17.6   14.2   13.9   36.3
+# physicalDamageDealtToChampions    12.9   16.4   13.9   16.2    8.0   14.7   30.6
+# physicalDamageTaken                6.3    8.1    9.7    8.8    8.0    7.7   17.2
+# totalHeal                         19.1   19.9   18.9   19.9   18.5   19.1   28.1
+# totalTimeCrowdControlDealt        23.8   22.1   22.6   27.2   21.9   24.2   48.7
+# totalUnitsHealed                  14.9   16.4   14.8   16.2   15.0   15.8   19.9
+# trueDamageDealt                   20.7   22.0   23.0   20.0   20.9   22.7   32.2
+# trueDamageDealtToChampions        31.6   31.1   31.1   33.0   31.6   30.7   68.5
+# trueDamageTaken                   32.3   31.8   31.7   36.3   31.1   36.1   69.8
+# wardsKilled                       40.7   38.9   39.5   43.5   38.1   39.6   99.2
+# wardsPlaced                       12.0   11.5   11.6   12.8   11.5   11.5   28.5
+
+# join score results given criterias. Features == 1 must be selected for specific label
+(t(information_gain(data.sampled, features.selection.player, 'winner', 'label')) * 100 > 0) * (t(gini(data.sampled, features.selection.player, 'winner', 'label')) * 100 < 70)
+#                                  label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
+# assists                              1      1      1      1      0      1      1      1      1       1
+# deaths                               1      1      1      1      0      1      1      1      1       1
+# kills                                1      1      1      1      0      1      1      1      1       1
+# largestCriticalStrike                0      0      0      0      0      0      1      0      0       1
+# magicDamageDealtToChampions          1      1      0      1      0      1      1      1      1       0
+# magicDamageTaken                     1      1      1      1      0      1      1      1      1       1
+# minionsKilled                        0      0      1      1      0      1      1      1      0       1
+# neutralMinionsKilledEnemyJungle      0      1      0      0      0      0      1      0      0       0
+# neutralMinionsKilledTeamJungle       0      0      1      0      0      0      1      1      0       0
+# physicalDamageDealtToChampions       1      1      0      1      0      1      1      1      1       1
+# physicalDamageTaken                  1      0      1      0      0      0      1      1      1       1
+# totalHeal                            1      1      1      1      0      1      1      1      1       1
+# totalTimeCrowdControlDealt           0      1      1      1      0      1      1      0      0       1
+# totalUnitsHealed                     0      0      0      0      1      0      0      0      1       0
+# trueDamageDealt                      1      1      1      1      0      0      1      1      1       0
+# trueDamageDealtToChampions           0      0      0      1      0      0      0      1      0       0
+# trueDamageTaken                      1      1      0      1      0      0      0      1      1       1
+# wardsKilled                          0      0      0      0      0      0      0      0      0       0
+# wardsPlaced                          1      0      1      0      0      1      0      0      1       0

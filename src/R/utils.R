@@ -40,13 +40,14 @@ information_gain = function (data, features, target, label) {
     labels = sort(unique(data[, label]))
 
     # matrix to collect the scores (information gain) for each feature x label
-    score_matrix = matrix(0, nrow=length(features), ncol=length(labels))
-    dimnames(score_matrix) <- list(features, colnames(score_matrix, do.NULL=FALSE, prefix = label))
+    score_matrix = matrix(0, nrow=length(labels), ncol=length(features))
+    dimnames(score_matrix) <- list(rownames(score_matrix, do.NULL=FALSE, prefix = label), features)
 
     # compute scores for each label given a binary target feature
     for(i in labels) {
-        col = information.gain(as.formula(sprintf('%s ~ .', target)), data[data[, label] == i, c(features, target)])
-        score_matrix[, strf('%s%s', label, i)] = round(col[order(rownames(col)), ], digits=3)
+        sample = data[data[, label] == i, c(features, target)]
+        score = FSelector::information.gain(as.formula(strf('%s ~ .', target)), sample)
+        score_matrix[strf('%s%s', label, i), ] = round(score[order(rownames(score)), ], digits=3)
     }
 
     return(score_matrix)
@@ -56,14 +57,15 @@ information_gain = function (data, features, target, label) {
 #' References
 #' https://www.r-bloggers.com/calculating-a-gini-coefficients-for-a-number-of-locales-at-once-in-r/
 #' http://stats.stackexchange.com/questions/95839/gini-decrease-and-gini-impurity-of-children-nodes
+#' https://www.analyticsvidhya.com/blog/2016/04/complete-tutorial-tree-based-modeling-scratch-in-python/
 gini = function (data, features, target, label) {
     data = as.data.frame(data)
     features = sort(features)
     labels = sort(unique(data[, label]))
 
     # matrix to collect the scores (information gain) for each feature x label
-    score_matrix = matrix(0, nrow=length(features), ncol=length(labels))
-    dimnames(score_matrix) <- list(features, colnames(score_matrix, do.NULL=FALSE, prefix = label))
+    score_matrix = matrix(0, nrow=length(labels), ncol=length(features))
+    dimnames(score_matrix) <- list(rownames(score_matrix, do.NULL=FALSE, prefix = label), features)
 
     # calculate a gini index for a data matrix x and multiply by a given proportion p
     gini_ = function (x, p=1) {
@@ -73,16 +75,14 @@ gini = function (data, features, target, label) {
     # compute scores for each label given a binary target feature
     for(i in labels) {
         sample = data[data[, label] == i, ]
-        sample_target_0 = data[data[, label] == i & data[, target] == 0, ]
-        sample_target_1 = data[data[, label] == i & data[, target] == 1, ]
+        sample_target_0 = sample[sample[, target] == 0, ]
+        sample_target_1 = sample[sample[, target] == 1, ]
 
-        score = gini_(sample[, features])
         score_target_0 = gini_(sample_target_0[, features], (nrow(sample_target_0) / nrow(sample)))
         score_target_1 = gini_(sample_target_1[, features], (nrow(sample_target_1) / nrow(sample)))
+        score = score_target_0 + score_target_1
 
-        score = score - score_target_0 - score_target_1
-
-        score_matrix[, strf('%s%s', label, i)] = round(score[order(rownames(score)), ], digits=3)
+        score_matrix[strf('%s%s', label, i), ] = round(score[order(rownames(score)), ], digits=3)
     }
 
     return(score_matrix)
