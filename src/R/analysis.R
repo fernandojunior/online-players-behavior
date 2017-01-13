@@ -262,6 +262,8 @@ correlations = render_plot(function () {
     return(correlation_analysis(team.normalized[, features.selection])$estimates)
 }, '../output/correlation-team', width=18, height=12)
 
+# Redundant feature selection analysis --------------------------------------------------------------------------------
+
 # Rank the most correlated features by mean of correlations for each one
 features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 # [1] "goldEarned"                      "goldSpent"
@@ -277,8 +279,6 @@ features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 # [21] "neutralMinionsKilledTeamJungle"  "physicalDamageTaken"
 # [23] "magicDamageTaken"                "trueDamageDealtToChampions"
 # [25] "trueDamageTaken"
-
-# Dimensionality reduction ----------------------------------------------------
 
 # Features with high similarity (dendogram plot) and high correlation (heatmap
 # plot) > 0.7 are redundants.
@@ -306,8 +306,7 @@ features.redundant.team = c(
     #'assists' # assists x kills
 )
 
-# Remove redundant features (high similarity and correlation) to avoid
-# multicollinearity.
+# Remove redundant features (high similarity and correlation) to avoid multicollinearity.
 features.selection.player = setdiff(features.selection, features.redundant)
 # [1] "neutralMinionsKilledEnemyJungle" "kills"
 # [3] "assists"                         "minionsKilled"
@@ -327,6 +326,8 @@ features.selection.team = setdiff(features.selection, features.redundant.team)
 # [11] "trueDamageDealt"                 "neutralMinionsKilledTeamJungle"
 # [13] "physicalDamageTaken"             "magicDamageTaken"
 # [15] "trueDamageDealtToChampions"      "trueDamageTaken"
+
+# Dimensionality reduction --------------------------------------------------------------------------------------------
 
 # Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection.player]
@@ -563,7 +564,15 @@ render_plot(function () {
     plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
 }, '../output/exploring-centers-team', width=16, height=9)
 
-# TODO Relevant feature analisys by cluster .....................................
+# TODO Relevant feature selection analysis ............................................................................
+# feature selection to quantify the discriminative power of attributes.
+# In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
+# a feature (its discriminative power) to the classification process.
+# References:
+# - Data Classification Algorithms and Applications (2015)
+# - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
+# - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
+
 
 each(function (k) {
     plot_name = strf('../output/correlation-player-%s', k)
@@ -670,6 +679,10 @@ t(gini(team.sampled, features.selection.team, 'winner', 'label')) * 100
 # wardsKilled                       40.7   38.9   39.5   43.5   38.1   39.6   99.2
 # wardsPlaced                       12.0   11.5   11.6   12.8   11.5   11.5   28.5
 
+t(relieff(data.sampled, features.selection.player, 'winner', 'label')) * 100
+
+t(relieff(team.sampled, features.selection.team, 'winner', 'label')) * 100
+
 # join score results given criterias. Features == 1 must be selected for specific label
 (t(information_gain(data.sampled, features.selection.player, 'winner', 'label')) * 100 > 0) * (t(gini(data.sampled, features.selection.player, 'winner', 'label')) * 100 < 70)
 #                                  label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
@@ -692,3 +705,11 @@ t(gini(team.sampled, features.selection.team, 'winner', 'label')) * 100
 # trueDamageTaken                      1      1      0      1      0      0      0      1      1       1
 # wardsKilled                          0      0      0      0      0      0      0      0      0       0
 # wardsPlaced                          1      0      1      0      0      1      0      0      1       0
+
+# TODO feature selection using random forest
+# http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
+# https://cran.r-project.org/web/packages/varSelRF/varSelRF.pdf
+
+# TODO
+# http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
+# http://rstudio-pubs-static.s3.amazonaws.com/35817_2552e05f1d4e4db8ba87b334101a43da.html
