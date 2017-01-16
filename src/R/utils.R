@@ -88,10 +88,12 @@ gini = function (data, features, target, label) {
     }))
 }
 
-#' Compute the ReliefF for a given data set for each label given a target
+#' Compute the ReliefF for a given data set for each label given a target. The weights range from -1 to 1 with large
+#' positive weights assigned to important features.
 #'
 #' References:
 #' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
+#' https://www.mathworks.com/help/stats/relieff.html?requestedDomain=www.mathworks.com
 relieff = function (data, features, target, label, f) {
     return(cluster_feature_selection(data, features, target, label, function (cluster) {
         FSelector::relief(as.formula(strf('%s ~ .', target)), cluster)
