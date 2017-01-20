@@ -617,6 +617,32 @@ mode(tmp) <- 'numeric'
 tmp = relevant_features.random_forest > (apply(relevant_features.random_forest, 2, mean) - apply(relevant_features.random_forest, 2, mean) * 0.2)
 mode(tmp) <- 'numeric'
 
+# TODO Classification .................................................................................................
+
+# TODO classification
+import_package('caret', attach=TRUE)
+# https://www.r-bloggers.com/evaluating-logistic-regression-models/
+logistic_regression_result = (function (data, scores) {
+    cluster = 'label'
+    cluster_value = '1'
+    target = 'winner'
+    features = rownames(scores)[scores[, strf('%s%s', cluster, cluster_value)] == 1]
+
+    data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
+    data[, target] = as.factor(data[, target])
+
+    partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
+    training = as.data.frame(data[partitions, ])
+    testing = as.data.frame(data[-partitions, ])
+
+    formula = as.formula(strf('%s ~ .', target))
+    model = train(formula, data=training, method="glm", family="binomial")
+
+    predicted = predict(model, newdata=testing[, features, drop=FALSE])
+    accuracy = table(predicted, testing[, target])
+    sum(diag(accuracy))/sum(accuracy)
+})(team.sampled, (relevant_features.team.information_gain > 0))
+
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
 # https://cran.r-project.org/web/packages/varSelRF/varSelRF.pdf

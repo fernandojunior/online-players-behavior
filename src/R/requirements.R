@@ -12,3 +12,7 @@ devtools::install_github('klmr/modules')
 install.packages('FSelector', dependencies=TRUE)
 
 install.packages('ineq', dependencies=TRUE)
+
+install.packages('caret', dependencies=TRUE)
+
+library(caret)
