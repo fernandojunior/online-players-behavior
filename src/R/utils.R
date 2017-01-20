@@ -100,6 +100,15 @@ relieff = function (data, features, target, label, f) {
     }))
 }
 
+#' Compute the feature relevance using random forest for a given data set for each label given a target
+#' References:
+#' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
+random.forest.importance = function (data, features, target, label) {
+    return(cluster_feature_selection(data, features, target, label, function (cluster) {
+        FSelector::random.forest.importance(as.formula(strf('%s ~ .', target)), cluster)
+    }))
+}
+
 # cluster functions
 
 #' Between-cluster Sum of Square Error rate of a k-means fit.

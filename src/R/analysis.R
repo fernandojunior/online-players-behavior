@@ -592,181 +592,30 @@ data.sampled = data[rownames(data) %in% rownames(labeled), ]
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
 
 relevant_features.information_gain = t(information_gain(data.sampled, features.selection.player, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                           12.7    7.5    5.4    4.3    0.6    5.4    6.3    6.6   12.0     6.7
-# deaths                            10.7   14.0    4.8   10.2    2.1    8.2   13.0    9.4   14.3    11.7
-# kills                              2.8    3.6    0.8    5.3    0.5    6.5   11.7    6.7    2.5     9.1
-# largestCriticalStrike              0.0    0.2    0.0    0.0    0.0    0.6    5.3    0.0    0.0     2.4
-# magicDamageDealtToChampions        0.7    0.3    0.8    0.4    1.3    0.7    0.8    3.1    0.6     0.0
-# magicDamageTaken                   2.8    3.3    1.0    1.9    1.2    0.6    1.9    2.2    2.4     2.0
-# minionsKilled                      0.0    0.0    1.0    2.5    9.6    1.6    3.1    1.0    0.0     2.1
-# neutralMinionsKilledEnemyJungle    3.9   15.8    9.3    8.0    0.5    9.8   16.6    9.3    6.0    13.5
-# neutralMinionsKilledTeamJungle     0.0    0.0    1.1    0.0    0.0    0.0    0.6    0.3    0.0     0.7
-# physicalDamageDealtToChampions     0.8    0.4    0.9    1.1    2.4    2.1    7.2    0.7    0.6     4.3
-# physicalDamageTaken                0.6    0.0    1.0    0.0   10.5    0.0    0.3    0.3    0.7     0.7
-# totalHeal                          0.7    2.6    2.6    1.0    2.1    0.7    0.4    1.2    1.3     0.6
-# totalTimeCrowdControlDealt         0.0    1.0    1.0    0.3    1.9    0.8    4.0    0.0    0.0     0.8
-# totalUnitsHealed                   0.0    0.0    0.0    0.0    0.9    0.0    0.0    0.0    0.4     0.0
-# trueDamageDealt                    0.6    4.5    4.3    1.8    0.0    3.3    0.9    2.7    1.0     4.8
-# trueDamageDealtToChampions         0.3    0.0    0.3    1.2    0.0    0.6    0.0    0.3    0.0     1.3
-# trueDamageTaken                    0.7    1.4    1.1    0.5    0.8    0.0    0.0    0.3    1.1     0.5
-# wardsKilled                        0.0    0.0    0.3    0.0    0.0    0.0    0.0    0.0    0.0     0.0
-# wardsPlaced                        0.7    0.0    0.8    0.0    2.5    0.4    0.0    0.0    0.4     0.0
-
 relevant_features.team.information_gain = t(information_gain(team.sampled, features.selection.team, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7
-# assists                           21.3   17.5   26.1   27.3   13.7   28.5    0.0
-# deaths                            37.4   32.7   30.6   45.2   31.3   44.0    0.0
-# kills                             32.4   28.4   28.9   36.9   28.0   39.2    0.0
-# largestCriticalStrike              1.9    3.2    2.3    2.3    0.0    1.7    0.0
-# magicDamageDealtToChampions        5.3    0.0    4.9    8.0    4.2    5.3    0.0
-# magicDamageTaken                   9.4    5.8    2.2    7.8    9.2    5.7    0.0
-# minionsKilled                      8.5    7.9    8.1   16.7    5.8   10.9   14.9
-# neutralMinionsKilledEnemyJungle   37.1   31.3   32.1   32.5   27.8   35.4    3.5
-# neutralMinionsKilledTeamJungle     0.0    0.0    0.0    0.0    0.0    0.0    4.8
-# physicalDamageDealtToChampions     8.2    8.4   10.0    6.1    0.0   10.0    0.0
-# physicalDamageTaken                0.0    4.9    4.3    7.5    3.2    4.5    3.6
-# totalHeal                          6.3    3.8    4.6    3.1    5.0    4.8    5.1
-# totalTimeCrowdControlDealt         2.1    0.0    3.3    2.6    0.0    4.9    0.0
-# totalUnitsHealed                   0.0    0.0    0.0    0.0    3.0    1.7    4.1
-# trueDamageDealt                    4.1    6.5    5.1    3.5    8.1    3.7    4.4
-# trueDamageDealtToChampions         0.0    0.0    0.0    0.0    0.0    4.4    0.0
-# trueDamageTaken                    0.0    0.0    0.0    4.9    0.0    0.0    0.0
-# wardsKilled                        0.0    0.0    0.0    0.0    0.0    0.0    0.0
-# wardsPlaced                        2.0    0.0    2.7    3.0    0.0    0.0    2.3
 
 relevant_features.gini = t(gini(data.sampled, features.selection.player, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                           37.2   39.7   68.0   54.0   91.9   50.1   38.9   47.2   36.5    41.9
-# deaths                            38.0   35.3   63.7   45.2   88.4   41.0   29.7   40.8   32.5    36.0
-# kills                             56.5   42.2   69.7   48.9   91.8   47.3   34.6   44.8   51.7    42.1
-# largestCriticalStrike             97.3   79.0   85.2   94.3   97.8   77.3   26.3   95.4   92.5    29.9
-# magicDamageDealtToChampions       40.9   55.6   74.5   58.7   89.5   57.8   61.7   38.7   41.5    59.1
-# magicDamageTaken                  38.7   37.9   65.8   45.8   87.0   44.1   32.1   39.5   32.9    36.9
-# minionsKilled                     42.9   41.8   68.6   36.2   71.7   29.1   18.2   30.7   46.9    22.9
-# neutralMinionsKilledEnemyJungle   88.8   35.6   82.5   81.3   97.7   77.3   67.1   79.8   85.2    74.8
-# neutralMinionsKilledTeamJungle    92.8   20.3   44.5   75.2   97.1   75.2   60.9   68.8   87.7    70.0
-# physicalDamageDealtToChampions    41.8   49.3   73.4   63.0   84.1   40.3   31.4   49.5   53.4    35.0
-# physicalDamageTaken               32.4   22.4   49.4   44.1   80.5   36.2   23.9   38.1   26.8    28.6
-# totalHeal                         56.2   31.5   55.1   58.7   87.1   56.1   38.2   59.0   52.4    39.5
-# totalTimeCrowdControlDealt        53.0   32.2   58.3   62.6   88.0   63.8   51.9   59.1   51.0    64.3
-# totalUnitsHealed                  29.3   11.5    6.2   21.1   60.8   27.5   29.6   14.5   35.0    25.4
-# trueDamageDealt                   68.0   23.7   51.1   67.1   94.2   75.2   43.7   69.7   69.8    75.0
-# trueDamageDealtToChampions        82.5   47.6   72.8   50.7   96.6   79.4   37.2   66.0   74.7    79.0
-# trueDamageTaken                   58.7   52.3   74.7   59.1   93.0   57.7   51.3   55.0   53.7    55.9
-# wardsKilled                       68.3   58.8   82.2   77.7   97.7   75.9   65.5   74.6   36.4    69.9
-# wardsPlaced                       34.1   31.9   58.8   40.3   78.6   36.6   26.2   34.5   29.1    31.1
-
 relevant_features.team.gini = t(gini(team.sampled, features.selection.team, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7
-# assists                           19.7   17.0   18.1   25.6   15.7   22.5   87.1
-# deaths                            14.2   15.2   14.2   19.4   13.7   17.8   70.8
-# kills                             14.3   13.2   14.7   18.8   11.6   16.7   72.9
-# largestCriticalStrike             31.3   32.4   29.0   37.1   27.2   35.0   69.2
-# magicDamageDealtToChampions       15.4    8.8   15.1   17.8   19.6   17.9   37.3
-# magicDamageTaken                  19.0   14.7    9.3   17.6   15.3   18.7   36.2
-# minionsKilled                      8.3    7.6    7.9    8.9    7.1    7.9   14.4
-# neutralMinionsKilledEnemyJungle   36.4   33.7   35.1   41.3   30.1   35.3   87.4
-# neutralMinionsKilledTeamJungle    14.4   14.7   14.9   17.6   14.2   13.9   36.3
-# physicalDamageDealtToChampions    12.9   16.4   13.9   16.2    8.0   14.7   30.6
-# physicalDamageTaken                6.3    8.1    9.7    8.8    8.0    7.7   17.2
-# totalHeal                         19.1   19.9   18.9   19.9   18.5   19.1   28.1
-# totalTimeCrowdControlDealt        23.8   22.1   22.6   27.2   21.9   24.2   48.7
-# totalUnitsHealed                  14.9   16.4   14.8   16.2   15.0   15.8   19.9
-# trueDamageDealt                   20.7   22.0   23.0   20.0   20.9   22.7   32.2
-# trueDamageDealtToChampions        31.6   31.1   31.1   33.0   31.6   30.7   68.5
-# trueDamageTaken                   32.3   31.8   31.7   36.3   31.1   36.1   69.8
-# wardsKilled                       40.7   38.9   39.5   43.5   38.1   39.6   99.2
-# wardsPlaced                       12.0   11.5   11.6   12.8   11.5   11.5   28.5
 
 relevant_features.relieff = t(relieff(data.sampled, features.selection.player, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                           -3.2   -2.4   -0.9   -2.2    5.0   -3.2   13.5    1.6    0.4     1.2
-# deaths                            -2.4   -5.5   -1.0    0.9    1.7   -1.6    7.6   -0.3   -1.9     1.7
-# kills                              0.2   -3.4   -1.3   -2.2   -0.2   -3.1    1.3    0.1    0.5     1.6
-# largestCriticalStrike             -1.0   -4.1    0.1    1.1    0.0   -1.9    0.2    0.4   -0.3    -1.4
-# magicDamageDealtToChampions       -1.8   -4.9   -0.8   -2.0   -0.1   -2.0    5.1    2.1   -3.8    -0.2
-# magicDamageTaken                  -4.8   -2.0   -0.5    2.2    3.2   -2.7    0.6    1.3    0.4    -2.0
-# minionsKilled                     -1.2   -2.7   -1.3    0.0   -0.1   -2.7    0.1    0.5    0.8     0.1
-# neutralMinionsKilledEnemyJungle    1.3   -2.7   -0.6   -0.6    0.6   -4.1   12.0    0.6    0.0     1.3
-# neutralMinionsKilledTeamJungle    -1.5   -0.6   -1.0   -3.2    2.2   -2.4   -1.0   -1.5   -0.3     0.2
-# physicalDamageDealtToChampions    -3.6   -1.0   -0.8   -0.8   -0.9   -3.3    0.4    3.4   -0.4    -1.0
-# physicalDamageTaken               -3.1   -2.9   -0.5   -1.2    1.2   -3.5    8.4    0.6    2.9     0.4
-# totalHeal                         -2.7   -2.0   -1.4    0.8   -0.5   -3.1    0.9    0.7   -1.0     1.1
-# totalTimeCrowdControlDealt        -2.7   -3.5   -0.7   -1.0    1.2   -3.8   -2.4   -1.2    1.2    -1.3
-# totalUnitsHealed                  -3.1    0.0    0.0    0.3    0.5   -3.4   -0.9    4.6   -3.8     2.3
-# trueDamageDealt                   -1.5   -3.5   -0.8   -1.4    0.2   -3.8   -2.3   -2.8    1.3     0.8
-# trueDamageDealtToChampions         0.2   -4.0   -0.8   -2.4    1.6   -4.7   -2.8   -0.3   -1.3    -1.3
-# trueDamageTaken                   -4.4   -1.9   -0.7    0.0    0.3   -2.8    0.1   -0.4   -0.9     2.3
-# wardsKilled                       -4.1   -2.2   -1.4   -1.5   -0.1   -3.2    6.3   -0.1   -1.2     0.5
-# wardsPlaced                       -5.0   -1.5   -1.2   -2.4    1.7   -1.2    2.3    0.4   -1.7    -2.9
-
 relevant_features.team.relieff = t(relieff(team.sampled, features.selection.team, 'winner', 'label')) * 100
-#                                 label1 label2 label3 label4 label5 label6 label7
-# assists                           -9.0   -0.6    1.8   -2.3   -3.4   -2.2   -6.0
-# deaths                            -1.6    6.9   -0.4    8.2   -7.0   -3.8    3.2
-# kills                             -3.5    0.6    0.7   -0.4    0.5   14.5    0.4
-# largestCriticalStrike              3.9    0.8   -1.4    3.9    4.2   -2.7   -1.5
-# magicDamageDealtToChampions       -7.6   -1.2    0.6   -1.7    8.0   -5.1   -1.5
-# magicDamageTaken                  17.3    0.8   -3.1    1.0    0.9    0.1   -1.7
-# minionsKilled                      4.0    4.1   -0.6   -1.4    7.3   15.1   -0.4
-# neutralMinionsKilledEnemyJungle   13.6    4.3    4.7    5.7    1.9   10.4   -1.4
-# neutralMinionsKilledTeamJungle     7.9    2.2   -5.2    0.2    1.3   -4.9   -0.5
-# physicalDamageDealtToChampions    -5.1    0.0   -0.7    5.9   -6.9   -4.6   -2.5
-# physicalDamageTaken                2.7    0.6   -3.8    6.5   -4.4   -0.6   -1.5
-# totalHeal                         -5.3    6.9   -0.4   -1.5   -5.9   41.3   -4.8
-# totalTimeCrowdControlDealt         2.0   -0.1    5.7   -0.3   -4.4   -3.6    0.1
-# totalUnitsHealed                   4.2    0.1   -1.2   -0.7   -8.3   -7.3    0.8
-# trueDamageDealt                   -4.3    3.2    5.9   -6.6   -5.3   -2.5    0.9
-# trueDamageDealtToChampions        -3.7    2.3    2.0    2.7   -1.9  -10.4   -1.1
-# trueDamageTaken                    1.3    1.2   -4.7   -1.0   -3.3    8.1   -1.0
-# wardsKilled                        3.6    1.9   -5.4    3.0    0.2    4.3    0.0
-# wardsPlaced                       -5.4    3.8   11.5    2.0   -7.0   -6.7   -5.0
 
-# join score results given criterias. Features == 1 must be selected for each label
+relevant_features.random_forest = t(random.forest.importance(data.sampled, features.selection.player, 'winner', 'label')) * 100
+relevant_features.team.random_forest = t(random.forest.importance(team.sampled, features.selection.team, 'winner', 'label')) * 100
+
+## selection criterias
+# Features == 1 must be selected for each label
+
 (relevant_features.information_gain > 0) * (relevant_features.gini < 70) * (relevant_features.relieff > 0)
-#                                  label1 label2 label3 label4 label5 label6 label7 label8 label9 label10
-# assists                              0      0      0      0      0      0      1      1      1       1
-# deaths                               0      0      0      1      0      0      1      0      0       1
-# kills                                1      0      0      0      0      0      1      1      1       1
-# largestCriticalStrike                0      0      0      0      0      0      1      0      0       0
-# magicDamageDealtToChampions          0      0      0      0      0      0      1      1      0       0
-# magicDamageTaken                     0      0      0      1      0      0      1      1      1       0
-# minionsKilled                        0      0      0      1      0      0      1      1      0       1
-# neutralMinionsKilledEnemyJungle      0      0      0      0      0      0      1      0      0       0
-# neutralMinionsKilledTeamJungle       0      0      0      0      0      0      0      0      0       0
-# physicalDamageDealtToChampions       0      0      0      0      0      0      1      1      0       0
-# physicalDamageTaken                  0      0      0      0      0      0      1      1      1       1
-# totalHeal                            0      0      0      1      0      0      1      1      0       1
-# totalTimeCrowdControlDealt           0      0      0      0      0      0      0      0      0       0
-# totalUnitsHealed                     0      0      0      0      1      0      0      0      0       0
-# trueDamageDealt                      0      0      0      0      0      0      0      0      1       0
-# trueDamageDealtToChampions           0      0      0      0      0      0      0      0      0       0
-# trueDamageTaken                      0      0      0      1      0      0      0      0      0       1
-# wardsKilled                          0      0      0      0      0      0      0      0      0       0
-# wardsPlaced                          0      0      0      0      0      0      0      0      0       0
-
 (relevant_features.team.information_gain > 0) * (relevant_features.team.gini < 70) * (relevant_features.team.relieff > 0)
-#                                 label1 label2 label3 label4 label5 label6 label7
-# assists                              0      0      1      0      0      0      0
-# deaths                               0      1      0      1      0      0      0
-# kills                                0      1      1      0      1      1      0
-# largestCriticalStrike                1      1      0      1      0      0      0
-# magicDamageDealtToChampions          0      0      1      0      1      0      0
-# magicDamageTaken                     1      1      0      1      1      1      0
-# minionsKilled                        1      1      0      0      1      1      0
-# neutralMinionsKilledEnemyJungle      1      1      1      1      1      1      0
-# neutralMinionsKilledTeamJungle       0      0      0      0      0      0      0
-# physicalDamageDealtToChampions       0      0      0      1      0      0      0
-# physicalDamageTaken                  0      1      0      1      0      0      0
-# totalHeal                            0      1      0      0      0      1      0
-# totalTimeCrowdControlDealt           1      0      1      0      0      0      0
-# totalUnitsHealed                     0      0      0      0      0      0      1
-# trueDamageDealt                      0      1      1      0      0      0      1
-# trueDamageDealtToChampions           0      0      0      0      0      0      0
-# trueDamageTaken                      0      0      0      0      0      0      0
-# wardsKilled                          0      0      0      0      0      0      0
-# wardsPlaced                          0      0      1      1      0      0      0
+
+# random forest score > mean
+tmp = relevant_features.random_forest > (apply(relevant_features.random_forest, 2, mean))
+mode(tmp) <- 'numeric'
+
+# random forest score > mean - 20%
+tmp = relevant_features.random_forest > (apply(relevant_features.random_forest, 2, mean) - apply(relevant_features.random_forest, 2, mean) * 0.2)
+mode(tmp) <- 'numeric'
 
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
