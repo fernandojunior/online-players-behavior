@@ -592,57 +592,50 @@ each(function (k) {
 data.sampled = data[rownames(data) %in% rownames(labeled), ]
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
 
-relevant_features.information_gain = t(information_gain(data.sampled, features.selection.player, 'winner', 'label')) * 100
-relevant_features.team.information_gain = t(information_gain(team.sampled, features.selection.team, 'winner', 'label')) * 100
+relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
+relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
 
-relevant_features.gini = t(gini(data.sampled, features.selection.player, 'winner', 'label')) * 100
-relevant_features.team.gini = t(gini(team.sampled, features.selection.team, 'winner', 'label')) * 100
+relevant_features.gini = gini(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x < 0.7)
+relevant_features.team.gini = gini(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x < 0.7)
 
-relevant_features.relieff = t(relieff(data.sampled, features.selection.player, 'winner', 'label')) * 100
-relevant_features.team.relieff = t(relieff(team.sampled, features.selection.team, 'winner', 'label')) * 100
+relevant_features.relieff = relieff(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
+relevant_features.team.relieff = relieff(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
 
-relevant_features.random_forest = t(random.forest.importance(data.sampled, features.selection.player, 'winner', 'label')) * 100
-relevant_features.team.random_forest = t(random.forest.importance(team.sampled, features.selection.team, 'winner', 'label')) * 100
+relevant_features.random_forest = random.forest.importance(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
+relevant_features.team.random_forest = random.forest.importance(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
 
-## selection criterias
-# Features == 1 must be selected for each label
-
-(relevant_features.information_gain > 0) * (relevant_features.gini < 70) * (relevant_features.relieff > 0)
-(relevant_features.team.information_gain > 0) * (relevant_features.team.gini < 70) * (relevant_features.team.relieff > 0)
+# intersection
+(relevant_features.information_gain$is_selected) * (relevant_features.gini$is_selected) * (relevant_features.relieff$is_selected)
+(relevant_features.team.information_gain$is_selected) * (relevant_features.team.gini$is_selected) * (relevant_features.team.relieff$is_selected)
 
 # random forest score > mean
-tmp = relevant_features.random_forest > (apply(relevant_features.random_forest, 2, mean))
-mode(tmp) <- 'numeric'
-
-# random forest score > mean - 20%
-tmp = relevant_features.random_forest > (apply(relevant_features.random_forest, 2, mean) - apply(relevant_features.random_forest, 2, mean) * 0.2)
+tmp = relevant_features.random_forest$is_selected
 mode(tmp) <- 'numeric'
 
 # TODO Classification .................................................................................................
 
-# TODO classification
 import_package('caret', attach=TRUE)
 # https://www.r-bloggers.com/evaluating-logistic-regression-models/
-logistic_regression_result = (function (data, scores) {
-    cluster = 'label'
-    cluster_value = '1'
-    target = 'winner'
-    features = rownames(scores)[scores[, strf('%s%s', cluster, cluster_value)] == 1]
-
-    data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
-    data[, target] = as.factor(data[, target])
-
-    partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
-    training = as.data.frame(data[partitions, ])
-    testing = as.data.frame(data[-partitions, ])
-
-    formula = as.formula(strf('%s ~ .', target))
-    model = train(formula, data=training, method="glm", family="binomial")
-
-    predicted = predict(model, newdata=testing[, features, drop=FALSE])
-    accuracy = table(predicted, testing[, target])
-    sum(diag(accuracy))/sum(accuracy)
-})(team.sampled, (relevant_features.team.information_gain > 0))
+# logistic_regression_result = (function (data, scores) {
+#     cluster = 'label'
+#     cluster_value = '1'
+#     target = 'winner'
+#     features = rownames(scores)[scores[, strf('%s%s', cluster, cluster_value)] == 1]
+#
+#     data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
+#     data[, target] = as.factor(data[, target])
+#
+#     partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
+#     training = as.data.frame(data[partitions, ])
+#     testing = as.data.frame(data[-partitions, ])
+#
+#     formula = as.formula(strf('%s ~ .', target))
+#     model = train(formula, data=training, method="glm", family="binomial")
+#
+#     predicted = predict(model, newdata=testing[, features, drop=FALSE])
+#     accuracy = table(predicted, testing[, target])
+#     sum(diag(accuracy))/sum(accuracy)
+# })(team.sampled, (relevant_features.team.information_gain > 0))
 
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification

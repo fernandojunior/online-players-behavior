@@ -6,7 +6,7 @@ import_package('FSelector', attach, attach=TRUE)
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
 #' @seealso information_gain, gini, relieff
-cluster_feature_selection = function (data, features, target, cluster, cluster_handler) {
+cluster_feature_selection = function (data, features, target, cluster, cluster_handler, criteria_handler=NULL) {
     data = as.data.frame(data)
     features = sort(features)
     clusters = sort(unique(data[, cluster]))
@@ -22,17 +22,26 @@ cluster_feature_selection = function (data, features, target, cluster, cluster_h
         score_matrix[strf('%s%s', cluster, i), ] = round(score[order(rownames(score)), ], digits=3)
     }
 
-    return(score_matrix)
+    result = list(score=score_matrix)
+
+    if (!is.null(criteria_handler)) {
+        result$is_selected = criteria_handler(score_matrix)
+        result$selection = apply(result$is_selected, 1, function (row) {
+            return(colnames(result$is_selected)[row])
+        })
+    }
+
+    return(result)
 }
 
 #' Compute the information gain for a given data set for each label given a target
 #' References:
 #' http://stackoverflow.com/questions/33241638/use-of-formula-in-information-gain-in-r
 #' http://stackoverflow.com/questions/1859554/what-is-entropy-and-information-gain
-information_gain = function (data, features, target, label) {
+information_gain = function (data, features, target, label, criteria_handler=NULL) {
     return(cluster_feature_selection(data, features, target, label, function (cluster) {
         FSelector::information.gain(as.formula(strf('%s ~ .', target)), cluster)
-    }))
+    }, criteria_handler))
 }
 
 #' Compute the gini index for a given data set for each label given a binary target
@@ -40,7 +49,7 @@ information_gain = function (data, features, target, label) {
 #' https://www.r-bloggers.com/calculating-a-gini-coefficients-for-a-number-of-locales-at-once-in-r/
 #' http://stats.stackexchange.com/questions/95839/gini-decrease-and-gini-impurity-of-children-nodes
 #' https://www.analyticsvidhya.com/blog/2016/04/complete-tutorial-tree-based-modeling-scratch-in-python/
-gini = function (data, features, target, label) {
+gini = function (data, features, target, label, criteria_handler=NULL) {
     # calculate a gini index for a data matrix x and multiply by a given proportion p
     gini_ = function (x, p=1) {
         return(as.data.frame(apply(x, 2, ineq::Gini)) * p)
@@ -55,7 +64,7 @@ gini = function (data, features, target, label) {
         score_target_1 = gini_(cluster_target_1[, features], (nrow(cluster_target_1) / nrow(cluster)))
         score = score_target_0 + score_target_1
         return(score)
-    }))
+    }, criteria_handler))
 }
 
 #' Compute the ReliefF for a given data set for each label given a target. The weights range from -1 to 1 with large
@@ -64,17 +73,17 @@ gini = function (data, features, target, label) {
 #' References:
 #' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #' https://www.mathworks.com/help/stats/relieff.html?requestedDomain=www.mathworks.com
-relieff = function (data, features, target, label) {
+relieff = function (data, features, target, label, criteria_handler=NULL) {
     return(cluster_feature_selection(data, features, target, label, function (cluster) {
         FSelector::relief(as.formula(strf('%s ~ .', target)), cluster)
-    }))
+    }, criteria_handler))
 }
 
 #' Compute the feature relevance using random forest for a given data set for each label given a target
 #' References:
 #' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
-random.forest.importance = function (data, features, target, label) {
+random.forest.importance = function (data, features, target, label, criteria_handler=NULL) {
     return(cluster_feature_selection(data, features, target, label, function (cluster) {
         FSelector::random.forest.importance(as.formula(strf('%s ~ .', target)), cluster)
-    }))
+    }, criteria_handler))
 }
