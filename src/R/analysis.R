@@ -4,6 +4,7 @@ options("width"=200)
 library('modules')
 import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
+import('feature_selection', attach=TRUE)
 import('utils', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
