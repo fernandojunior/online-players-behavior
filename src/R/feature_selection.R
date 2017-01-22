@@ -1,5 +1,24 @@
 import_package('FSelector', attach, attach=TRUE)
 
+#' List with redundant features of a data matrix
+redundant_features = function (data, redundats_=NULL) {
+    correlation_matrix = correlation_analysis(data)$estimates
+
+    # highly correlated sum (>= 0.7) by feature
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[row >= 0.7]))
+
+    if (is.null(highly_correlated_sum)) {
+        return(NULL)
+    } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
+        most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
+        redundats_ = c(redundats_, most_redundant)
+        features = setdiff(colnames(data), most_redundant)
+        return(redundant_features(data[, features], redundats_))
+    } else {
+        return(redundats_)
+    }
+}
+
 #' Compute a feature selection score matrix (cluster_handler) for a given data set for each cluster given a target
 #'
 #' References:
