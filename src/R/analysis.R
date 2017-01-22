@@ -288,11 +288,12 @@ features.redundant = c(
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
     'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
-    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
-    # 'trueDamageDealt', # trueDamageDealt x trueDamageDealtToChampions
     'goldEarned', # goldEarned x goldSpent
-    'goldSpent' # goldSpent x kills
+    'goldSpent', # goldSpent x kills
+    'deaths', # deaths x magicDamageTaken and deaths x physicalDamageTaken
+    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
+    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
+    'totalUnitsHealed' # totalUnitsHealed x totalHeal
 )
 
 features.redundant.team = c(
@@ -300,11 +301,14 @@ features.redundant.team = c(
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
     'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
-    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
+    'assists', # assists x kills, assists x magicDamageDealtToChampions, physicalDamageDealtToChampions
+    'deaths', # deaths x magicDamageTaken
     'goldEarned', # goldEarned x goldSpent
-    'goldSpent' # goldSpent x kills
-    #'assists' # assists x kills
+    'goldSpent', # goldSpent x kills
+    'kills',  # kills x assists, kills x magicDamageDealtToChampions, kills x physicalDamageDealtToChampions
+    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
+    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
+    'trueDamageDealt' # trueDamageDealt x trueDamageDealtToChampions
 )
 
 # Remove redundant features (high similarity and correlation) to avoid multicollinearity.
@@ -433,7 +437,7 @@ boxplot(values(clusters_size.relative))$stats
 
 boxplot(values(clusters_size.team.relative))$stats
 
-# Balancing team data ....................................................
+# Balancing data ......................................................................................................
 
 # min clusters size between winners and losers
 clusters_size.min = min(table(winners$label), table(losers$label))
@@ -448,6 +452,8 @@ labeled = rbind(winners, losers)
 winners.team = undersample(winners.team, 'label', clusters_size.team.min)
 losers.team = undersample(losers.team, 'label', clusters_size.team.min)
 labeled.team = rbind(winners.team, losers.team)
+
+# TODO correlation analysis after data balancing
 
 # TODO Statistical analysis of the results ------------------------------------
 
@@ -574,7 +580,6 @@ render_plot(function () {
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
 
-
 each(function (k) {
     plot_name = strf('../output/correlation-player-%s', k)
     render_plot(function () {
@@ -604,6 +609,10 @@ relevant_features.team.relieff = relieff(team.sampled, features.selection.team, 
 relevant_features.random_forest = random.forest.importance(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
 relevant_features.team.random_forest = random.forest.importance(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
 
+# TODO remove features present in all clusters
+
+# TODO correlation analysis by cluster to remove redundant ones
+
 # intersection
 (relevant_features.information_gain$is_selected) * (relevant_features.gini$is_selected) * (relevant_features.relieff$is_selected)
 (relevant_features.team.information_gain$is_selected) * (relevant_features.team.gini$is_selected) * (relevant_features.team.relieff$is_selected)
@@ -612,30 +621,31 @@ relevant_features.team.random_forest = random.forest.importance(team.sampled, fe
 tmp = relevant_features.random_forest$is_selected
 mode(tmp) <- 'numeric'
 
-# TODO Classification .................................................................................................
+# TODO Classification [winner x loser] .................................................................................................
 
 import_package('caret', attach=TRUE)
 # https://www.r-bloggers.com/evaluating-logistic-regression-models/
-# logistic_regression_result = (function (data, scores) {
-#     cluster = 'label'
-#     cluster_value = '1'
-#     target = 'winner'
-#     features = rownames(scores)[scores[, strf('%s%s', cluster, cluster_value)] == 1]
-#
-#     data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
-#     data[, target] = as.factor(data[, target])
-#
-#     partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
-#     training = as.data.frame(data[partitions, ])
-#     testing = as.data.frame(data[-partitions, ])
-#
-#     formula = as.formula(strf('%s ~ .', target))
-#     model = train(formula, data=training, method="glm", family="binomial")
-#
-#     predicted = predict(model, newdata=testing[, features, drop=FALSE])
-#     accuracy = table(predicted, testing[, target])
-#     sum(diag(accuracy))/sum(accuracy)
-# })(team.sampled, (relevant_features.team.information_gain > 0))
+(function (data, features) {
+    cluster = 'label'
+    cluster_value = '1'
+    target = 'winner'
+
+    features = features[[strf('%s%s', cluster, cluster_value)]]
+
+    data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
+    data[, target] = as.factor(data[, target])
+
+    partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
+    training = as.data.frame(data[partitions, ])
+    testing = as.data.frame(data[-partitions, ])
+
+    formula = as.formula(strf('%s ~ .', target))
+    model = train(formula, data=training, method="glm", family="binomial")
+
+    predicted = predict(model, newdata=testing[, features, drop=FALSE])
+    accuracy = table(predicted, testing[, target])
+    return(sum(diag(accuracy))/sum(accuracy))
+})(team.sampled, relevant_features.team.random_forest$selection)
 
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
