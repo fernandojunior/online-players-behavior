@@ -623,6 +623,8 @@ mode(tmp) <- 'numeric'
 
 # TODO Classification [winner x loser] .................................................................................................
 
+team.sampled
+
 import_package('caret', attach=TRUE)
 # https://www.r-bloggers.com/evaluating-logistic-regression-models/
 (function (data, features) {
@@ -635,6 +637,8 @@ import_package('caret', attach=TRUE)
     data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
     data[, target] = as.factor(data[, target])
 
+    correlation_analysis(data[, features])
+
     partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
     training = as.data.frame(data[partitions, ])
     testing = as.data.frame(data[-partitions, ])
@@ -645,7 +649,7 @@ import_package('caret', attach=TRUE)
     predicted = predict(model, newdata=testing[, features, drop=FALSE])
     accuracy = table(predicted, testing[, target])
     return(sum(diag(accuracy))/sum(accuracy))
-})(team.sampled, relevant_features.team.random_forest$selection)
+})(team.sampled, relevant_features.team.information_gain$selection)
 
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
