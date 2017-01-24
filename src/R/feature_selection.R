@@ -1,3 +1,4 @@
+import('utils', attach=c('correlation_matrix'))
 import_package('FSelector', attach, attach=TRUE)
 
 #' List with redundant features of a data matrix
@@ -25,33 +26,50 @@ redundant_features = function (data, redundats_=NULL) {
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
 #' @seealso information_gain, gini, relieff
-cluster_feature_selection = function (data, features, target, cluster, cluster_handler, criteria_handler=NULL) {
+cluster_feature_selection = function (data, features, target, cluster, cluster_handler, criteria_handler=NULL, remove_redundant=TRUE) {
     data = as.data.frame(data)
     features = sort(features)
     clusters = sort(unique(data[, cluster]))
+    cluster_names = lapply(clusters, function (i) strf('%s%s', cluster, i))
 
     # matrix to collect the scores (information gain) for each feature x cluster
     score_matrix = matrix(0, nrow=length(clusters), ncol=length(features))
-    dimnames(score_matrix) <- list(rownames(score_matrix, do.NULL=FALSE, prefix = cluster), features)
+    dimnames(score_matrix) <- list(cluster_names, features)
 
     # compute scores for each cluster given a binary target feature
     for(i in clusters) {
-        sample = data[data[, cluster] == i, c(features, target)]
-        score = cluster_handler(sample)
+        cluster_data = data[data[, cluster] == i, c(features, target)]
+        score = cluster_handler(cluster_data)
         score_matrix[strf('%s%s', cluster, i), ] = round(score[order(rownames(score)), ], digits=3)
     }
 
     result = list(score=score_matrix)
 
     if (!is.null(criteria_handler)) {
-        result$is_selected = criteria_handler(score_matrix)
-        result$selection = apply(result$is_selected, 1, function (row) {
-            return(colnames(result$is_selected)[row])
+        is_selected = criteria_handler(score_matrix)
+
+        result$selection = apply(is_selected, 1, function (row) {
+            return(colnames(is_selected)[row])
         })
+
+        result$redundant = lapply(clusters, function (i) {
+            cluster_data = data[data[, cluster] == i, c(result$selection[[strf('%s%s', cluster, i)]] )]
+            redundant_features(cluster_data)
+        })
+        names(result$redundant) = cluster_names
+
+        if (remove_redundant == TRUE) {
+            result$selection = lapply(cluster_names, function (i) {
+                return(setdiff(values(result$selection[[i]]), result$redundant[[i]]))
+            })
+            names(result$selection) = cluster_names
+        }
     }
 
     return(result)
 }
+
+information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
 
 #' Compute the information gain for a given data set for each label given a target
 #' References:
