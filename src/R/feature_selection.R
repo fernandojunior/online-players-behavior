@@ -1,4 +1,4 @@
-import('utils', attach=c('correlation_matrix'))
+import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
 
 #' List with redundant features of a data matrix
@@ -68,8 +68,6 @@ cluster_feature_selection = function (data, features, target, cluster, cluster_h
 
     return(result)
 }
-
-information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
 
 #' Compute the information gain for a given data set for each label given a target
 #' References:
