@@ -281,56 +281,37 @@ features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 # [23] "magicDamageTaken"                "trueDamageDealtToChampions"
 # [25] "trueDamageTaken"
 
-# Features with high similarity (dendogram plot) and high correlation (heatmap
-# plot) > 0.7 are redundants.
-features.redundant = c(
+# Composed features
+features.compound = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
-    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'goldEarned', # goldEarned x goldSpent
-    'goldSpent', # goldSpent x kills
-    'deaths', # deaths x magicDamageTaken and deaths x physicalDamageTaken
-    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
-    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
-    'totalUnitsHealed' # totalUnitsHealed x totalHeal
+    'neutralMinionsKilled' # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
 )
 
-features.redundant.team = c(
-    'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
-    'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
-    'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
-    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'assists', # assists x kills, assists x magicDamageDealtToChampions, physicalDamageDealtToChampions
-    'deaths', # deaths x magicDamageTaken
-    'goldEarned', # goldEarned x goldSpent
-    'goldSpent', # goldSpent x kills
-    'kills',  # kills x assists, kills x magicDamageDealtToChampions, kills x physicalDamageDealtToChampions
-    'magicDamageDealt', # magicDamageDealt x magicDamageDealtToChampions
-    'physicalDamageDealt', # physicalDamageDealt x physicalDamageDealtToChampions
-    'trueDamageDealt' # trueDamageDealt x trueDamageDealtToChampions
-)
+# Remove compound feaures (leaving only atomic attributes - first normal form)
+features.selection = setdiff(features.selection, features.compound)
 
-# Remove redundant features (high similarity and correlation) to avoid multicollinearity.
-features.selection.player = setdiff(features.selection, features.redundant)
-# [1] "neutralMinionsKilledEnemyJungle" "kills"
-# [3] "assists"                         "minionsKilled"
-# [5] "deaths"                          "physicalDamageDealtToChampions"
-# [7] "magicDamageDealtToChampions"     "largestCriticalStrike"
-# [9] "totalTimeCrowdControlDealt"      "totalHeal"
-# [11] "wardsPlaced"                     "neutralMinionsKilledTeamJungle"
-# [13] "physicalDamageTaken"             "magicDamageTaken"
-# [15] "trueDamageDealtToChampions"      "trueDamageTaken"
+# Redundant features
+features.redundant.player = redundant_features(data.normalized[, features.selection])
+# [1] "goldSpent"                   "magicDamageDealtToChampions" "physicalDamageDealt"
+
+features.redundant.team = redundant_features(team.normalized[, features.selection])
+# [1] "goldSpent"                   "goldEarned"                  "kills"                       "physicalDamageDealt"         "magicDamageDealtToChampions" "assists"
+# [7] "magicDamageTaken
+
+# Remove redundant features: highly similarity (dendogram) and correlation (heatmap).
+features.selection.player = setdiff(features.selection, features.redundant.player)
+# [1] "assists"                         "goldEarned"                      "kills"                           "physicalDamageDealtToChampions"  "minionsKilled"
+# [6] "magicDamageDealt"                "totalHeal"                       "wardsPlaced"                     "physicalDamageTaken"             "neutralMinionsKilledEnemyJungle"
+# [11] "trueDamageDealt"                 "trueDamageDealtToChampions"      "wardsKilled"                     "magicDamageTaken"                "totalTimeCrowdControlDealt"
+# [16] "totalUnitsHealed"                "trueDamageTaken"                 "deaths"                          "largestCriticalStrike"           "neutralMinionsKilledTeamJungle
 
 features.selection.team = setdiff(features.selection, features.redundant.team)
-# [1] "neutralMinionsKilledEnemyJungle" "kills"
-# [3] "minionsKilled"                   "deaths"
-# [5] "physicalDamageDealtToChampions"  "magicDamageDealtToChampions"
-# [7] "largestCriticalStrike"           "totalTimeCrowdControlDealt"
-# [9] "totalHeal"                       "wardsPlaced"
-# [11] "trueDamageDealt"                 "neutralMinionsKilledTeamJungle"
-# [13] "physicalDamageTaken"             "magicDamageTaken"
-# [15] "trueDamageDealtToChampions"      "trueDamageTaken"
+# [1] "physicalDamageDealtToChampions"  "minionsKilled"                   "magicDamageDealt"                "totalHeal"                       "wardsPlaced"
+# [6] "physicalDamageTaken"             "neutralMinionsKilledEnemyJungle" "trueDamageDealt"                 "trueDamageDealtToChampions"      "wardsKilled"
+# [11] "totalTimeCrowdControlDealt"      "totalUnitsHealed"                "trueDamageTaken"                 "deaths"                          "largestCriticalStrike"
+# [16] "neutralMinionsKilledTeamJungle"
 
 # Dimensionality reduction --------------------------------------------------------------------------------------------
 
@@ -454,6 +435,7 @@ losers.team = undersample(losers.team, 'label', clusters_size.team.min)
 labeled.team = rbind(winners.team, losers.team)
 
 # TODO correlation analysis after data balancing
+
 
 # TODO Statistical analysis of the results ------------------------------------
 
