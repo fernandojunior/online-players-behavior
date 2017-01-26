@@ -10,7 +10,19 @@ import('utils', attach=TRUE)
 RENDER_PLOT_SAVE = TRUE
 RENDER_PLOT_CLOSE = FALSE
 
-# Load data -------------------------------------------------------------------
+# =========================
+# Specific domain functions
+# =========================
+
+#' Return only 5x5 match IDs from player data
+get_5x5_matchIds = function (players) {
+    teams = aggregate(winner~matchId, players[, c('winner', 'matchId')], function(x) sum(as.numeric(x)))
+    return(teams[teams$winner == 5, 'matchId'])
+}
+
+# =========
+# Load data
+# =========
 
 # A data set with n = 85470 points/tuples/rows, where a point p represents a
 # feature vector of a participant in a specific match. Each match has only 10
@@ -18,8 +30,12 @@ RENDER_PLOT_CLOSE = FALSE
 # data = read.csv('../data/data.csv')
 data = read.csv('../data/data20170105025503.csv')
 
+# Some games are with error (from Riot API).
+# Remove inconsistent matches, i.e. matches not 5x5
+data = data[data$matchId %in% get_5x5_matchIds(data), ]
+
 # nrow(data)
-# [1] 85470
+# [1] 1099950
 
 # Remove duplicated rows by summonerId to decrease bias
 # data = data[!duplicated(data[, 'summonerId']),]
@@ -136,7 +152,9 @@ features.selection = setdiff(features.numeric, features.low_variance)
 # [23] "trueDamageDealt"                 "trueDamageDealtToChampions"
 # [25] "trueDamageTaken"                 "wardsPlaced"
 
-# Treatment of outliers -------------------------------------------------------
+# ======================
+# Treatment of outliers
+# ======================
 
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
 outliers = render_plot(function () {
@@ -194,14 +212,14 @@ data = data[!outliers$outliers, ]
 #> [1] 43595
 
 # As data were looked up by participants, some matches were left with less than
-# 10 participants. So, these invalid (incomplete) matches need to be removed.
-valid_matches = names(Filter(Curry(eq, 10), counter(data$matchId)))
-data = data[data$matchId %in% valid_matches, ]
-# write.csv(data, '../data/treated.csv', row.names=FALSE)
+# 10 participants. So, these inconsistent (incomplete) matches need to be removed.
+data = data[data$matchId %in% get_5x5_matchIds(data), ]
 # nrow(data)
-#> [1] 2400
+#> [1] 207990
 
-# Data normalization ----------------------------------------------------------
+# ==================
+# Data normalization
+# ==================
 
 # As the match duration varies between the matches, the features were divided
 # by match duration to compute players performance per minute.
@@ -251,7 +269,9 @@ team.normalized = as.data.frame(na.omit(cbind(
     normalize(team.performance[, features.numeric])
 )))
 
-# Correlation analysis --------------------------------------------------------
+# ====================
+# Correlation analysis
+# ====================
 
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
@@ -263,7 +283,9 @@ correlations = render_plot(function () {
     return(correlation_analysis(team.normalized[, features.selection])$estimates)
 }, '../output/correlation-team', width=18, height=12)
 
-# Redundant feature selection analysis --------------------------------------------------------------------------------
+# ====================================
+# Redundant feature selection analysis
+# ====================================
 
 # Rank the most correlated features by mean of correlations for each one
 features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
@@ -313,7 +335,9 @@ features.selection.team = setdiff(features.selection, features.redundant.team)
 # [11] "totalTimeCrowdControlDealt"      "totalUnitsHealed"                "trueDamageTaken"                 "deaths"                          "largestCriticalStrike"
 # [16] "neutralMinionsKilledTeamJungle"
 
-# Dimensionality reduction --------------------------------------------------------------------------------------------
+# ========================
+# Dimensionality reduction
+# ========================
 
 # Dimensionality reduction of the normalized data with selected features
 data.reduced = data.normalized[, features.selection.player]
@@ -328,13 +352,19 @@ correlations = render_plot(function () {
     return(correlation_analysis(team.reduced)$estimates)
 }, '../output/correlation-team-thin', width=18, height=12)
 
-# Cluster analysis (K-means) --------------------------------------------------
+# ==========================
+# Cluster analysis (K-means)
+# ==========================
 
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
     return(cluster_analysis(data.reduced, kmax=120)$fits)
 }, '../output/k-means-error-curve-player')
+
+fits.team = render_plot(function () {
+    return(cluster_analysis(team.reduced, kmax=120)$fits)
+}, '../output/k-means-error-curve-team')
 
 render_plot(function () {
     return(bagging_cluster_analysis(data.reduced, kmax=120, ntests=10))
@@ -343,10 +373,6 @@ render_plot(function () {
 render_plot(function () {
     return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=10))
 }, '../output/k-means-error-curve-player-bagging')
-
-fits.team = render_plot(function () {
-    return(cluster_analysis(team.reduced, kmax=120)$fits)
-}, '../output/k-means-error-curve-team')
 
 render_plot(function () {
     return(bagging_cluster_analysis(team.reduced, kmax=120, ntests=10))
@@ -362,9 +388,11 @@ render_plot(function () {
 fit = fits[[10]]
 # each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 
-fit.team = fits.team[[7]]
+fit.team = fits.team[[6]]
 
-# TODO Write or load labeled data ---------------------------------------------
+# ===============================
+# TODO Write or load labeled data
+# ===============================
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.reduced)
