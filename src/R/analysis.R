@@ -14,10 +14,18 @@ RENDER_PLOT_CLOSE = FALSE
 # Specific domain functions
 # =========================
 
-#' Return only 5x5 match IDs from player data
-get_5x5_matchIds = function (players) {
+#' Return matches with 10 players
+get_10_players_matches = function (players) {
+    matchIds = names(Filter(Curry(eq, 10), table(players$matchId)))
+    players = players[players$matchId %in% matchIds, ]
+}
+
+#' Return matches with 5 players each team (5x5)
+get_5x5_matches = function (players) {
+    players = get_10_players_matches(players)
     teams = aggregate(winner~matchId, players[, c('winner', 'matchId')], function(x) sum(as.numeric(x)))
-    return(teams[teams$winner == 5, 'matchId'])
+    matchIds = teams[teams$winner == 5, 'matchId']
+    return(players[players$matchId %in% matchIds, ])
 }
 
 # =========
@@ -32,7 +40,7 @@ data = read.csv('../data/data20170105025503.csv')
 
 # Some games are with error (from Riot API).
 # Remove inconsistent matches, i.e. matches not 5x5
-data = data[data$matchId %in% get_5x5_matchIds(data), ]
+data = get_5x5_matches(data)
 
 # nrow(data)
 # [1] 1099950
@@ -213,7 +221,7 @@ data = data[!outliers$outliers, ]
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent (incomplete) matches need to be removed.
-data = data[data$matchId %in% get_5x5_matchIds(data), ]
+data = get_5x5_matches(data)
 # nrow(data)
 #> [1] 207990
 
@@ -303,7 +311,7 @@ features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 # [23] "magicDamageTaken"                "trueDamageDealtToChampions"
 # [25] "trueDamageTaken"
 
-# Composed features
+# Compound features
 features.compound = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
@@ -385,39 +393,31 @@ render_plot(function () {
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it.
-fit = fits[[10]]
+fit = fits[[8]]
 # each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 
 fit.team = fits.team[[6]]
-
-# ===============================
-# TODO Write or load labeled data
-# ===============================
 
 # Associating each reduced data point with its info and label features
 labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.reduced)
 labeled.team = cbind(team.normalized[, c('matchId', 'winner')], label=fit.team$cluster, team.reduced)
 
+# Labeling data
 data = cbind(data, label=labeled$label)
 team = cbind(team, label=labeled.team$label)
 
-# write.csv(labeled, '../data/labeled.csv', row.names=FALSE)
+###############################################################################
+# Clustered data balancing (undersampling) by discriminating winners and losers
+###############################################################################
 
-# cluster = read.csv('../output/fit/cluster.csv')$x
-# labeled = cbind(data[, features.info], label=cluster, data.reduced)
-# labeled = read.csv('../data/labeled.csv')
-
-# Balancing/undersampling data ................................................
-
-# Discriminate labeled data between winners and losers
+# Discriminate clustered data between winners and losers
 winners = labeled[labeled$winner == 1, ]
 losers = labeled[labeled$winner == 0, ]
 
 winners.team = labeled.team[labeled.team[, 'winner'] == 1, ]
 losers.team = labeled.team[labeled.team[, 'winner'] == 0, ]
 
-# Clusters size analysis ......................................................
-
+# Clusters size analysis
 clusters_size = as.data.frame(cbind(
     all=table(labeled[, 'label']),
     winners=table(winners[, 'label']),
@@ -430,7 +430,7 @@ clusters_size.team = as.data.frame(cbind(
     losers=table(losers.team[, 'label'])
 ))
 
-# relative clusters size between winners and losers
+# Relative clusters size between winners and losers
 clusters_size.relative = as.data.frame(cbind(
     winners=clusters_size$winners / clusters_size$all,
     losers=clusters_size$losers / clusters_size$all
@@ -441,19 +441,17 @@ clusters_size.team.relative = as.data.frame(cbind(
     losers=clusters_size.team$losers / clusters_size.team$all
 ))
 
-# Check if there are outliers in clusters size
+# Check if there are outliers in relative clusters size
 boxplot(values(clusters_size.relative))$stats
 
 boxplot(values(clusters_size.team.relative))$stats
 
-# Balancing data ......................................................................................................
-
-# min clusters size between winners and losers
+# Min cluster size in winners + losers
 clusters_size.min = min(table(winners$label), table(losers$label))
 
-clusters_size.team.min = min(table(winners.team[, 'label']), table(losers.team[, 'label']))
+clusters_size.team.min = min(table(winners.team$label), table(losers.team$label))
 
-# undersampling
+# Undersampling clustered data based on min size
 winners = undersample(winners, 'label', clusters_size.min)
 losers = undersample(losers, 'label', clusters_size.min)
 labeled = rbind(winners, losers)
@@ -462,10 +460,18 @@ winners.team = undersample(winners.team, 'label', clusters_size.team.min)
 losers.team = undersample(losers.team, 'label', clusters_size.team.min)
 labeled.team = rbind(winners.team, losers.team)
 
-# TODO correlation analysis after data balancing
+# Re-do correlation and redundant feature analysis of balanced data
+correlation_analysis(labeled[, features.selection.player])$estimates >= 0.7
+correlation_analysis(labeled.team[, features.selection.team])$estimates >= 0.7
 
+redundant_features(labeled[, features.selection.player])
+# NULL
+redundant_features(labeled.team[, features.selection.team])
+# NULL
 
-# TODO Statistical analysis of the results ------------------------------------
+##########################################
+# TODO Statistical analysis of the results
+##########################################
 
 # Hypothesis 1. H1-0: There is no difference between the distributions of the
 # clusters found in the learning model; H1-1 There is difference between the
@@ -498,7 +504,9 @@ render_plot(function () {
 
 # TODO compare median between clusters
 
-# Exploring labeled data ------------------------------------------------------
+########################
+# Exploring labeled data
+########################
 
 # Plot of labeled data. Only the top selected features
 render_plot(function () {
@@ -538,11 +546,11 @@ render_plot(function () {
     par(mfrow=c(1, 3))
     lim = c(-2, 2)
     angle = 0
-    pca_plot(labeled[, features.selection.player], main='PCA', color=labeled$label,
+    pca_plot(labeled[, features.selection.player[1:3]], main='PCA', color=labeled$label,
              angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(winners[, features.selection.player], main='PCA winners',
+    pca_plot(winners[, features.selection.player[1:3]], main='PCA winners',
              color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(losers[, features.selection.player], main='PCA losers',
+    pca_plot(losers[, features.selection.player[1:3]], main='PCA losers',
              color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
 }, '../output/exploring-pca-player', width=18, height=9)
 
@@ -563,7 +571,10 @@ render_plot(function () {
 # also observe that some clusters are more perceptible than others when the
 # labeled data is discriminated between winners and losers.
 
-# TODO Centroid analysis ------------------------------------------------------
+########################
+# TODO Centroid analysis
+########################
+
 # Given a data set x, summarize the mean for each feature by label.
 render_plot(function () {
     par(mfrow=c(3,1))
@@ -595,7 +606,7 @@ each(function (k) {
     render_plot(function () {
         correlation_analysis(labeled[labeled$label == k, features.selection.team])$estimates
     }, plot_name, width=18, height=12)
-}, unique(labeled$label))
+}, sort(unique(labeled$label)))
 
 each(function (k) {
     plot_name = strf('../output/correlation-team-%s', k)
@@ -648,6 +659,8 @@ import_package('caret', attach=TRUE)
     data[, target] = as.factor(data[, target])
 
     correlation_analysis(data[, features])
+    features.redundant = redundant_features(data[, features])
+    features = setdiff(features, features.redundant)
 
     partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
     training = as.data.frame(data[partitions, ])
