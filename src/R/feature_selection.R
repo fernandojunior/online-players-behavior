@@ -1,6 +1,26 @@
 import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
 
+#' Select the features of a matrix x such that min >= f(x) =< max optional thresholds
+filter_features = function (x, f, min=NULL, max=NULL) {
+    y = apply(x, 2, f)
+
+    select = names(y)
+    if (is.null(min) && !is.null(max))
+        select = y <= max
+    else if (!is.null(min) && is.null(max))
+        select = y >= min
+    else
+        select = ((y >= min) + (y <= max)) == 2
+
+    features = names(y)[select]
+
+    if (length(features) > 0)
+        return(features)
+    else
+        return(NULL)
+}
+
 #' List with redundant features of a data matrix
 redundant_features = function (data, redundats_=NULL) {
     correlation_matrix = correlation_analysis(data)$estimates
@@ -20,13 +40,50 @@ redundant_features = function (data, redundats_=NULL) {
     }
 }
 
-#' Compute a feature selection score matrix (cluster_handler) for a given data set for each cluster given a target
+#' Compute a feature selection score matrix (feature_selection_handler) for a given data set for each cluster given a target
 #'
 #' References:
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
 #' @seealso information_gain, gini, relieff
-cluster_feature_selection = function (data, features, target, cluster, cluster_handler, criteria_handler=NULL, remove_redundant=TRUE) {
+feature_selection = function (data, features, target, scores_handler, criteria_handler=NULL, normalize_handler=NULL) {
+    data = if (!is.data.frame(data)) as.data.frame(data) else data
+    features = sort(features)
+
+    if (!is.null(normalize_handler))
+        data[, features] = normalize_handler(data[, features])
+
+    scores = scores_handler(data[, c(features, target)])
+    scores = scores[order(scores$attr_importance, decreasing=TRUE), , drop=FALSE]
+
+    result = list(scores=scores)
+
+    if (!is.null(criteria_handler)) {
+        # select features by appplying criteria handler on computed scores
+        is_selected = criteria_handler(scores)
+        result$selection = rownames(is_selected)[is_selected]
+
+        # remove redundant features
+        result$redundant = redundant_features(data[, features])
+        result$selection = setdiff(result$selection, result$redundant)
+
+        # also remove features with a single 'class'
+        result$unique_value = filter_features(data[, features], function(y) {
+            return(if (is.integer(y)) length(unique(y)) else NULL)
+        }, max=1)
+        result$selection = setdiff(result$selection, result$unique_value)
+    }
+
+    return(result)
+}
+
+#' Compute a feature selection score matrix (feature_selection_handler) for a given data set for each cluster given a target
+#'
+#' References:
+#' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
+#'
+#' @seealso information_gain, gini, relieff
+cluster_feature_selection = function (data, features, target, cluster, scores_handler, criteria_handler=NULL, remove_redundant=TRUE) {
     data = as.data.frame(data)
     features = sort(features)
     clusters = sort(unique(data[, cluster]))
@@ -39,7 +96,7 @@ cluster_feature_selection = function (data, features, target, cluster, cluster_h
     # compute scores for each cluster given a binary target feature
     for(i in clusters) {
         cluster_data = data[data[, cluster] == i, c(features, target)]
-        score = cluster_handler(cluster_data)
+        score = scores_handler(cluster_data)
         score_matrix[strf('%s%s', cluster, i), ] = round(score[order(rownames(score)), ], digits=3)
     }
 

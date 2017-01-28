@@ -248,6 +248,7 @@ data.relative_performance = as.data.frame(t(map(function (i) {
     t = team.performance[team.performance$matchId == x$matchId & team.performance$winner == x$winner, ]
     x[, features.numeric]/t[, features.numeric]
 }, 1:nrow(data.performance))))
+rownames(data.relative_performance) = rownames(data.performance)
 
 data.relative_performance = sapply(data.relative_performance, as.numeric)
 data.relative_performance[is.nan(data.relative_performance)] <- 0
@@ -403,8 +404,9 @@ labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluste
 labeled.team = cbind(team.normalized[, c('matchId', 'winner')], label=fit.team$cluster, team.reduced)
 
 # Labeling data
-data = cbind(data, label=labeled$label)
-team = cbind(team, label=labeled.team$label)
+data = cbind(data, label=fit$cluster)
+player = cbind(data.performance, label=fit$cluster)
+team = cbind(team, label=fit.team$cluster)
 
 ###############################################################################
 # Clustered data balancing (undersampling) by discriminating winners and losers
@@ -604,7 +606,7 @@ render_plot(function () {
 each(function (k) {
     plot_name = strf('../output/correlation-player-%s', k)
     render_plot(function () {
-        correlation_analysis(labeled[labeled$label == k, features.selection.team])$estimates
+        correlation_analysis(labeled[labeled$label == k, features.selection.player])$estimates
     }, plot_name, width=18, height=12)
 }, sort(unique(labeled$label)))
 
@@ -615,8 +617,20 @@ each(function (k) {
     }, plot_name, width=18, height=12)
 }, unique(labeled.team$label))
 
-data.sampled = data[rownames(data) %in% rownames(labeled), ]
+player.sampled = as.data.frame(player[rownames(player) %in% rownames(labeled), ])
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
+
+feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
+    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
+}, criteria_handler=function (x) x > 0, normalize_handler=scale)
+
+feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
+    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
+}, criteria_handler=function (x) x > 0, normalize_handler=normalize)
+
+feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
+    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
+}, criteria_handler=function (x) x > 0)
 
 relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
 relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)

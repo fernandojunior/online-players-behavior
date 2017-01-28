@@ -175,22 +175,6 @@ correlation_analysis = function (x) {
     return(correlations)
 }
 
-#' Select the features of a matrix x such that min > f(x) < max thresholds
-filter_features = function (x, f, min=NULL, max=NULL) {
-    y = apply(x, 2, f)
-
-    features = colnames(x)
-    if (is.null(min) && !is.null(max))
-        features = y < max
-    else if (!is.null(min) && is.null(max))
-        features = y > min
-    else
-        features = y > min & y < max
-
-    features = names(features[features == TRUE])
-    return(features)
-}
-
 # plots
 
 #' Render a plot in a function f to a PNG file.
