@@ -632,6 +632,40 @@ feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.te
     FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
 }, criteria_handler=function (x) x > 0)
 
+import_package('caret', attach=TRUE)
+import_package('logistf', attach=TRUE)
+
+train_clusters = function (data, features, target, label, method) {
+    data = if (!is.data.frame(data)) as.data.frame(data) else data
+    data[, target] = as.factor(data[, target])
+    data = data[, c(features, target, label)]
+
+    each(function (k) {
+        print(k)
+        cluster = data[data[, label] == k, ]
+        result = feature_selection(cluster, features, target, function (x) {
+            method(as.formula(strf('%s ~ .', target)), x)
+        }, criteria_handler=function (x) x > 0)
+
+        features = result$selection
+        print(features)
+        cluster = cluster[, c(features, target)]
+
+        partitions = caret::createDataPartition(cluster[, target], p=0.6, list=FALSE)
+        training = as.data.frame(cluster[partitions, ])
+        testing = as.data.frame(cluster[-partitions, ])
+
+        model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
+
+        predicted = predict(model, newdata=testing[, features, drop=FALSE])
+        accuracy = table(predicted, testing[, target])
+        print(sum(diag(accuracy))/sum(accuracy))
+        return(sum(diag(accuracy))/sum(accuracy))
+    }, sort(unique(data[, label])))
+}
+
+cluster_model(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
+
 relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
 relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
 

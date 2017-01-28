@@ -26,7 +26,7 @@ redundant_features = function (data, redundats_=NULL) {
     correlation_matrix = correlation_analysis(data)$estimates
 
     # highly correlated sum (>= 0.7) by feature
-    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[row >= 0.7]))
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[abs(row) >= 0.7]))
 
     if (is.null(highly_correlated_sum)) {
         return(NULL)
