@@ -40,41 +40,25 @@ redundant_features = function (data, redundats_=NULL) {
     }
 }
 
-#' Compute a feature selection score matrix (feature_selection_handler) for a given data set for each cluster given a target
+#' Compute feature scores with a feature selection method for a given data set to select features based on a criteria
+#' handler
 #'
 #' References:
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
 #' @seealso information_gain, gini, relieff
-feature_selection = function (data, features, target, scores_handler, criteria_handler=NULL, normalize_handler=NULL) {
+feature_selection = function (data, target, method_handler, criteria_handler) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
-    features = sort(features)
+    features = sort(colnames(data))
 
-    if (!is.null(normalize_handler))
-        data[, features] = normalize_handler(data[, features])
-
-    scores = scores_handler(data[, c(features, target)])
+    scores = method_handler(data)
     scores = scores[order(scores$attr_importance, decreasing=TRUE), , drop=FALSE]
 
-    result = list(scores=scores)
+    # select features by appplying criteria handler on computed scores
+    is_selected = criteria_handler(scores)
+    features = rownames(is_selected)[is_selected]
 
-    if (!is.null(criteria_handler)) {
-        # select features by appplying criteria handler on computed scores
-        is_selected = criteria_handler(scores)
-        result$selection = rownames(is_selected)[is_selected]
-
-        # remove redundant features
-        result$redundant = redundant_features(data[, features])
-        result$selection = setdiff(result$selection, result$redundant)
-
-        # also remove features with a single 'class'
-        result$unique_value = filter_features(data[, features], function(y) {
-            return(if (is.integer(y)) length(unique(y)) else NULL)
-        }, max=1)
-        result$selection = setdiff(result$selection, result$unique_value)
-    }
-
-    return(result)
+    return(list(scores=scores, features=features))
 }
 
 #' Compute a feature selection score matrix (feature_selection_handler) for a given data set for each cluster given a target

@@ -375,21 +375,21 @@ fits.team = render_plot(function () {
     return(cluster_analysis(team.reduced, kmax=120)$fits)
 }, '../output/k-means-error-curve-team')
 
-render_plot(function () {
-    return(bagging_cluster_analysis(data.reduced, kmax=120, ntests=10))
-}, '../output/k-means-error-curve-player-avaraged')
-
-render_plot(function () {
-    return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=10))
-}, '../output/k-means-error-curve-player-bagging')
-
-render_plot(function () {
-    return(bagging_cluster_analysis(team.reduced, kmax=120, ntests=10))
-}, '../output/k-means-error-curve-team-avareged')
-
-render_plot(function () {
-    return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.reduced), ntests=10))
-}, '../output/k-means-error-curve-team-bagging')
+# render_plot(function () {
+#     return(bagging_cluster_analysis(data.reduced, kmax=120, ntests=10))
+# }, '../output/k-means-error-curve-player-avaraged')
+#
+# render_plot(function () {
+#     return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.reduced), ntests=10))
+# }, '../output/k-means-error-curve-player-bagging')
+#
+# render_plot(function () {
+#     return(bagging_cluster_analysis(team.reduced, kmax=120, ntests=10))
+# }, '../output/k-means-error-curve-team-avareged')
+#
+# render_plot(function () {
+#     return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.reduced), ntests=10))
+# }, '../output/k-means-error-curve-team-bagging')
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
@@ -602,35 +602,15 @@ render_plot(function () {
 # - Data Classification Algorithms and Applications (2015)
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
-
-each(function (k) {
-    plot_name = strf('../output/correlation-player-%s', k)
-    render_plot(function () {
-        correlation_analysis(labeled[labeled$label == k, features.selection.player])$estimates
-    }, plot_name, width=18, height=12)
-}, sort(unique(labeled$label)))
+player.sampled = as.data.frame(player[rownames(player) %in% rownames(labeled), ])
+team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
 
 each(function (k) {
     plot_name = strf('../output/correlation-team-%s', k)
     render_plot(function () {
         correlation_analysis(labeled.team[labeled.team$label == k, features.selection.team])$estimates
     }, plot_name, width=18, height=12)
-}, unique(labeled.team$label))
-
-player.sampled = as.data.frame(player[rownames(player) %in% rownames(labeled), ])
-team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
-
-feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
-    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
-}, criteria_handler=function (x) x > 0, normalize_handler=scale)
-
-feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
-    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
-}, criteria_handler=function (x) x > 0, normalize_handler=normalize)
-
-feature_selection(team.sampled[team.sampled$label == 1, ], features.selection.team, 'label', function (data) {
-    FSelector::information.gain(as.formula(strf('%s ~ .', 'label')), data)
-}, criteria_handler=function (x) x > 0)
+}, sort(unique(team.sampled$label)))
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
@@ -640,16 +620,29 @@ train_clusters = function (data, features, target, label, method) {
     data[, target] = as.factor(data[, target])
     data = data[, c(features, target, label)]
 
-    each(function (k) {
-        print(k)
-        cluster = data[data[, label] == k, ]
-        result = feature_selection(cluster, features, target, function (x) {
-            method(as.formula(strf('%s ~ .', target)), x)
-        }, criteria_handler=function (x) x > 0)
+    result = Map(function (k) {
+        cluster = data[data[, label] == k, c(features, target)]
 
-        features = result$selection
-        print(features)
+        # remove redundant features
+        redundant_features = redundant_features(cluster[, features])
+        features = setdiff(features, redundant_features)
+
+        # remove zero variance features, ie, features with a single 'class'
+        zero_variance_features = filter_features(cluster[, features], function(y) {
+            return(if (is.integer(y)) length(unique(y)) else NULL)
+        }, max=1)
+        features = setdiff(features, zero_variance_features)
+
+        # select features using feature selection method (score handler) and criteria handler
+        features = feature_selection(cluster, target, function (x) {
+            method(as.formula(strf('%s ~ .', target)), x)
+        }, criteria_handler=function (x) x > 0)$features
+
         cluster = cluster[, c(features, target)]
+
+        # render_plot(function () {
+        #     correlation_analysis(cluster[, features])
+        # }, strf('../output/correlation-team-%s', k), width=18, height=12)
 
         partitions = caret::createDataPartition(cluster[, target], p=0.6, list=FALSE)
         training = as.data.frame(cluster[partitions, ])
@@ -659,12 +652,24 @@ train_clusters = function (data, features, target, label, method) {
 
         predicted = predict(model, newdata=testing[, features, drop=FALSE])
         accuracy = table(predicted, testing[, target])
-        print(sum(diag(accuracy))/sum(accuracy))
-        return(sum(diag(accuracy))/sum(accuracy))
+        score = sum(diag(accuracy))/sum(accuracy)
+
+        return(list(
+            k=k,
+            redundant_features=redundant_features,
+            zero_variance_features=zero_variance_features,
+            features=features,
+            model=model,
+            accuracy=accuracy,
+            score=score
+        ))
+
     }, sort(unique(data[, label])))
+
+    return(result)
 }
 
-cluster_model(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
+train_clusters(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
 
 relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
 relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
