@@ -21,12 +21,12 @@ filter_features = function (x, f, min=NULL, max=NULL) {
         return(NULL)
 }
 
-#' List with redundant features of a data matrix
-redundant_features = function (data, redundats_=NULL) {
+#' Redundant features of a matrix that are equal or grater than correlation threshold
+redundant_features = function (data, redundats_=NULL, threshold=0.7) {
     correlation_matrix = correlation_analysis(data)$estimates
 
     # highly correlated sum (>= 0.7) by feature
-    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[abs(row) >= 0.7]))
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[abs(row) >= threshold]))
 
     if (is.null(highly_correlated_sum)) {
         return(NULL)
@@ -34,28 +34,29 @@ redundant_features = function (data, redundats_=NULL) {
         most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
         redundats_ = c(redundats_, most_redundant)
         features = setdiff(colnames(data), most_redundant)
-        return(redundant_features(data[, features], redundats_))
+        return(redundant_features(data[, features], redundats_, threshold))
     } else {
         return(redundats_)
     }
 }
 
-#' Compute feature scores with a feature selection method for a given data set to select features based on a criteria
-#' handler
+#' Given a dataset, compute feature scores with a method to select features based on a selector
 #'
 #' References:
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
 #' @seealso information_gain, gini, relieff
-feature_selection = function (data, target, method_handler, criteria_handler) {
+feature_selection = function (data, features, target, method_handler, selector) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
-    features = sort(colnames(data))
+    features = sort(features)
+
+    data = data[, c(features, target)]
 
     scores = method_handler(data)
     scores = scores[order(scores$attr_importance, decreasing=TRUE), , drop=FALSE]
 
-    # select features by appplying criteria handler on computed scores
-    is_selected = criteria_handler(scores)
+    # select features by applying selector on computed scores
+    is_selected = selector(scores)
     features = rownames(is_selected)[is_selected]
 
     return(list(scores=scores, features=features))

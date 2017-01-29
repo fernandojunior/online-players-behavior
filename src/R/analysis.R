@@ -602,8 +602,9 @@ render_plot(function () {
 # - Data Classification Algorithms and Applications (2015)
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
-player.sampled = as.data.frame(player[rownames(player) %in% rownames(labeled), ])
+
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
+testing = team[!(rownames(team) %in% rownames(team.sampled)),]
 
 each(function (k) {
     plot_name = strf('../output/correlation-team-%s', k)
@@ -617,14 +618,20 @@ import_package('logistf', attach=TRUE)
 
 train_clusters = function (data, features, target, label, method) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
-    data[, target] = as.factor(data[, target])
     data = data[, c(features, target, label)]
+
+    # classes can't be numeric
+    data[, target] = as.factor(data[, target])
+
+    label_values = sort(unique(data[, label]))
+    label_names = Map(function (i) strf('%s%s', label, i), label_values)
 
     result = Map(function (k) {
         cluster = data[data[, label] == k, c(features, target)]
+        testing = testing[testing[, label] == k, c(features, target)]
 
         # remove redundant features
-        redundant_features = redundant_features(cluster[, features])
+        redundant_features = redundant_features(cluster[, features], threshold=0.7)
         features = setdiff(features, redundant_features)
 
         # remove zero variance features, ie, features with a single 'class'
@@ -634,19 +641,19 @@ train_clusters = function (data, features, target, label, method) {
         features = setdiff(features, zero_variance_features)
 
         # select features using feature selection method (score handler) and criteria handler
-        features = feature_selection(cluster, target, function (x) {
+        features = feature_selection(cluster, features, target, function (x) {
             method(as.formula(strf('%s ~ .', target)), x)
-        }, criteria_handler=function (x) x > 0)$features
+        }, selector=function (x) x > 0)$features
 
         cluster = cluster[, c(features, target)]
 
-        # render_plot(function () {
-        #     correlation_analysis(cluster[, features])
-        # }, strf('../output/correlation-team-%s', k), width=18, height=12)
+        render_plot(function () {
+            correlation_analysis(cluster[, features])
+        }, strf('../output/correlation-team-%s', k), width=18, height=12)
 
         partitions = caret::createDataPartition(cluster[, target], p=0.6, list=FALSE)
         training = as.data.frame(cluster[partitions, ])
-        testing = as.data.frame(cluster[-partitions, ])
+        validation = as.data.frame(cluster[-partitions, ])
 
         model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
 
@@ -656,20 +663,37 @@ train_clusters = function (data, features, target, label, method) {
 
         return(list(
             k=k,
+            label=label,
             redundant_features=redundant_features,
             zero_variance_features=zero_variance_features,
             features=features,
             model=model,
-            accuracy=accuracy,
+            # accuracy=accuracy, # TODO precision and recall
             score=score
         ))
 
-    }, sort(unique(data[, label])))
+    }, label_values)
+    names(result) = label_names
 
     return(result)
 }
 
-train_clusters(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
+tcr = train_clusters(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
+
+Map(function (i) {
+    label = 'label'
+    target = 'winner'
+    label_value = i$k
+    label_name = i
+    model = i$model
+    features = i$features
+    testing = testing[testing[, label] == label_value, ]
+
+    predicted = predict(model, newdata=testing[, features, drop=FALSE])
+    accuracy = table(predicted, testing[, target])
+    score = sum(diag(accuracy))/sum(accuracy)
+    return(list(score=score, accuracy=accuracy))
+}, tcr)
 
 relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
 relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
