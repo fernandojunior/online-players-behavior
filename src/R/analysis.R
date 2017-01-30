@@ -454,12 +454,13 @@ clusters_size.min = min(table(winners$label), table(losers$label))
 clusters_size.team.min = min(table(winners.team$label), table(losers.team$label))
 
 # Undersampling clustered data based on min size
-winners = undersample(winners, 'label', clusters_size.min)
-losers = undersample(losers, 'label', clusters_size.min)
+# Decrease some 80% from the size to create testing data and avoid unary class: table(team$winner, team$label)
+winners = undersample(winners, 'label', clusters_size.min * 0.8)
+losers = undersample(losers, 'label', clusters_size.min * 0.8)
 labeled = rbind(winners, losers)
 
-winners.team = undersample(winners.team, 'label', clusters_size.team.min)
-losers.team = undersample(losers.team, 'label', clusters_size.team.min)
+winners.team = undersample(winners.team, 'label', clusters_size.team.min * 0.8)
+losers.team = undersample(losers.team, 'label', clusters_size.team.min * 0.8)
 labeled.team = rbind(winners.team, losers.team)
 
 # Re-do correlation and redundant feature analysis of balanced data
@@ -604,14 +605,9 @@ render_plot(function () {
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
 
 team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
-testing = team[!(rownames(team) %in% rownames(team.sampled)),]
 
-each(function (k) {
-    plot_name = strf('../output/correlation-team-%s', k)
-    render_plot(function () {
-        correlation_analysis(labeled.team[labeled.team$label == k, features.selection.team])$estimates
-    }, plot_name, width=18, height=12)
-}, sort(unique(team.sampled$label)))
+training = team[!(rownames(team) %in% rownames(team.sampled)),]
+testing = team[(rownames(team) %in% rownames(team.sampled)),]
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
@@ -628,7 +624,6 @@ train_clusters = function (data, features, target, label, method) {
 
     result = Map(function (k) {
         cluster = data[data[, label] == k, c(features, target)]
-        testing = testing[testing[, label] == k, c(features, target)]
 
         # remove redundant features
         redundant_features = redundant_features(cluster[, features], threshold=0.7)
@@ -657,8 +652,8 @@ train_clusters = function (data, features, target, label, method) {
 
         model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
 
-        predicted = predict(model, newdata=testing[, features, drop=FALSE])
-        accuracy = table(predicted, testing[, target])
+        predicted = predict(model, newdata=validation[, features, drop=FALSE])
+        accuracy = table(predicted, validation[, target])
         score = sum(diag(accuracy))/sum(accuracy)
 
         return(list(
@@ -678,7 +673,15 @@ train_clusters = function (data, features, target, label, method) {
     return(result)
 }
 
-tcr = train_clusters(team.sampled, setdiff(features.selection.team, c('')),  'winner', 'label', FSelector::information.gain)
+team.sampled[, 'minionsKilledEnemyTeam'] = team.sampled[, 'minionsKilled'] - team.sampled[, 'neutralMinionsKilled']
+team[, 'minionsKilledEnemyTeam'] = team[, 'minionsKilled'] - team[, 'neutralMinionsKilled']
+training[, 'minionsKilledEnemyTeam'] = training[, 'minionsKilled'] - training[, 'neutralMinionsKilled']
+
+highcorrelatated = c('deaths', 'trueDamageDealt', 'minionsKilled')
+
+tcr = train_clusters(training, setdiff(c(features.selection.team, 'minionsKilledEnemyTeam'), c(highcorrelatated)),  'winner', 'label', FSelector::information.gain)
+
+Map(function(i) i$score, tcr)
 
 Map(function (i) {
     label = 'label'
@@ -687,6 +690,7 @@ Map(function (i) {
     label_name = i
     model = i$model
     features = i$features
+    testing = testing
     testing = testing[testing[, label] == label_value, ]
 
     predicted = predict(model, newdata=testing[, features, drop=FALSE])
