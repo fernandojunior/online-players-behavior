@@ -1,5 +1,5 @@
 options(scipen=999)
-options("width"=200)
+options("width"=120)
 
 library('modules')
 import('fun', attach=TRUE)
@@ -28,6 +28,11 @@ get_5x5_matches = function (players) {
     return(players[players$matchId %in% matchIds, ])
 }
 
+#' Remove AFK players
+remove_afk_players = function (data) {
+    return(data[!(data$totalDamageDealtToChampions == 0 | data$goldSpent <= 500 | data$matchDuration < 20), ])
+}
+
 # =========
 # Load data
 # =========
@@ -38,17 +43,28 @@ get_5x5_matches = function (players) {
 # data = read.csv('../data/data.csv')
 data = read.csv('../data/data20170105025503.csv')
 
-# Some games are with error (from Riot API).
+# nrow(data)
+# [1] 1100000
+
+# Remove some games with error or AFK players
 # Remove inconsistent matches, i.e. matches not 5x5
 data = get_5x5_matches(data)
-
-# nrow(data)
-# [1] 1099950
+data = remove_afk_players(data)
 
 # Remove duplicated rows by summonerId to decrease bias
 # data = data[!duplicated(data[, 'summonerId']),]
 # > nrow(data)
 # [1] 54681
+
+# nrow(data)
+# [1] 1099950
+
+# ==================
+# Feature extraction
+# ==================
+data[, 'minionsKilledEnemyTeam'] = data[, 'minionsKilled'] - data[, 'neutralMinionsKilled']
+data[, 'physicalDamageDealtToMonsters'] = data[, 'physicalDamageDealt'] - data[, 'physicalDamageDealtToChampions']
+data[, 'magicDamageDealtToMonsters'] = data[, 'magicDamageDealt'] - data[, 'magicDamageDealtToChampions']
 
 features = names(data)
 
@@ -98,25 +114,20 @@ features.numeric = setdiff(features, c(
     features.logical,
     features.categorical
 ))
-# [1] "assists"                         "deaths"
-# [3] "doubleKills"                     "goldEarned"
-# [5] "goldSpent"                       "inhibitorKills"
-# [7] "killingSprees"                   "kills"
-# [9] "largestCriticalStrike"           "largestKillingSpree"
-# [11] "largestMultiKill"                "magicDamageDealt"
-# [13] "magicDamageDealtToChampions"     "magicDamageTaken"
-# [15] "minionsKilled"                   "neutralMinionsKilled"
-# [17] "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
-# [19] "pentaKills"                      "physicalDamageDealt"
-# [21] "physicalDamageDealtToChampions"  "physicalDamageTaken"
-# [23] "quadraKills"                     "sightWardsBoughtInGame"
-# [25] "totalDamageDealt"                "totalDamageDealtToChampions"
-# [27] "totalDamageTaken"                "totalHeal"
-# [29] "totalTimeCrowdControlDealt"      "totalUnitsHealed"
-# [31] "towerKills"                      "tripleKills"
-# [33] "trueDamageDealt"                 "trueDamageDealtToChampions"
-# [35] "trueDamageTaken"                 "visionWardsBoughtInGame"
-# [37] "wardsKilled"                     "wardsPlaced"
+# [1] "assists"                         "deaths"                          "doubleKills"
+# [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
+# [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
+# [10] "largestKillingSpree"             "largestMultiKill"                "magicDamageDealt"
+# [13] "magicDamageDealtToChampions"     "magicDamageTaken"                "minionsKilled"
+# [16] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [19] "pentaKills"                      "physicalDamageDealt"             "physicalDamageDealtToChampions"
+# [22] "physicalDamageTaken"             "quadraKills"                     "sightWardsBoughtInGame"
+# [25] "totalDamageDealt"                "totalDamageDealtToChampions"     "totalDamageTaken"
+# [28] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [31] "towerKills"                      "tripleKills"                     "trueDamageDealt"
+# [34] "trueDamageDealtToChampions"      "trueDamageTaken"                 "visionWardsBoughtInGame"
+# [37] "wardsKilled"                     "wardsPlaced"                     "minionsKilledEnemyTeam"
+# [40] "trueDamageDealtToMonsters"       "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
 
 features.ong = c(
     'firstBloodKill', 'firstTowerKill', 'firstTowerAssist',
@@ -137,28 +148,23 @@ features.ong.numeric = c(
 
 # features with low variance
 features.low_variance = filter_features(data[, features.numeric], var, max=8)
-#  [1] "doubleKills"             "inhibitorKills"
-#  [3] "killingSprees"           "largestKillingSpree"
-#  [5] "largestMultiKill"        "pentaKills"
-#  [7] "quadraKills"             "sightWardsBoughtInGame"
-#  [9] "towerKills"              "tripleKills"
-# [11] "visionWardsBoughtInGame" "wardsKilled"
+# [1] "doubleKills"             "inhibitorKills"          "killingSprees"           "largestKillingSpree"
+# [5] "largestMultiKill"        "pentaKills"              "quadraKills"             "sightWardsBoughtInGame"
+# [9] "towerKills"              "tripleKills"             "visionWardsBoughtInGame"
 
 # Pre-select features with relevant variance
 features.selection = setdiff(features.numeric, features.low_variance)
-# [1] "assists"                         "deaths"
-# [3] "goldEarned"                      "goldSpent"
-# [5] "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealt"                "magicDamageDealtToChampions"
-# [9] "magicDamageTaken"                "minionsKilled"
-# [11] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
-# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"
-# [15] "physicalDamageDealtToChampions"  "physicalDamageTaken"
-# [17] "totalDamageDealt"                "totalDamageDealtToChampions"
-# [19] "totalDamageTaken"                "totalHeal"
-# [21] "totalTimeCrowdControlDealt"      "totalUnitsHealed"
-# [23] "trueDamageDealt"                 "trueDamageDealtToChampions"
-# [25] "trueDamageTaken"                 "wardsPlaced"
+# [1] "assists"                         "deaths"                          "goldEarned"
+# [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
+# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageTaken"
+# [10] "minionsKilled"                   "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
+# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"             "physicalDamageDealtToChampions"
+# [16] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
+# [19] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
+# [22] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
+# [25] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
+# [28] "minionsKilledEnemyTeam"          "trueDamageDealtToMonsters"       "physicalDamageDealtToMonsters"
+# [31] "magicDamageDealtToMonsters"
 
 # ======================
 # Treatment of outliers
@@ -169,61 +175,65 @@ outliers = render_plot(function () {
     return(outlier_analysis(data[, features.selection], factor=3))
 }, '../output/outliers-for-each-one', width=16, height=12)
 # outliers$total
-#> [1] 11086
+#> [1] 247292
 # > t(outliers$thresholds)
-#                                   lower  upper
-# assists                             -19     37
-# deaths                              -11     24
-# goldEarned                        -7491  30008
-# goldSpent                         -7420  27895
-# kills                               -19     30
-# largestCriticalStrike             -1644   2192
-# magicDamageDealt                -110875 168117
-# magicDamageDealtToChampions      -26558  39151
-# magicDamageTaken                 -15235  30482
-# minionsKilled                      -351    559
-# neutralMinionsKilled                -59     81
-# neutralMinionsKilledEnemyJungle      -9     12
-# neutralMinionsKilledTeamJungle      -48     64
-# physicalDamageDealt             -259807 378810
-# physicalDamageDealtToChampions   -34075  49036
-# physicalDamageTaken              -18829  45690
-# totalDamageDealt                -232569 435658
-# totalDamageDealtToChampions      -33410  66123
-# totalDamageTaken                 -26110  70511
-# totalHeal                         -7933  11940
-# totalTimeCrowdControlDealt        -1026   1571
-# trueDamageDealt                  -15569  21020
-# trueDamageDealtToChampions        -3132   4176
-# trueDamageTaken                   -2193   3554
-# wardsPlaced                         -17     32
+#                                   lower    upper
+# assists                             -16.0     33
+# deaths                               -8.0     20
+# goldEarned                        -6209.0  30254
+# goldSpent                         -6410.0  28345
+# kills                               -15.0     27
+# largestCriticalStrike             -1296.0   1728
+# magicDamageDealt                -169387.0 244152
+# magicDamageDealtToChampions      -29601.0  44074
+# magicDamageTaken                 -14970.0  31874
+# minionsKilled                      -376.0    604
+# neutralMinionsKilled                -62.0     85
+# neutralMinionsKilledEnemyJungle     -15.0     20
+# neutralMinionsKilledTeamJungle      -51.0     68
+# physicalDamageDealt             -276922.0 401511
+# physicalDamageDealtToChampions   -36535.0  52337
+# physicalDamageTaken              -20312.0  48400
+# totalDamageDealt                -229762.0 457148
+# totalDamageDealtToChampions      -34614.0  70120
+# totalDamageTaken                 -27117.0  74593
+# totalHeal                        -12030.0  20135
+# totalTimeCrowdControlDealt        -1297.0   2014
+# totalUnitsHealed                     -5.0      9
+# trueDamageDealt                  -22185.0  30476
+# trueDamageDealtToChampions        -3420.0   4560
+# trueDamageTaken                   -2738.0   4318
+# wardsKilled                          -9.0     12
+# wardsPlaced                         -13.0     36
+# minionsKilledEnemyTeam             -426.0    624
+# trueDamageDealtToMonsters        -20160.0  26880
+# physicalDamageDealtToMonsters   -238109.0 345908
+# magicDamageDealtToMonsters      -143753.5 203023
 
 # Select only features where lower != upper from outlier analysis
 features.selection = colnames(outliers$thresholds)
-# [1] "assists"                         "deaths"
-# [3] "goldEarned"                      "goldSpent"
-# [5] "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealt"                "magicDamageDealtToChampions"
-# [9] "magicDamageTaken"                "minionsKilled"
-# [11] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
-# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"
-# [15] "physicalDamageDealtToChampions"  "physicalDamageTaken"
-# [17] "totalDamageDealt"                "totalDamageDealtToChampions"
-# [19] "totalDamageTaken"                "totalHeal"
-# [21] "totalTimeCrowdControlDealt"      "trueDamageDealt"
-# [23] "trueDamageDealtToChampions"      "trueDamageTaken"
-# [25] "wardsPlaced"
+# [1] "assists"                         "deaths"                          "goldEarned"
+# [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
+# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageTaken"
+# [10] "minionsKilled"                   "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
+# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"             "physicalDamageDealtToChampions"
+# [16] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
+# [19] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
+# [22] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
+# [25] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
+# [28] "minionsKilledEnemyTeam"          "trueDamageDealtToMonsters"       "physicalDamageDealtToMonsters"
+# [31] "magicDamageDealtToMonsters"
 
 # remove extreme outliers
 data = data[!outliers$outliers, ]
 # nrow(data)
-#> [1] 43595
+#> [1] 802131
 
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent (incomplete) matches need to be removed.
 data = get_5x5_matches(data)
 # nrow(data)
-#> [1] 207990
+#> [1] 181470
 
 # ==================
 # Data normalization
@@ -231,31 +241,48 @@ data = get_5x5_matches(data)
 
 # As the match duration varies between the matches, the features were divided
 # by match duration to compute players performance per minute.
-data.performance = data[, features.numeric]/data[, 'matchDuration']
+data.performance = cbind(data[, features.numeric]/data[, 'matchDuration'], data[, c('matchId', 'winner')])
 
 # team performance per minute
 team.performance = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner')], data.performance),  FUN=sum)
 team.performance.logical = aggregate(. ~ matchId + winner, data=cbind(data[, c('matchId', 'winner', features.logical)]),  FUN=max)
 
 # What is the player performance in relation to the team?
-# As the player performance varies between the matches and the features also
-# are of different varieties, the player performance was divided by team
-# performance to compute relative performance, wich can ranges from 0 to 1, and
-# thus scale up the data in a uniform way. Relative performance of the players
-# in their respective teams:
+# As the player performance varies between the matches and the features also are of different varieties, the player
+# performance was divided by team performance to compute relative performance, wich can ranges from 0 to 1, and thus
+# scale up the data in a uniform way. Relative performance of the players in their respective teams:
 data.relative_performance = as.data.frame(t(map(function (i) {
-    x = cbind(data[i, c('matchId', 'winner')], data.performance[i, ])
+    x = data.performance[i, ]
     t = team.performance[team.performance$matchId == x$matchId & team.performance$winner == x$winner, ]
-    x[, features.numeric]/t[, features.numeric]
+    x[, features.numeric] = x[, features.numeric]/t[, features.numeric]
+    return(x)
 }, 1:nrow(data.performance))))
 rownames(data.relative_performance) = rownames(data.performance)
-
-data.relative_performance = sapply(data.relative_performance, as.numeric)
-data.relative_performance[is.nan(data.relative_performance)] <- 0
 
 team.performance = sapply(team.performance, as.numeric)
 team.performance.logical = sapply(team.performance.logical, as.numeric)
 team.performance[is.nan(team.performance)] <- 0
+team.performance = as.data.frame(team.performance)
+
+data.relative_performance = sapply(data.relative_performance, as.numeric)
+data.relative_performance[is.nan(data.relative_performance)] <- 0
+data.relative_performance = as.data.frame(data.relative_performance)
+
+# clean data: remove matches with nan or inf values based on relative performance
+corruptedMatchIds = (function (data) {
+    if (!is.data.frame(data))
+        data = as.data.frame(data)
+    selected_rows = apply(data, 1, function (row) {
+        return(sum(is.infinite(row)) > 0 || sum(is.na(row)) > 0)
+    })
+    return(unique(data[selected_rows, 'matchId']))
+})(cbind(data.relative_performance[, features.selection], matchId=data[, 'matchId']))
+
+data = data[!(data[, 'matchId'] %in% corruptedMatchIds), ]
+data.performance =  data.performance[!(data.performance[, 'matchId'] %in% corruptedMatchIds), ]
+data.relative_performance =  data.relative_performance[!(data.relative_performance[, 'matchId'] %in% corruptedMatchIds), ]
+team.performance =  team.performance[!(team.performance[, 'matchId'] %in% corruptedMatchIds), ]
+team.performance.logical =  team.performance.logical[!(team.performance.logical[, 'matchId'] %in% corruptedMatchIds), ]
 
 # Boolean features do not need be normalized
 data.normalized = na.omit(cbind(
@@ -298,50 +325,58 @@ correlations = render_plot(function () {
 
 # Rank the most correlated features by mean of correlations for each one
 features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
-# [1] "goldEarned"                      "goldSpent"
-# [3] "totalDamageDealt"                "neutralMinionsKilledEnemyJungle"
-# [5] "kills"                           "totalDamageDealtToChampions"
-# [7] "assists"                         "physicalDamageDealt"
-# [9] "minionsKilled"                   "deaths"
-# [11] "physicalDamageDealtToChampions"  "neutralMinionsKilled"
-# [13] "magicDamageDealtToChampions"     "magicDamageDealt"
-# [15] "largestCriticalStrike"           "totalTimeCrowdControlDealt"
-# [17] "totalHeal"                       "wardsPlaced"
-# [19] "trueDamageDealt"                 "totalDamageTaken"
-# [21] "neutralMinionsKilledTeamJungle"  "physicalDamageTaken"
-# [23] "magicDamageTaken"                "trueDamageDealtToChampions"
-# [25] "trueDamageTaken"
+# [1] "totalDamageDealt"                "goldSpent"                       "totalDamageDealtToChampions"
+# [4] "goldEarned"                      "assists"                         "physicalDamageDealt"
+# [7] "kills"                           "physicalDamageDealtToMonsters"   "physicalDamageDealtToChampions"
+# [10] "minionsKilled"                   "magicDamageDealtToChampions"     "magicDamageDealt"
+# [13] "minionsKilledEnemyTeam"          "totalHeal"                       "magicDamageDealtToMonsters"
+# [16] "wardsPlaced"                     "trueDamageDealt"                 "neutralMinionsKilledEnemyJungle"
+# [19] "physicalDamageTaken"             "trueDamageDealtToChampions"      "totalDamageTaken"
+# [22] "trueDamageDealtToMonsters"       "wardsKilled"                     "totalTimeCrowdControlDealt"
+# [25] "magicDamageTaken"                "totalUnitsHealed"                "trueDamageTaken"
+# [28] "neutralMinionsKilled"            "largestCriticalStrike"           "deaths"
+# [31] "neutralMinionsKilledTeamJungle"
 
 # Compound features
 features.compound = c(
     'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
-    'neutralMinionsKilled' # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
+    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
+    'minionsKilled', #  neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle + minionsKilledEnemyTeam
+    'trueDamageDealt', # trueDamageDealtToChampions + trueDamageDealtToMonsters
+    'physicalDamageDealt', # physicalDamageDealtToChampions + physicalDamageDealtToMonsters
+    'magicDamageDealt' # magicDamageDealtToChampions + magicDamageDealtToMonsters
 )
 
 # Remove compound feaures (leaving only atomic attributes - first normal form)
 features.selection = setdiff(features.selection, features.compound)
 
 # Redundant features
-features.redundant.player = redundant_features(data.normalized[, features.selection])
-# [1] "goldSpent"                   "magicDamageDealtToChampions" "physicalDamageDealt"
+features.redundant.player = redundant_features(data.normalized[, features.selection], threshold=0.65)
+# "goldSpent"                     "physicalDamageDealtToMonsters" "magicDamageDealtToChampions"
 
-features.redundant.team = redundant_features(team.normalized[, features.selection])
-# [1] "goldSpent"                   "goldEarned"                  "kills"                       "physicalDamageDealt"         "magicDamageDealtToChampions" "assists"
-# [7] "magicDamageTaken
+features.redundant.team = redundant_features(team.normalized[, features.selection], threshold=0.65)
+# [1] "goldSpent"                     "goldEarned"                    "kills"
+# [4] "physicalDamageDealtToMonsters" "magicDamageDealtToChampions"   "assists"
+# [7] "magicDamageTaken"
 
 # Remove redundant features: highly similarity (dendogram) and correlation (heatmap).
 features.selection.player = setdiff(features.selection, features.redundant.player)
-# [1] "assists"                         "goldEarned"                      "kills"                           "physicalDamageDealtToChampions"  "minionsKilled"
-# [6] "magicDamageDealt"                "totalHeal"                       "wardsPlaced"                     "physicalDamageTaken"             "neutralMinionsKilledEnemyJungle"
-# [11] "trueDamageDealt"                 "trueDamageDealtToChampions"      "wardsKilled"                     "magicDamageTaken"                "totalTimeCrowdControlDealt"
-# [16] "totalUnitsHealed"                "trueDamageTaken"                 "deaths"                          "largestCriticalStrike"           "neutralMinionsKilledTeamJungle
+# [1] "assists"                         "goldEarned"                      "kills"
+# [4] "physicalDamageDealtToChampions"  "totalHeal"                       "magicDamageDealt"
+# [7] "minionsKilledEnemyTeam"          "wardsPlaced"                     "neutralMinionsKilledEnemyJungle"
+# [10] "physicalDamageTaken"             "trueDamageDealtToChampions"      "trueDamageDealtToMonsters"
+# [13] "wardsKilled"                     "totalTimeCrowdControlDealt"      "magicDamageTaken"
+# [16] "totalUnitsHealed"                "trueDamageTaken"                 "deaths"
+# [19] "largestCriticalStrike"           "neutralMinionsKilledTeamJungle"
 
 features.selection.team = setdiff(features.selection, features.redundant.team)
-# [1] "physicalDamageDealtToChampions"  "minionsKilled"                   "magicDamageDealt"                "totalHeal"                       "wardsPlaced"
-# [6] "physicalDamageTaken"             "neutralMinionsKilledEnemyJungle" "trueDamageDealt"                 "trueDamageDealtToChampions"      "wardsKilled"
-# [11] "totalTimeCrowdControlDealt"      "totalUnitsHealed"                "trueDamageTaken"                 "deaths"                          "largestCriticalStrike"
+# [1] "physicalDamageDealtToChampions"  "minionsKilledEnemyTeam"          "totalHeal"
+# [4] "magicDamageDealtToMonsters"      "wardsPlaced"                     "neutralMinionsKilledEnemyJungle"
+# [7] "physicalDamageTaken"             "trueDamageDealtToChampions"      "trueDamageDealtToMonsters"
+# [10] "wardsKilled"                     "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [13] "trueDamageTaken"                 "largestCriticalStrike"           "deaths"
 # [16] "neutralMinionsKilledTeamJungle"
 
 # ========================
@@ -464,8 +499,8 @@ losers.team = undersample(losers.team, 'label', clusters_size.team.min * 0.8)
 labeled.team = rbind(winners.team, losers.team)
 
 # Re-do correlation and redundant feature analysis of balanced data
-correlation_analysis(labeled[, features.selection.player])$estimates >= 0.7
-correlation_analysis(labeled.team[, features.selection.team])$estimates >= 0.7
+correlation_analysis(labeled[, features.selection.player])$estimates >= 0.65
+correlation_analysis(labeled.team[, features.selection.team])$estimates >= 0.65
 
 redundant_features(labeled[, features.selection.player])
 # NULL
@@ -626,7 +661,7 @@ train_clusters = function (data, features, target, label, method) {
         cluster = data[data[, label] == k, c(features, target)]
 
         # remove redundant features
-        redundant_features = redundant_features(cluster[, features], threshold=0.7)
+        redundant_features = redundant_features(cluster[, features], threshold=0.65)
         features = setdiff(features, redundant_features)
 
         # remove zero variance features, ie, features with a single 'class'
@@ -679,7 +714,7 @@ training[, 'minionsKilledEnemyTeam'] = training[, 'minionsKilled'] - training[, 
 
 highcorrelatated = c('deaths', 'trueDamageDealt', 'minionsKilled')
 
-tcr = train_clusters(training, setdiff(c(features.selection.team, 'minionsKilledEnemyTeam'), c(highcorrelatated)),  'winner', 'label', FSelector::information.gain)
+tcr = train_clusters(training, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
 
 Map(function(i) i$score, tcr)
 
@@ -692,12 +727,25 @@ Map(function (i) {
     features = i$features
     testing = testing
     testing = testing[testing[, label] == label_value, ]
+    testing[, target] = as.factor(testing[, target])
 
+    # print(model)
+    # exp(coef(model$finalModel))
+
+    # predicted = predict(model, newdata=testing[, features, drop=FALSE], type="prob")
     predicted = predict(model, newdata=testing[, features, drop=FALSE])
+    # print(head(cbind(predicted, testing[, target])))
     accuracy = table(predicted, testing[, target])
     score = sum(diag(accuracy))/sum(accuracy)
+    # pred <- prediction(predicted, testing[, target])
+    # class(pred)
+    # print(slotNames(pred))
     return(list(score=score, accuracy=accuracy))
 }, tcr)
+
+install.packages('ROCR', dependencies=TRUE)
+import_package('ROCR', attach=TRUE)
+# TODO library(ROCR)
 
 relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
 relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
