@@ -659,22 +659,7 @@ train_clusters = function (data, features, target, label, feature_selector) {
 
     result = Map(function (k) {
         cluster = data[data[, label] == k, c(features, target)]
-
-        # remove redundant features
-        redundant_features = redundant_features(cluster[, features], threshold=0.65)
-        features = setdiff(features, redundant_features)
-
-        # remove zero variance features, ie, features with a single 'class'
-        zero_variance_features = filter_features(cluster[, features], function(y) {
-            return(if (is.integer(y)) length(unique(y)) else NULL)
-        }, max=1)
-        features = setdiff(features, zero_variance_features)
-
-        # select features using feature selection method (score handler) and criteria handler
-        features = feature_selection(cluster, features, target, function (x) {
-            feature_selector(as.formula(strf('%s ~ .', target)), x)
-        }, selector=function (x) x > 0)$features
-
+        features = feature_engeneering(cluster, features, target)
         cluster = cluster[, c(features, target)]
 
         render_plot(function () {
@@ -694,8 +679,6 @@ train_clusters = function (data, features, target, label, feature_selector) {
         return(list(
             k=k,
             label=label,
-            redundant_features=redundant_features,
-            zero_variance_features=zero_variance_features,
             features=features,
             model=model,
             accuracy=accuracy, # TODO precision and recall
@@ -710,7 +693,7 @@ train_clusters = function (data, features, target, label, feature_selector) {
 
 tcr = train_clusters(training, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
 
-Map(function(i) i$zero_variance_features, tcr)
+Map(function(i) i$score, tcr)
 
 testing_clusters = function (testing, target, label) {
     return(Map(function (i) {

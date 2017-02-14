@@ -1,6 +1,28 @@
 import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
 
+#' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
+#' TODO: Improve
+feature_engeneering = function (data, features, target, correlation_threshold=0.65, feature_selector=FSelector::information.gain) {
+    print(nrow(data))
+    # remove redundant features
+    redundant_features = redundant_features(data[, features], threshold=correlation_threshold)
+    features = setdiff(features, redundant_features)
+
+    # remove zero variance features, ie, features with a single 'class'
+    zero_variance_features = filter_features(data[, features], function(y) {
+        return(if (is.integer(y)) length(unique(y)) else NULL)
+    }, max=1)
+    features = setdiff(features, zero_variance_features)
+
+    # select features using feature selection method (score handler) and criteria handler
+    features = feature_selection(data, features, target, function (x) {
+        feature_selector(as.formula(strf('%s ~ .', target)), x)
+    }, selector=function (x) x > 0)$features
+
+    return(features)
+}
+
 #' Select the features of a matrix x such that min >= f(x) =< max optional thresholds
 filter_features = function (x, f, min=NULL, max=NULL) {
     y = apply(x, 2, f)
