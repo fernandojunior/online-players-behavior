@@ -647,7 +647,7 @@ testing = team[(rownames(team) %in% rownames(team.sampled)),]
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
 
-train_clusters = function (data, features, target, label, method) {
+train_clusters = function (data, features, target, label, feature_selector) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
     data = data[, c(features, target, label)]
 
@@ -672,7 +672,7 @@ train_clusters = function (data, features, target, label, method) {
 
         # select features using feature selection method (score handler) and criteria handler
         features = feature_selection(cluster, features, target, function (x) {
-            method(as.formula(strf('%s ~ .', target)), x)
+            feature_selector(as.formula(strf('%s ~ .', target)), x)
         }, selector=function (x) x > 0)$features
 
         cluster = cluster[, c(features, target)]
@@ -698,7 +698,7 @@ train_clusters = function (data, features, target, label, method) {
             zero_variance_features=zero_variance_features,
             features=features,
             model=model,
-            # accuracy=accuracy, # TODO precision and recall
+            accuracy=accuracy, # TODO precision and recall
             score=score
         ))
 
@@ -708,40 +708,56 @@ train_clusters = function (data, features, target, label, method) {
     return(result)
 }
 
-team.sampled[, 'minionsKilledEnemyTeam'] = team.sampled[, 'minionsKilled'] - team.sampled[, 'neutralMinionsKilled']
-team[, 'minionsKilledEnemyTeam'] = team[, 'minionsKilled'] - team[, 'neutralMinionsKilled']
-training[, 'minionsKilledEnemyTeam'] = training[, 'minionsKilled'] - training[, 'neutralMinionsKilled']
-
-highcorrelatated = c('deaths', 'trueDamageDealt', 'minionsKilled')
-
 tcr = train_clusters(training, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
 
-Map(function(i) i$score, tcr)
+Map(function(i) i$zero_variance_features, tcr)
 
-Map(function (i) {
-    label = 'label'
-    target = 'winner'
-    label_value = i$k
-    label_name = i
-    model = i$model
-    features = i$features
-    testing = testing
-    testing = testing[testing[, label] == label_value, ]
-    testing[, target] = as.factor(testing[, target])
+testing_clusters = function (testing, target, label) {
+    return(Map(function (i) {
+        label_value = i$k
+        label_name = i
+        model = i$model
+        features = i$features
+        testing = testing
+        testing = testing[testing[, label] == label_value, ]
+        # target_values = as.numeric(as.factor(testing[, target])) # 0 1 -> 1 2
+        target_values = as.factor(testing[, target])
 
-    # print(model)
-    # exp(coef(model$finalModel))
+        predicted_prob = predict(model, newdata=testing[, features, drop=FALSE], type="prob")
 
-    # predicted = predict(model, newdata=testing[, features, drop=FALSE], type="prob")
-    predicted = predict(model, newdata=testing[, features, drop=FALSE])
-    # print(head(cbind(predicted, testing[, target])))
-    accuracy = table(predicted, testing[, target])
-    score = sum(diag(accuracy))/sum(accuracy)
-    # pred <- prediction(predicted, testing[, target])
-    # class(pred)
-    # print(slotNames(pred))
-    return(list(score=score, accuracy=accuracy))
-}, tcr)
+        predicted_prob = sapply(1:nrow(testing), function (i) {
+            return(predicted_prob[i, target_values[i]])
+        })
+
+        predicted = sapply(1:nrow(testing), function (i) {
+            target = target_values[i]
+            if (predicted_prob[i] > 0.5 & target == 0 || predicted_prob[i] < 0.5 & target == 1)
+                return(0)
+            else
+                return(1)
+        })
+
+        # print('target_values')
+        # print(table(target_values))
+        # print(head(target_values))
+        # print('target_values')
+        # print(table(predicted))
+        # print(head(predicted))
+        # print(head(cbind(target_values, predicted_prob, predicted)))
+
+        accuracy = table(predicted, target_values)
+        # print(accuracy)
+        score = sum(diag(accuracy))/sum(accuracy)
+
+        return(list(score=score, accuracy=accuracy, predicted=predicted_prob, testing=target_values))
+    }, tcr))
+}
+
+xxx = testing_clusters(testing, 'winner', 'label')
+
+Map(function(i) i$score, xxx)
+
+xxx$label1$score
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
