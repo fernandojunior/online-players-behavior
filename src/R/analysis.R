@@ -461,36 +461,41 @@ labeled.team = balance(labeled.team, 'winner', 'label')$data
 # TODO Statistical analysis of the results
 ##########################################
 
-# Hypothesis 1. H1-0: There is no difference between the distributions of the
-# clusters found in the learning model; H1-1 There is difference between the
-# distributions of the clusters found in the learning model. Test:
-# Kruskal-Wallis rank sum test
+(function (data, features) {
+    winners = data[data$winner == 1, ]
+    losers = data[data$winner == 0, ]
 
-# Alternative hypothesis true: p.value < 0.05
-h1 = kruskal.test(rowSums(labeled[, features.selection.player]), labeled$label)
+    # Hypothesis 1. H1-0: There is no difference between the distributions of the
+    # clusters found in the learning model; H1-1 There is difference between the
+    # distributions of the clusters found in the learning model. Test:
+    # Kruskal-Wallis rank sum test
 
-# Hypothesis 2. H2-0: For each cluster found in the learning model there is no
-# difference between the medians of the winning players and losing players;
-# (H2-1) for each cluster found there is difference between the medians of the
-# winning players and losing players. Test: Wilcoxon rank sum test with
-# continuity correction
+    # Alternative hypothesis true: p.value < 0.05
+    h1 = kruskal.test(rowSums(data[, features]), data$label)
 
-# Alternative hypothesis true for each cluster: p.value < 0.05
-h2.p.values = values(Map(function (k) {
-    x = rowSums(winners[winners$label == k, features.selection.player])
-    y = rowSums(losers[losers$label == k, features.selection.player])
-    # TODO print(paste(shapiro.test(x)$p.value, shapiro.test(y)$p.value))
-    # TODO print(t.test(x, y, paired=FALSE)$p.value)
-    wilcox.test(x , y, paired=FALSE)$p.value
-}, range(fit$k)))
+    # Hypothesis 2. H2-0: For each cluster found in the learning model there is no
+    # difference between the medians of the winning players and losing players;
+    # (H2-1) for each cluster found there is difference between the medians of the
+    # winning players and losing players. Test: Wilcoxon rank sum test with
+    # continuity correction
 
-render_plot(function () {
-    par(mfrow=c(1, 2))
-    plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
-    plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-}, '../output/hypothesis-player', width=16, height=9)
+    # Alternative hypothesis true for each cluster: p.value < 0.05
+    h2.p.values = values(Map(function (k) {
+        x = rowSums(winners[winners$label == k, features])
+        y = rowSums(losers[losers$label == k, features])
+        # TODO print(paste(shapiro.test(x)$p.value, shapiro.test(y)$p.value))
+        # TODO print(t.test(x, y, paired=FALSE)$p.value)
+        wilcox.test(x , y, paired=FALSE)$p.value
+    }, sort(unique(data$label))))
 
-# TODO compare median between clusters
+    render_plot(function () {
+        par(mfrow=c(1, 2))
+        plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
+        plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
+    }, '../output/hypothesis-player', width=16, height=9)
+
+    # TODO compare median between clusters
+})(labeled, features.selection.player)
 
 ########################
 # Exploring labeled data
@@ -563,24 +568,14 @@ render_plot(function () {
 # TODO Centroid analysis
 ########################
 
-# Given a data set x, summarize the mean for each feature by label.
-render_plot(function () {
-    par(mfrow=c(3,1))
-    lim = c(-1, 1)
-    plot_by(labeled[, features.selection.player], labeled$label, mean, ylim=lim)
-    plot_by(winners[, features.selection.player], winners$label, mean, ylim=lim)
-    plot_by(losers[, features.selection.player], losers$label, mean, ylim=lim)
-}, '../output/exploring-centers-player', width=16, height=9)
+centroid_analysis(labeled, features.selection.player, '../output/exploring-centers-player')
 
-render_plot(function () {
-    par(mfrow=c(3,1))
-    lim = c(-0.02, 0.02)
-    plot_by(labeled.team[, features.selection.team], labeled.team$label, mean, ylim=lim)
-    plot_by(winners.team[, features.selection.team], winners.team$label, mean, ylim=lim)
-    plot_by(losers.team[, features.selection.team], losers.team$label, mean, ylim=lim)
-}, '../output/exploring-centers-team', width=16, height=9)
+centroid_analysis(labeled.team, setdiff(features.selection.team, 'magicDamageDealtToMonsters'), '../output/exploring-centers-team')
 
-# TODO Relevant feature selection analysis ............................................................................
+##########################################
+# TODO Relevant feature selection analysis
+##########################################
+
 # feature selection to quantify the discriminative power of attributes.
 # In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
 # a feature (its discriminative power) to the classification process.
