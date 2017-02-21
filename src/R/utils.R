@@ -5,6 +5,24 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
+#' Given a data set x, summarize the mean for each feature by label.
+#' TODO cluter boxplot
+centroid_analysis = function (data, features, plot_name) {
+    winners = data[data$winner == 1, ]
+    losers = data[data$winner == 0, ]
+
+    max = max(data[, features])
+    min = -max
+
+    render_plot(function () {
+        par(mfrow=c(3,1))
+        lim = c(min, max)
+        plot_by(data[, features], data$label, mean, ylim=lim)
+        plot_by(winners[, features], winners$label, mean, ylim=lim)
+        plot_by(losers[, features], losers$label, mean, ylim=lim)
+    }, plot_name, width=16, height=9)
+}
+
 #' Balance data using undersample method based on target (binary) and label (multiclass) features
 balance = function (data, target, label) {
     # Discriminate clustered data between target (winners and losers) to analyse sizes
@@ -323,6 +341,7 @@ plot_by = function (x, y, f, ...) {
     cols = or(colnames(x), 1:ncol(x))
     labels = Map(function (x) strf('#%s', x), 1:length(cols))
     named_labels = Map(function(i) strf('%s#%s', cols[i], i), 1:length(cols))
+    print(values(named_labels))
     grouped = pairify(aggregate(. ~ y, x, f)[, cols])
     grouped$key = Map(function (key) indexof(key, cols), grouped$key)
     args = list(...)
