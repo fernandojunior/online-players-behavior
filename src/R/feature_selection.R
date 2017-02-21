@@ -4,7 +4,6 @@ import_package('FSelector', attach, attach=TRUE)
 #' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
 #' TODO: Improve
 feature_engeneering = function (data, features, target, correlation_threshold=0.65, feature_selector=FSelector::information.gain) {
-    print(nrow(data))
     # remove redundant features
     redundant_features = redundant_features(data[, features], threshold=correlation_threshold)
     features = setdiff(features, redundant_features)
@@ -45,7 +44,9 @@ filter_features = function (x, f, min=NULL, max=NULL) {
 
 #' Redundant features of a matrix that are equal or grater than correlation threshold
 redundant_features = function (data, redundats_=NULL, threshold=0.7) {
-    correlation_matrix = correlation_analysis(data)$estimates
+    correlation_matrix = render_plot(function () {
+        return(correlation_analysis(data)$estimates)
+    }, close=TRUE, save=FALSE)
 
     # highly correlated sum (>= 0.7) by feature
     highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[abs(row) >= threshold]))
