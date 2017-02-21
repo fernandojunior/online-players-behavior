@@ -24,7 +24,7 @@ centroid_analysis = function (data, features, plot_name) {
 }
 
 #' Balance data using undersample method based on target (binary) and label (multiclass) features
-balance = function (data, target, label) {
+balance = function (data, target, label, prop=0.8) {
     # Discriminate clustered data between target (winners and losers) to analyse sizes
     winners = data[data[, target] == 1, ]
     losers = data[data[, target] == 0, ]
@@ -39,7 +39,7 @@ balance = function (data, target, label) {
     # boxplot(values(relative_clusters_size))$stats
 
     # Min cluster size between winners and losers to undersample data
-    min_clusters_size = round(min(table(winners[, 'label']), table(losers[, 'label'])))
+    min_clusters_size = round(min(table(winners[, 'label']), table(losers[, 'label'])) * prop)
 
     cluster_size_analysis = list(size=clusters_size, relative_size=relative_clusters_size, min_size=min_clusters_size)
 

@@ -1,3 +1,13 @@
+# feature selection to quantify the discriminative power of attributes.
+# In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
+# a feature (its discriminative power) to the classification process.
+# References:
+# - Data Classification Algorithms and Applications (2015)
+# - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
+# - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
+
+
+
 import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
 

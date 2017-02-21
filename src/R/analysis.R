@@ -8,7 +8,7 @@ import('feature_selection', attach=TRUE)
 import('utils', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
-RENDER_PLOT_CLOSE = FALSE
+RENDER_PLOT_CLOSE = TRUE
 
 # =========================
 # Specific domain functions
@@ -572,51 +572,66 @@ centroid_analysis(labeled, features.selection.player, '../output/exploring-cente
 
 centroid_analysis(labeled.team, setdiff(features.selection.team, 'magicDamageDealtToMonsters'), '../output/exploring-centers-team')
 
-##########################################
-# TODO Relevant feature selection analysis
-##########################################
-
-# feature selection to quantify the discriminative power of attributes.
-# In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
-# a feature (its discriminative power) to the classification process.
-# References:
-# - Data Classification Algorithms and Applications (2015)
-# - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
-# - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
+#######################
+# TODO Predictive model
+#######################
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
 
-training = balance(team, 'winner', 'label')$data
-testing = team[!(rownames(team) %in% rownames(training)), ]
+training = balance(team, 'winner', 'label', prop=0.8)$data
+# $size
+#     all winners losers
+# 1  9888    5516   4372
+# 2 10402    4315   6087
+# 3  6500    1731   4769
+# 4  6955    4646   2309
+# 5  2631    1980    651
+#
+# $relative_size
+#     winners    losers
+# 1 0.5578479 0.4421521
+# 2 0.4148241 0.5851759
+# 3 0.2663077 0.7336923
+# 4 0.6680086 0.3319914
+# 5 0.7525656 0.2474344
+#
+# $min_size
+# [1] 521
+
+validation = team[!(rownames(team) %in% rownames(training)), ]
 
 # > nrow(training)
-# [1] 6510
-# > nrow(testing)
-# [1] 29866
+# [1] 5210
+# > nrow(validation)
+# [1] 31166
 
-train_clusters = function (data, features, target, label, feature_selector) {
-    data = if (!is.data.frame(data)) as.data.frame(data) else data
-    data = data[, c(features, target, label)]
+train_clusters = function (training, validation, features, target, label, feature_selector) {
+    training = if (!is.data.frame(training)) as.data.frame(training) else training
+    training = training[, c(features, target, label)]
+
+    # partitions = caret::createDataPartition(training[, target], p=0.6, list=FALSE)
+    # training = as.data.frame(training[partitions, ])
+    # validation = as.data.frame(training[-partitions, ])
 
     # classes can't be numeric
-    data[, target] = as.factor(data[, target])
+    training[, target] = as.factor(training[, target])
 
-    label_values = sort(unique(data[, label]))
+    label_values = sort(unique(training[, label]))
     label_names = Map(function (i) strf('%s%s', label, i), label_values)
 
     result = Map(function (k) {
-        cluster = data[data[, label] == k, c(features, target)]
-        features = feature_engeneering(cluster, features, target)
-        cluster = cluster[, c(features, target)]
+        training = training[training[, label] == k, c(features, target)]
+        validation = validation[validation[, label] == k, c(features, target)]
+
+        features = feature_engeneering(training, features, target)
+
+        training = training[, c(features, target)]
+        validation = validation[, c(features, target)]
 
         # render_plot(function () {
-        #     correlation_analysis(cluster[, features])
+        #     correlation_analysis(training[, features])
         # }, strf('../output/correlation-team-%s', k), width=18, height=12)
-
-        partitions = caret::createDataPartition(cluster[, target], p=0.6, list=FALSE)
-        training = as.data.frame(cluster[partitions, ])
-        validation = as.data.frame(cluster[-partitions, ])
 
         model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
 
@@ -639,7 +654,7 @@ train_clusters = function (data, features, target, label, feature_selector) {
     return(result)
 }
 
-tcr = train_clusters(training, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
+tcr = train_clusters(training, validation, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
 Map(function(i) i$accuracy, tcr)
 # $label1
 # [1] 0.9326923
@@ -656,16 +671,21 @@ Map(function(i) i$accuracy, tcr)
 # $label5
 # [1] 0.9596154
 
-testing_clusters = function (testing, target, label) {
+predict_clusters = function (testing, target, label) {
     return(Map(function (i) {
         label_value = i$k
-        label_name = i
         model = i$model
         features = i$features
         testing = testing
         testing = testing[testing[, label] == label_value, ]
         # target_values = as.numeric(as.factor(testing[, target])) # 0 1 -> 1 2
         target_values = as.factor(testing[, target])
+
+        (function () {
+            predicted = predict(model, newdata=testing[, features, drop=FALSE])
+            confusion_matrix = table(predicted, testing[, target])
+            accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
+        })()
 
         predicted_prob = predict(model, newdata=testing[, features, drop=FALSE], type="prob")
 
@@ -681,25 +701,16 @@ testing_clusters = function (testing, target, label) {
                 return(1)
         })
 
-        # print('target_values')
-        # print(table(target_values))
-        # print(head(target_values))
-        # print('target_values')
-        # print(table(predicted))
-        # print(head(predicted))
-        # print(head(cbind(target_values, predicted_prob, predicted)))
+        confusion_matrix = table(predicted, target_values)
+        accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
 
-        accuracy = table(predicted, target_values)
-        # print(accuracy)
-        score = sum(diag(accuracy))/sum(accuracy)
-
-        return(list(score=score, accuracy=accuracy, predicted=predicted_prob, testing=target_values))
+        return(list(accuracy=accuracy, confusion_matrix=confusion_matrix, predicted=predicted_prob, testing=target_values))
     }, tcr))
 }
 
-xxx = testing_clusters(testing, 'winner', 'label')
+xxx = predict_clusters(validation, 'winner', 'label')
 
-Map(function(i) i$score, xxx)
+Map(function(i) i$accuracy, xxx)
 # $label1
 # [1] 0.9367575
 #
