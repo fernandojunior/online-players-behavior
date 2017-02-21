@@ -5,6 +5,34 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
+#' Balance data using undersample method based on target (binary) and label (multiclass) features
+balance = function (data, target, label) {
+    # Discriminate clustered data between target (winners and losers) to analyse sizes
+    winners = data[data[, target] == 1, ]
+    losers = data[data[, target] == 0, ]
+    clusters_size = cbind(all=table(data[, label]), winners=table(winners[, label]), losers=table(losers[, label]))
+
+    relative_clusters_size = cbind(
+        winners=clusters_size[, 'winners'] / clusters_size[, 'all'],
+        losers=clusters_size[, 'losers'] / clusters_size[, 'all']
+    )
+
+    # Check if there are outliers in relative clusters size
+    # boxplot(values(relative_clusters_size))$stats
+
+    # Min cluster size between winners and losers to undersample data
+    min_clusters_size = round(min(table(winners[, 'label']), table(losers[, 'label'])))
+
+    cluster_size_analysis = list(size=clusters_size, relative_size=relative_clusters_size, min_size=min_clusters_size)
+
+    # balance data based on cluster size analysis
+    balanced = rbind(undersample(winners, label, min_clusters_size), undersample(losers, label, min_clusters_size))
+
+    print(cluster_size_analysis)
+
+    return(list(cluster_size_analysis=cluster_size_analysis, data=balanced))
+}
+
 #' Normalize a dataset x
 normalize = function (x) {
     return((x-min(x))/(max(x)-min(x)))
