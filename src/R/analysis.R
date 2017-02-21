@@ -400,32 +400,23 @@ fit = fits[[6]]
 
 fit.team = fits.team[[5]]
 
-# Associating each reduced data point with its info and label features
-labeled = cbind(winner=data[, 'winner'], data[, features.info], label=fit$cluster, data.normalized[, features.selection.player])
-labeled.team = cbind(team.normalized[, c('matchId', 'winner')], label=fit.team$cluster, team.normalized[, features.selection.team])
-
 # Labeling data
 data = cbind(data, label=fit$cluster)
 player = cbind(data.performance, label=fit$cluster)
+
 team = cbind(team.performance, label=fit.team$cluster)
+team.normalized = cbind(team.normalized, label=fit.team$cluster)
+
+labeled = cbind(winner=data[, 'winner'], data[, features.info], data.normalized[, features.selection.player], label=fit$cluster)
+labeled.team = cbind(label=fit.team$cluster, team.normalized[, c(features.selection.team, 'matchId', 'winner')])
 
 ###############################################################################
 # Clustered data balancing (undersampling) by discriminating winners and losers
 ###############################################################################
 
-# Discriminate clustered data between winners and losers
-winners = labeled[labeled$winner == 1, ]
-losers = labeled[labeled$winner == 0, ]
-
-winners.team = labeled.team[labeled.team[, 'winner'] == 1, ]
-losers.team = labeled.team[labeled.team[, 'winner'] == 0, ]
-
-# Clusters size analysis
-clusters_size = as.data.frame(cbind(
-    all=table(labeled[, 'label']),
-    winners=table(winners[, 'label']),
-    losers=table(losers[, 'label'])
-))
+# Undersampling clustered data based on min size
+labeled = balance(labeled, 'winner', 'label')$data
+# $size
 #     all winners losers
 # 1 28247   14636  13611
 # 2 35868   17961  17907
@@ -433,24 +424,8 @@ clusters_size = as.data.frame(cbind(
 # 4 29894   14157  15737
 # 5 16495    7795   8700
 # 6 35453   18205  17248
-
-clusters_size.team = as.data.frame(cbind(
-    all=table(labeled.team[, 'label']),
-    winners=table(winners.team[, 'label']),
-    losers=table(losers.team[, 'label'])
-))
-#     all winners losers
-# 1  9888    5516   4372
-# 2 10402    4315   6087
-# 3  6500    1731   4769
-# 4  6955    4646   2309
-# 5  2631    1980    651
-
-# Relative clusters size between winners and losers
-clusters_size.relative = as.data.frame(cbind(
-    winners=clusters_size$winners / clusters_size$all,
-    losers=clusters_size$losers / clusters_size$all
-))
+#
+# $relative_size
 #     winners    losers
 # 1 0.5181435 0.4818565
 # 2 0.5007528 0.4992472
@@ -458,48 +433,29 @@ clusters_size.relative = as.data.frame(cbind(
 # 4 0.4735733 0.5264267
 # 5 0.4725674 0.5274326
 # 6 0.5134967 0.4865033
+#
+# $min_size
+# [1] 7795
 
-clusters_size.team.relative = as.data.frame(cbind(
-    winners=clusters_size.team$winners / clusters_size.team$all,
-    losers=clusters_size.team$losers / clusters_size.team$all
-))
+labeled.team = balance(labeled.team, 'winner', 'label')$data
+# $size
+#     all winners losers
+# 1  9888    5516   4372
+# 2 10402    4315   6087
+# 3  6500    1731   4769
+# 4  6955    4646   2309
+# 5  2631    1980    651
+#
+# $relative_size
 #     winners    losers
 # 1 0.5578479 0.4421521
 # 2 0.4148241 0.5851759
 # 3 0.2663077 0.7336923
 # 4 0.6680086 0.3319914
 # 5 0.7525656 0.2474344
-
-# Check if there are outliers in relative clusters size
-boxplot(values(clusters_size.relative))$stats
-
-boxplot(values(clusters_size.team.relative))$stats
-
-# Min cluster size between winners and losers to undersample data
-# Decrease some 80% from the size to create testing data and avoid unary class: table(team$winner, team$label)
-clusters_size.min = round(min(table(winners$label), table(losers$label)) * 0.8)
-# [1] 6236
-
-clusters_size.team.min = round(min(table(winners.team$label), table(losers.team$label)) * 0.8)
-# [1] 520
-
-# Undersampling clustered data based on min size
-winners = undersample(winners, 'label', clusters_size.min)
-losers = undersample(losers, 'label', clusters_size.min)
-labeled = rbind(winners, losers)
-
-winners.team = undersample(winners.team, 'label', clusters_size.team.min * 0.8)
-losers.team = undersample(losers.team, 'label', clusters_size.team.min * 0.8)
-labeled.team = rbind(winners.team, losers.team)
-
-# Re-do correlation and redundant feature analysis of balanced data
-correlation_analysis(labeled[, features.selection.player])$estimates >= 0.65
-correlation_analysis(labeled.team[, features.selection.team])$estimates >= 0.65
-
-redundant_features(labeled[, features.selection.player])
-# NULL
-redundant_features(labeled.team[, features.selection.team])
-# NULL
+#
+# $min_size
+# [1] 651
 
 ##########################################
 # TODO Statistical analysis of the results
@@ -633,18 +589,16 @@ render_plot(function () {
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
 
-team.sampled = team[rownames(team) %in% rownames(labeled.team), ]
-
-training = team[!(rownames(team) %in% rownames(team.sampled)),]
-testing = team[(rownames(team) %in% rownames(team.sampled)),]
-
-# > nrow(training)
-# [1] 32216
-# > nrow(testing)
-# [1] 4160
-
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
+
+training = balance(team, 'winner', 'label')$data
+testing = team[!(rownames(team) %in% rownames(training)), ]
+
+# > nrow(training)
+# [1] 6510
+# > nrow(testing)
+# [1] 29866
 
 train_clusters = function (data, features, target, label, feature_selector) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
@@ -661,9 +615,9 @@ train_clusters = function (data, features, target, label, feature_selector) {
         features = feature_engeneering(cluster, features, target)
         cluster = cluster[, c(features, target)]
 
-        render_plot(function () {
-            correlation_analysis(cluster[, features])
-        }, strf('../output/correlation-team-%s', k), width=18, height=12)
+        # render_plot(function () {
+        #     correlation_analysis(cluster[, features])
+        # }, strf('../output/correlation-team-%s', k), width=18, height=12)
 
         partitions = caret::createDataPartition(cluster[, target], p=0.6, list=FALSE)
         training = as.data.frame(cluster[partitions, ])
@@ -672,16 +626,16 @@ train_clusters = function (data, features, target, label, feature_selector) {
         model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
 
         predicted = predict(model, newdata=validation[, features, drop=FALSE])
-        accuracy = table(predicted, validation[, target])
-        score = sum(diag(accuracy))/sum(accuracy)
+        confusion_matrix = table(predicted, validation[, target])
+        accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
 
         return(list(
             k=k,
             label=label,
             features=features,
             model=model,
-            accuracy=accuracy, # TODO precision and recall
-            score=score
+            confusion_matrix=confusion_matrix, # TODO precision and recall
+            accuracy=accuracy
         ))
 
     }, label_values)
@@ -691,22 +645,21 @@ train_clusters = function (data, features, target, label, feature_selector) {
 }
 
 tcr = train_clusters(training, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
-
-Map(function(i) i$score, tcr)
+Map(function(i) i$accuracy, tcr)
 # $label1
-# [1] 0.9414688
+# [1] 0.9326923
 #
 # $label2
-# [1] 0.9602822
+# [1] 0.9596154
 #
 # $label3
-# [1] 0.9735333
+# [1] 0.9596154
 #
 # $label4
-# [1] 0.9620253
+# [1] 0.9557692
 #
 # $label5
-# [1] 0.9638387
+# [1] 0.9596154
 
 testing_clusters = function (testing, target, label) {
     return(Map(function (i) {
@@ -752,23 +705,20 @@ testing_clusters = function (testing, target, label) {
 xxx = testing_clusters(testing, 'winner', 'label')
 
 Map(function(i) i$score, xxx)
-> Map(function(i) i$score, xxx)
 # $label1
-# [1] 0.9338942
+# [1] 0.9367575
 #
 # $label2
-# [1] 0.9567308
+# [1] 0.9481319
 #
 # $label3
-# [1] 0.9579327
+# [1] 0.9665256
 #
 # $label4
-# [1] 0.9627404
+# [1] 0.9571909
 #
 # $label5
-# [1] 0.9074519
-
-xxx$label1$score
+# [1] 0.9495862
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
