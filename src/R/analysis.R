@@ -226,6 +226,7 @@ data = data[!outliers$outliers, ]
 # nrow(data)
 #> [1] 802324
 
+# Remove teams with extreme outliers
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent (incomplete) matches need to be removed.
 data = get_5x5_matches(data)
@@ -338,12 +339,12 @@ features.selection.player = setdiff(features.selection, features.redundant.playe
 # [16] "wardsKilled"                     "totalUnitsHealed"                "trueDamageTaken"
 
 features.selection.team = setdiff(features.selection, c(features.redundant.team, 'deaths'))
-# [1] "neutralMinionsKilledEnemyJungle" "assists"                         "deaths"
-# [4] "physicalDamageDealtToChampions"  "minionsKilledEnemyTeam"          "totalHeal"
-# [7] "magicDamageDealtToMonsters"      "wardsPlaced"                     "totalTimeCrowdControlDealt"
-# [10] "neutralMinionsKilledTeamJungle"  "largestCriticalStrike"           "trueDamageDealtToChampions"
-# [13] "magicDamageTaken"                "physicalDamageTaken"             "wardsKilled"
-# [16] "totalUnitsHealed"                "trueDamageTaken"
+# [1] "neutralMinionsKilledEnemyJungle" "assists"                         "physicalDamageDealtToChampions"
+# [4] "minionsKilledEnemyTeam"          "totalHeal"                       "magicDamageDealtToMonsters"
+# [7] "wardsPlaced"                     "totalTimeCrowdControlDealt"      "neutralMinionsKilledTeamJungle"
+# [10] "largestCriticalStrike"           "trueDamageDealtToChampions"      "magicDamageTaken"
+# [13] "physicalDamageTaken"             "wardsKilled"                     "totalUnitsHealed"
+# [16] "trueDamageTaken"
 
 # ========================
 # Dimensionality reduction
@@ -369,11 +370,11 @@ correlations = render_plot(function () {
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
-    return(cluster_analysis(data.normalized[, features.selection.player], kmax=60)$fits)
+    return(cluster_analysis(data.normalized[, features.selection.player], kmax=120)$fits)
 }, '../output/k-means-error-curve-player')
 
 fits.team = render_plot(function () {
-    return(cluster_analysis(team.normalized[, features.selection.team], kmax=60)$fits)
+    return(cluster_analysis(team.normalized[, features.selection.team], kmax=120)$fits)
 }, '../output/k-means-error-curve-team')
 
 # render_plot(function () {
@@ -395,10 +396,10 @@ fits.team = render_plot(function () {
 # Which is the optimal fit in this case? Analysing the error curve plot, the
 # k = 7 fit seems to have the best trade-off, as the rate difference does not
 # vary so much after it.
-fit = fits[[6]]
+fit = fits[[7]]
 # each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
 
-fit.team = fits.team[[5]]
+fit.team = fits.team[[6]]
 
 # Labeling data
 data = cbind(data, label=fit$cluster)
@@ -415,47 +416,51 @@ labeled.team = cbind(label=fit.team$cluster, team.normalized[, c(features.select
 ###############################################################################
 
 # Undersampling clustered data based on min size
-labeled = balance(labeled, 'winner', 'label')$data
+labeled = balance(labeled, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
-# 1 28247   14636  13611
-# 2 35868   17961  17907
-# 3 35923   18186  17737
-# 4 29894   14157  15737
-# 5 16495    7795   8700
-# 6 35453   18205  17248
+# 1 16918    8706   8212
+# 2 22470   11541  10929
+# 3 34801   17805  16996
+# 4 32576   16903  15673
+# 5 15128    7037   8091
+# 6 24163   11010  13153
+# 7 35824   17938  17886
 #
 # $relative_size
 #     winners    losers
-# 1 0.5181435 0.4818565
-# 2 0.5007528 0.4992472
-# 3 0.5062495 0.4937505
-# 4 0.4735733 0.5264267
-# 5 0.4725674 0.5274326
-# 6 0.5134967 0.4865033
+# 1 0.5145998 0.4854002
+# 2 0.5136182 0.4863818
+# 3 0.5116232 0.4883768
+# 4 0.5188789 0.4811211
+# 5 0.4651639 0.5348361
+# 6 0.4556553 0.5443447
+# 7 0.5007258 0.4992742
 #
 # $min_size
-# [1] 7795
+# [1] 5630
 
 labeled.team = balance(labeled.team, 'winner', 'label')$data
 # $size
-#     all winners losers
-# 1  9888    5516   4372
-# 2 10402    4315   6087
-# 3  6500    1731   4769
-# 4  6955    4646   2309
-# 5  2631    1980    651
+#    all winners losers
+# 1 8986    4566   4420
+# 2 1812    1383    429
+# 3 7607    4554   3053
+# 4 4750    1197   3553
+# 5 8334    3045   5289
+# 6 4887    3443   1444
 #
 # $relative_size
 #     winners    losers
-# 1 0.5578479 0.4421521
-# 2 0.4148241 0.5851759
-# 3 0.2663077 0.7336923
-# 4 0.6680086 0.3319914
-# 5 0.7525656 0.2474344
+# 1 0.5081237 0.4918763
+# 2 0.7632450 0.2367550
+# 3 0.5986591 0.4013409
+# 4 0.2520000 0.7480000
+# 5 0.3653708 0.6346292
+# 6 0.7045222 0.2954778
 #
 # $min_size
-# [1] 651
+# [1] 343
 
 ##########################################
 # TODO Statistical analysis of the results
@@ -581,30 +586,58 @@ import_package('logistf', attach=TRUE)
 
 training = balance(team, 'winner', 'label', prop=0.8)$data
 # $size
-#     all winners losers
-# 1  9888    5516   4372
-# 2 10402    4315   6087
-# 3  6500    1731   4769
-# 4  6955    4646   2309
-# 5  2631    1980    651
+#    all winners losers
+# 1 8986    4566   4420
+# 2 1812    1383    429
+# 3 7607    4554   3053
+# 4 4750    1197   3553
+# 5 8334    3045   5289
+# 6 4887    3443   1444
 #
 # $relative_size
 #     winners    losers
-# 1 0.5578479 0.4421521
-# 2 0.4148241 0.5851759
-# 3 0.2663077 0.7336923
-# 4 0.6680086 0.3319914
-# 5 0.7525656 0.2474344
+# 1 0.5081237 0.4918763
+# 2 0.7632450 0.2367550
+# 3 0.5986591 0.4013409
+# 4 0.2520000 0.7480000
+# 5 0.3653708 0.6346292
+# 6 0.7045222 0.2954778
 #
 # $min_size
-# [1] 521
+# [1] 343
 
 validation = team[!(rownames(team) %in% rownames(training)), ]
 
 # > nrow(training)
-# [1] 5210
+# [1] 4116
 # > nrow(validation)
-# [1] 31166
+# [1] 32260
+
+#' Validate a prediction model given a validation set
+validate = function (model, validation_set, features, target) {
+    target_values = as.factor(validation_set[, target])
+
+    # predicted = predict(model, newdata=validation[, features, drop=FALSE])
+
+    predicted_prob = predict(model, newdata=validation_set[, features, drop=FALSE], type="prob")
+
+    predicted_prob = sapply(1:nrow(validation_set), function (i) {
+        return(predicted_prob[i, target_values[i]])
+    })
+
+    predicted = sapply(1:nrow(validation_set), function (i) {
+        target = target_values[i]
+        if (predicted_prob[i] > 0.5 & target == 0 || predicted_prob[i] < 0.5 & target == 1)
+            return(0)
+        else
+            return(1)
+    })
+
+    confusion_matrix = table(predicted, target_values)
+    accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
+    # TODO precision and recall
+    return(list(confusion_matrix=confusion_matrix, accuracy=accuracy))
+}
 
 train_clusters = function (training, validation, features, target, label, feature_selector) {
     training = if (!is.data.frame(training)) as.data.frame(training) else training
@@ -635,18 +668,9 @@ train_clusters = function (training, validation, features, target, label, featur
 
         model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
 
-        predicted = predict(model, newdata=validation[, features, drop=FALSE])
-        confusion_matrix = table(predicted, validation[, target])
-        accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
+        validation_result = validate(model, validation, features, target)
 
-        return(list(
-            k=k,
-            label=label,
-            features=features,
-            model=model,
-            confusion_matrix=confusion_matrix, # TODO precision and recall
-            accuracy=accuracy
-        ))
+        return(list(k=k, label=label, features=features, model=model, validation_result=validation_result))
 
     }, label_values)
     names(result) = label_names
@@ -655,21 +679,24 @@ train_clusters = function (training, validation, features, target, label, featur
 }
 
 tcr = train_clusters(training, validation, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
-Map(function(i) i$accuracy, tcr)
+Map(function(i) i$validation_result$accuracy, tcr)
 # $label1
-# [1] 0.9326923
+# [1] 0.9471084
 #
 # $label2
-# [1] 0.9596154
+# [1] 0.9387211
 #
 # $label3
-# [1] 0.9596154
+# [1] 0.9589655
 #
 # $label4
-# [1] 0.9557692
+# [1] 0.9303642
 #
 # $label5
-# [1] 0.9596154
+# [1] 0.9278243
+#
+# $label6
+# [1] 0.944537
 
 predict_clusters = function (testing, target, label) {
     return(Map(function (i) {
@@ -712,19 +739,22 @@ xxx = predict_clusters(validation, 'winner', 'label')
 
 Map(function(i) i$accuracy, xxx)
 # $label1
-# [1] 0.9367575
+# [1] 0.9471084
 #
 # $label2
-# [1] 0.9481319
+# [1] 0.9387211
 #
 # $label3
-# [1] 0.9665256
+# [1] 0.9589655
 #
 # $label4
-# [1] 0.9571909
+# [1] 0.9303642
 #
 # $label5
-# [1] 0.9495862
+# [1] 0.9278243
+#
+# $label6
+# [1] 0.944537
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
