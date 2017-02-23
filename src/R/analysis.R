@@ -48,72 +48,38 @@ data = read.csv('../data/data20170105025503.csv')
 
 # Remove some games with error or AFK players
 # Remove inconsistent matches, i.e. matches not 5x5
-data = get_5x5_matches(data)
 data = remove_afk_players(data)
+data = get_5x5_matches(data)
 
 # > nrow(data)
-# [1] 1049423
+# [1] 1036090
 
-# Remove duplicated rows by summonerId to decrease bias
+# TODO Remove duplicated rows by summonerId to decrease bias
 # data = data[!duplicated(data[, 'summonerId']),]
 # > nrow(data)
-# [1] 54681
 
-# ==================
-# Feature extraction
-# ==================
-data[, 'minionsKilledEnemyTeam'] = data[, 'minionsKilled'] - data[, 'neutralMinionsKilled']
-data[, 'physicalDamageDealtToMonsters'] = data[, 'physicalDamageDealt'] - data[, 'physicalDamageDealtToChampions']
-data[, 'magicDamageDealtToMonsters'] = data[, 'magicDamageDealt'] - data[, 'magicDamageDealtToChampions']
-
-features = names(data)
+# ===================
+# Features definition
+# ===================
 
 features.info = c(
-    'matchId',
-    'matchMode',
-    'queueType',
-    'season',
-    'championId',
-    'summonerId',
-    'matchDuration',
-    'matchCreation',
-    'matchCreationYear',
-    'matchCreationMonth',
-    'matchCreationDay',
-    'matchCreationHour',
-    'item0',
-    'item1',
-    'item2',
-    'item3',
-    'item4',
-    'item5',
-    'item6',
-    'combatPlayerScore',
-    'objectivePlayerScore',
-    'totalPlayerScore',
-    'totalScoreRank',
-    'unrealKills'  # ARAM
+    'matchId', 'matchMode', 'queueType', 'season', 'championId', 'summonerId',
+    'matchDuration', # In minutes
+    'matchCreation', 'matchCreationYear', 'matchCreationMonth', 'matchCreationDay', 'matchCreationHour',
+    'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6',
+    'combatPlayerScore', 'objectivePlayerScore', 'totalPlayerScore', 'totalScoreRank', 'unrealKills'  # ARAM
 )
 
 features.target = 'winner'
 
 features.logical = c(
-    # 'firstBloodAssist',
-    # 'firstBloodKill',
-    'firstInhibitorAssist',
-    'firstInhibitorKill'
-    # 'firstTowerAssist',
-    # 'firstTowerKill'
+    # 'firstBloodAssist', 'firstBloodKill', 'firstTowerAssist', 'firstTowerKill'
+    'firstInhibitorAssist', 'firstInhibitorKill'
 )
 
 features.categorical = c('champLevel')
 
-features.numeric = setdiff(features, c(
-    features.target,
-    features.info,
-    features.logical,
-    features.categorical
-))
+features.numeric = sort(setdiff(names(data), c(features.target, features.info, features.logical, features.categorical)))
 # [1] "assists"                         "deaths"                          "doubleKills"
 # [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
 # [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
@@ -126,116 +92,145 @@ features.numeric = setdiff(features, c(
 # [28] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
 # [31] "towerKills"                      "tripleKills"                     "trueDamageDealt"
 # [34] "trueDamageDealtToChampions"      "trueDamageTaken"                 "visionWardsBoughtInGame"
-# [37] "wardsKilled"                     "wardsPlaced"                     "minionsKilledEnemyTeam"
-# [40] "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
+# [37] "wardsKilled"                     "wardsPlaced"
 
 features.ong = c(
-    'firstBloodKill', 'firstTowerKill', 'firstTowerAssist',
-    'kills', 'assists', 'deaths', 'goldEarned','totalDamageDealt',
-    'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions',
-    'totalDamageTaken', 'minionsKilled', 'neutralMinionsKilled',
-    'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
-    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike',
-    'totalHeal'
+    'firstBloodKill', 'firstTowerKill', 'firstTowerAssist', 'kills', 'assists', 'deaths', 'goldEarned',
+    'totalDamageDealt', 'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions', 'totalDamageTaken',
+    'minionsKilled', 'neutralMinionsKilled', 'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
+    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike', 'totalHeal'
 )
 
 features.ong.numeric = c(
-    'goldEarned', 'kills', 'physicalDamageDealt', 'minionsKilled',
-    'totalDamageTaken', 'towerKills', 'largestCriticalStrike',
-    'neutralMinionsKilled', 'assists', 'totalTimeCrowdControlDealt',
+    'goldEarned', 'kills', 'physicalDamageDealt', 'minionsKilled', 'totalDamageTaken',
+    'towerKills', 'largestCriticalStrike', 'neutralMinionsKilled', 'assists', 'totalTimeCrowdControlDealt',
     'magicDamageDealt', 'wardsPlaced', 'totalHeal', 'deaths'
 )
 
-# features with low variance
-features.low_variance = filter_features(data[, features.numeric], var, max=8)
-# [1] "doubleKills"             "inhibitorKills"          "killingSprees"           "largestKillingSpree"
-# [5] "largestMultiKill"        "pentaKills"              "quadraKills"             "sightWardsBoughtInGame"
-# [9] "towerKills"              "tripleKills"             "visionWardsBoughtInGame"
+# =========================================
+# Feature extraction: Feature decomposition
+# =========================================
+data[, 'minionsKilledEnemyTeam'] = data[, 'minionsKilled'] - data[, 'neutralMinionsKilled']
+data[, 'physicalDamageDealtToMonsters'] = data[, 'physicalDamageDealt'] - data[, 'physicalDamageDealtToChampions']
+data[, 'magicDamageDealtToMonsters'] = data[, 'magicDamageDealt'] - data[, 'magicDamageDealtToChampions']
 
-# Pre-select features with relevant variance
-features.selection = setdiff(features.numeric, features.low_variance)
+# ========================
+# Simple feature selection
+# ========================
+
+features.numeric = sort(setdiff(names(data), c(features.target, features.info, features.logical, features.categorical)))
+# [1] "assists"                         "deaths"                          "doubleKills"
+# [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
+# [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
+# [10] "largestKillingSpree"             "largestMultiKill"                "magicDamageDealt"
+# [13] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
+# [16] "minionsKilled"                   "minionsKilledEnemyTeam"          "neutralMinionsKilled"
+# [19] "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"  "pentaKills"
+# [22] "physicalDamageDealt"             "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"
+# [25] "physicalDamageTaken"             "quadraKills"                     "sightWardsBoughtInGame"
+# [28] "totalDamageDealt"                "totalDamageDealtToChampions"     "totalDamageTaken"
+# [31] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [34] "towerKills"                      "tripleKills"                     "trueDamageDealt"
+# [37] "trueDamageDealtToChampions"      "trueDamageTaken"                 "visionWardsBoughtInGame"
+# [40] "wardsKilled"                     "wardsPlaced"
+
+# Remove features with low variance
+features.selection = setdiff(features.numeric, filter_features(data[, features.numeric], var, max=8))
 # [1] "assists"                         "deaths"                          "goldEarned"
 # [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageTaken"
-# [10] "minionsKilled"                   "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
-# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"             "physicalDamageDealtToChampions"
-# [16] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
-# [19] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
-# [22] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
-# [25] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
-# [28] "minionsKilledEnemyTeam"          "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
+# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"
+# [10] "magicDamageTaken"                "minionsKilled"                   "minionsKilledEnemyTeam"
+# [13] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [16] "physicalDamageDealt"             "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"
+# [19] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
+# [22] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
+# [25] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
+# [28] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
 
-# ======================
-# Treatment of outliers
-# ======================
+# Compound features
+features.compound = c(
+    'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
+    'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
+    'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
+    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
+    'minionsKilled', #  neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle + minionsKilledEnemyTeam
+    'trueDamageDealt', # trueDamageDealtToChampions + trueDamageDealtToMonsters
+    'physicalDamageDealt', # physicalDamageDealtToChampions + physicalDamageDealtToMonsters
+    'magicDamageDealt' # magicDamageDealtToChampions + magicDamageDealtToMonsters
+)
 
-# Analyze and indentify extreme (IQR factor = 3) outliers of numeric features.
+# Remove compound feaures (leaving only atomic attributes - first normal form)
+features.selection = setdiff(features.selection, features.compound)
+# [1] "assists"                         "deaths"                          "goldEarned"
+# [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
+# [7] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
+# [10] "minionsKilledEnemyTeam"          "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [13] "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"   "physicalDamageTaken"
+# [16] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [19] "trueDamageDealtToChampions"      "trueDamageTaken"                 "wardsKilled"
+# [22] "wardsPlaced"
+
+# ================
+# Outlier analysis
+# ================
+
+# Analyze and indentify extreme (IQR factor = 3) outliers of numeric features
 outliers = render_plot(function () {
     return(outlier_analysis(data[, features.selection], factor=3))
 }, '../output/outliers-for-each-one', width=16, height=12)
 # outliers$total
-#> [1] 247099
+#> [1] 240702
 # > t(outliers$thresholds)
-#                                     lower  upper
-# assists                             -16.0     33
-# deaths                               -8.0     20
-# goldEarned                        -6209.0  30254
-# goldSpent                         -6410.0  28345
-# kills                               -15.0     27
-# largestCriticalStrike             -1296.0   1728
-# magicDamageDealt                -169387.0 244152
-# magicDamageDealtToChampions      -29601.0  44074
-# magicDamageTaken                 -14970.0  31874
-# minionsKilled                      -376.0    604
-# neutralMinionsKilled                -62.0     85
-# neutralMinionsKilledEnemyJungle     -15.0     20
-# neutralMinionsKilledTeamJungle      -51.0     68
-# physicalDamageDealt             -276922.0 401511
-# physicalDamageDealtToChampions   -36535.0  52337
-# physicalDamageTaken              -20312.0  48400
-# totalDamageDealt                -229762.0 457148
-# totalDamageDealtToChampions      -34614.0  70120
-# totalDamageTaken                 -27117.0  74593
-# totalHeal                        -12030.0  20135
-# totalTimeCrowdControlDealt        -1297.0   2014
-# totalUnitsHealed                     -5.0      9
-# trueDamageDealt                  -22185.0  30476
-# trueDamageDealtToChampions        -3420.0   4560
-# trueDamageTaken                   -2738.0   4318
-# wardsKilled                          -9.0     12
-# wardsPlaced                         -13.0     36
-# minionsKilledEnemyTeam             -426.0    624
-# physicalDamageDealtToMonsters   -238109.0 345908
-# magicDamageDealtToMonsters      -143753.5 203023
+#                                   lower  upper
+# assists                             -19     37
+# deaths                               -8     20
+# goldEarned                        -6133  30239
+# goldSpent                         -6325  28325
+# kills                               -15     27
+# largestCriticalStrike             -1302   1736
+# magicDamageDealtToChampions      -29717  44252
+# magicDamageDealtToMonsters      -144318 203813
+# magicDamageTaken                 -14932  31898
+# minionsKilledEnemyTeam             -429    628
+# neutralMinionsKilledEnemyJungle     -15     20
+# neutralMinionsKilledTeamJungle      -51     68
+# physicalDamageDealtToChampions   -36712  52580
+# physicalDamageDealtToMonsters   -239124 347273
+# physicalDamageTaken              -20299  48469
+# totalHeal                        -12051  20191
+# totalTimeCrowdControlDealt        -1299   2019
+# totalUnitsHealed                     -5      9
+# trueDamageDealtToChampions        -3432   4576
+# trueDamageTaken                   -2742   4328
+# wardsKilled                          -9     12
+# wardsPlaced                         -13     36
 
 # Select only features where lower != upper from outlier analysis
 features.selection = colnames(outliers$thresholds)
 # [1] "assists"                         "deaths"                          "goldEarned"
 # [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageTaken"
-# [10] "minionsKilled"                   "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle"
-# [13] "neutralMinionsKilledTeamJungle"  "physicalDamageDealt"             "physicalDamageDealtToChampions"
-# [16] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
-# [19] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
-# [22] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
-# [25] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
-# [28] "minionsKilledEnemyTeam"          "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
+# [7] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
+# [10] "minionsKilledEnemyTeam"          "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [13] "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"   "physicalDamageTaken"
+# [16] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [19] "trueDamageDealtToChampions"      "trueDamageTaken"                 "wardsKilled"
+# [22] "wardsPlaced"
 
 # remove extreme outliers
 data = data[!outliers$outliers, ]
 # nrow(data)
-#> [1] 802324
+#> [1] 795388
 
 # Remove teams with extreme outliers
 # As data were looked up by participants, some matches were left with less than
 # 10 participants. So, these inconsistent (incomplete) matches need to be removed.
 data = get_5x5_matches(data)
 # nrow(data)
-#> [1] 181880
+#> [1] 187450
 
-# ==================
-# Data normalization
-# ==================
+# ===================
+# Data transformation
+# ===================
 
 # As the match duration varies between the matches, the features were divided
 # by match duration to compute players performance per minute.
@@ -243,6 +238,10 @@ data.performance = cbind(data[, features.numeric]/data[, 'matchDuration'], data[
 
 # team performance per minute
 team.performance = aggregate(. ~ matchId + winner, data=data.performance,  FUN=sum)
+
+# ==================
+# Data normalization
+# ==================
 
 # What is the player performance in relation to the team?
 # As the player performance varies between the matches and the features also are of different varieties, the player
@@ -274,9 +273,9 @@ team.normalized = as.data.frame(cbind(
     team.performance[, c('matchId', 'winner')]
 ))
 
-# ====================
-# Correlation analysis
-# ====================
+# ===================================
+# Correlation and similarity analysis
+# ===================================
 
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
@@ -294,31 +293,14 @@ correlations = render_plot(function () {
 
 # Rank the most correlated features by mean of correlations for each one
 features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
-# [1] "totalDamageDealt"                "goldEarned"                      "goldSpent"
-# [4] "totalDamageDealtToChampions"     "neutralMinionsKilledEnemyJungle" "kills"
-# [7] "assists"                         "physicalDamageDealt"             "deaths"
-# [10] "physicalDamageDealtToMonsters"   "minionsKilled"                   "neutralMinionsKilled"
-# [13] "physicalDamageDealtToChampions"  "minionsKilledEnemyTeam"          "totalHeal"
-# [16] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"
-# [19] "trueDamageDealt"                 "wardsPlaced"                     "totalDamageTaken"
-# [22] "totalTimeCrowdControlDealt"      "neutralMinionsKilledTeamJungle"  "largestCriticalStrike"
-# [25] "trueDamageDealtToChampions"      "magicDamageTaken"                "physicalDamageTaken"
-# [28] "wardsKilled"                     "totalUnitsHealed"                "trueDamageTaken"
-
-# Compound features
-features.compound = c(
-    'totalDamageDealt',  # physicalDamageDealt + magicDamageDealt
-    'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
-    'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
-    'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'minionsKilled', #  neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle + minionsKilledEnemyTeam
-    'trueDamageDealt', # trueDamageDealtToChampions + trueDamageDealtToMonsters
-    'physicalDamageDealt', # physicalDamageDealtToChampions + physicalDamageDealtToMonsters
-    'magicDamageDealt' # magicDamageDealtToChampions + magicDamageDealtToMonsters
-)
-
-# Remove compound feaures (leaving only atomic attributes - first normal form)
-features.selection = setdiff(features.selection, features.compound)
+# [1] "goldEarned"                      "goldSpent"                       "kills"
+# [4] "assists"                         "neutralMinionsKilledEnemyJungle" "deaths"
+# [7] "physicalDamageDealtToMonsters"   "physicalDamageDealtToChampions"  "totalHeal"
+# [10] "minionsKilledEnemyTeam"          "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"
+# [13] "wardsPlaced"                     "totalTimeCrowdControlDealt"      "largestCriticalStrike"
+# [16] "trueDamageDealtToChampions"      "neutralMinionsKilledTeamJungle"  "magicDamageTaken"
+# [19] "physicalDamageTaken"             "wardsKilled"                     "totalUnitsHealed"
+# [22] "trueDamageTaken"
 
 # Redundant features
 features.redundant.player = redundant_features(data.normalized[, features.selection], threshold=0.65)
@@ -331,18 +313,18 @@ features.redundant.team = redundant_features(team.normalized[, features.selectio
 
 # Remove redundant features: highly similarity (dendogram) and correlation (heatmap).
 features.selection.player = setdiff(features.selection, features.redundant.player)
-# [1] "neutralMinionsKilledEnemyJungle" "kills"                           "assists"
-# [4] "deaths"                          "physicalDamageDealtToChampions"  "minionsKilledEnemyTeam"
-# [7] "totalHeal"                       "magicDamageDealtToMonsters"      "wardsPlaced"
-# [10] "totalTimeCrowdControlDealt"      "neutralMinionsKilledTeamJungle"  "largestCriticalStrike"
-# [13] "trueDamageDealtToChampions"      "magicDamageTaken"                "physicalDamageTaken"
+# [1] "kills"                           "assists"                         "neutralMinionsKilledEnemyJungle"
+# [4] "deaths"                          "physicalDamageDealtToChampions"  "totalHeal"
+# [7] "minionsKilledEnemyTeam"          "magicDamageDealtToMonsters"      "wardsPlaced"
+# [10] "totalTimeCrowdControlDealt"      "largestCriticalStrike"           "trueDamageDealtToChampions"
+# [13] "neutralMinionsKilledTeamJungle"  "magicDamageTaken"                "physicalDamageTaken"
 # [16] "wardsKilled"                     "totalUnitsHealed"                "trueDamageTaken"
 
 features.selection.team = setdiff(features.selection, c(features.redundant.team, 'deaths'))
-# [1] "neutralMinionsKilledEnemyJungle" "assists"                         "physicalDamageDealtToChampions"
-# [4] "minionsKilledEnemyTeam"          "totalHeal"                       "magicDamageDealtToMonsters"
-# [7] "wardsPlaced"                     "totalTimeCrowdControlDealt"      "neutralMinionsKilledTeamJungle"
-# [10] "largestCriticalStrike"           "trueDamageDealtToChampions"      "magicDamageTaken"
+# [1] "assists"                         "neutralMinionsKilledEnemyJungle" "physicalDamageDealtToChampions"
+# [4] "totalHeal"                       "minionsKilledEnemyTeam"          "magicDamageDealtToMonsters"
+# [7] "wardsPlaced"                     "totalTimeCrowdControlDealt"      "largestCriticalStrike"
+# [10] "trueDamageDealtToChampions"      "neutralMinionsKilledTeamJungle"  "magicDamageTaken"
 # [13] "physicalDamageTaken"             "wardsKilled"                     "totalUnitsHealed"
 # [16] "trueDamageTaken"
 
@@ -367,14 +349,16 @@ correlations = render_plot(function () {
 # Cluster analysis (K-means)
 # ==========================
 
+RENDER_PLOT_CLOSE = FALSE
+
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
-    return(cluster_analysis(data.normalized[, features.selection.player], kmax=120)$fits)
+    return(cluster_analysis(data.normalized[, features.selection.player], kmax=20)$fits)
 }, '../output/k-means-error-curve-player')
 
 fits.team = render_plot(function () {
-    return(cluster_analysis(team.normalized[, features.selection.team], kmax=120)$fits)
+    return(cluster_analysis(team.normalized[, features.selection.team], kmax=20)$fits)
 }, '../output/k-means-error-curve-team')
 
 # render_plot(function () {
@@ -419,48 +403,48 @@ labeled.team = cbind(label=fit.team$cluster, team.normalized[, c(features.select
 labeled = balance(labeled, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
-# 1 16918    8706   8212
-# 2 22470   11541  10929
-# 3 34801   17805  16996
-# 4 32576   16903  15673
-# 5 15128    7037   8091
-# 6 24163   11010  13153
-# 7 35824   17938  17886
+# 1 19567    6938  12629
+# 2 27568   13040  14528
+# 3 15614    7912   7702
+# 4 35330   17536  17794
+# 5 17857   11725   6132
+# 6 31255   16082  15173
+# 7 40259   20492  19767
 #
 # $relative_size
 #     winners    losers
-# 1 0.5145998 0.4854002
-# 2 0.5136182 0.4863818
-# 3 0.5116232 0.4883768
-# 4 0.5188789 0.4811211
-# 5 0.4651639 0.5348361
-# 6 0.4556553 0.5443447
-# 7 0.5007258 0.4992742
+# 1 0.3545766 0.6454234
+# 2 0.4730122 0.5269878
+# 3 0.5067247 0.4932753
+# 4 0.4963487 0.5036513
+# 5 0.6566053 0.3433947
+# 6 0.5145417 0.4854583
+# 7 0.5090042 0.4909958
 #
 # $min_size
-# [1] 5630
+# [1] 4906
 
 labeled.team = balance(labeled.team, 'winner', 'label')$data
 # $size
 #    all winners losers
-# 1 8986    4566   4420
-# 2 1812    1383    429
-# 3 7607    4554   3053
-# 4 4750    1197   3553
-# 5 8334    3045   5289
-# 6 4887    3443   1444
+# 1 9268    4692   4576
+# 2 8580    3127   5453
+# 3 5073    3562   1511
+# 4 1853    1412    441
+# 5 7875    4718   3157
+# 6 4841    1234   3607
 #
 # $relative_size
 #     winners    losers
-# 1 0.5081237 0.4918763
-# 2 0.7632450 0.2367550
-# 3 0.5986591 0.4013409
-# 4 0.2520000 0.7480000
-# 5 0.3653708 0.6346292
-# 6 0.7045222 0.2954778
+# 1 0.5062581 0.4937419
+# 2 0.3644522 0.6355478
+# 3 0.7021486 0.2978514
+# 4 0.7620076 0.2379924
+# 5 0.5991111 0.4008889
+# 6 0.2549060 0.7450940
 #
 # $min_size
-# [1] 343
+# [1] 353
 
 ##########################################
 # TODO Statistical analysis of the results
@@ -584,7 +568,7 @@ centroid_analysis(labeled.team, setdiff(features.selection.team, 'magicDamageDea
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
 
-training = balance(team, 'winner', 'label', prop=0.8)$data
+training_set = balance(team, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
 # 1 8986    4566   4420
@@ -606,155 +590,94 @@ training = balance(team, 'winner', 'label', prop=0.8)$data
 # $min_size
 # [1] 343
 
-validation = team[!(rownames(team) %in% rownames(training)), ]
+validation_set = team[!(rownames(team) %in% rownames(training_set)), ]
 
-# > nrow(training)
+# > nrow(training_set)
 # [1] 4116
-# > nrow(validation)
+# > nrow(validation_set)
 # [1] 32260
 
 #' Validate a prediction model given a validation set
-validate = function (model, validation_set, features, target) {
-    target_values = as.factor(validation_set[, target])
+validate = function (model, validation_set, features, target_feature) {
+    targets = as.factor(validation_set[, target_feature])
 
-    # predicted = predict(model, newdata=validation[, features, drop=FALSE])
+    outcomes_prob_by_target = predict(model, newdata=validation_set[, features, drop=FALSE], type="prob")
 
-    predicted_prob = predict(model, newdata=validation_set[, features, drop=FALSE], type="prob")
-
-    predicted_prob = sapply(1:nrow(validation_set), function (i) {
-        return(predicted_prob[i, target_values[i]])
-    })
-
-    predicted = sapply(1:nrow(validation_set), function (i) {
-        target = target_values[i]
-        if (predicted_prob[i] > 0.5 & target == 0 || predicted_prob[i] < 0.5 & target == 1)
+    outcomes = sapply(1:nrow(validation_set), function (i) {
+        target = targets[i]
+        outcome_prob = outcomes_prob_by_target[i, target]
+        if (outcome_prob > 0.5 & target == 0 || outcome_prob < 0.5 & target == 1)
             return(0)
         else
             return(1)
     })
 
-    confusion_matrix = table(predicted, target_values)
+    confusion_matrix = table(outcomes, targets)
     accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
     # TODO precision and recall
     return(list(confusion_matrix=confusion_matrix, accuracy=accuracy))
 }
 
-train_clusters = function (training, validation, features, target, label, feature_selector) {
-    training = if (!is.data.frame(training)) as.data.frame(training) else training
-    training = training[, c(features, target, label)]
+# partitions = caret::createDataPartition(training[, target_feature], p=0.6, list=FALSE)
+# training_set = as.data.frame(training[partitions, ])
+# validation_set = as.data.frame(training[-partitions, ])
 
-    # partitions = caret::createDataPartition(training[, target], p=0.6, list=FALSE)
-    # training = as.data.frame(training[partitions, ])
-    # validation = as.data.frame(training[-partitions, ])
+#' Train and validate binary prediction model for each cluster
+train_by_cluster = function (training_set, validation_set, features, target_feature, cluster_feature) {
+    training_set = training_set[, c(features, target_feature, cluster_feature)]
+    training_set = if (!is.data.frame(training_set)) as.data.frame(training_set) else training_set
 
-    # classes can't be numeric
-    training[, target] = as.factor(training[, target])
+    # target classes can't be numeric
+    training_set[, target_feature] = as.factor(training_set[, target_feature])
 
-    label_values = sort(unique(training[, label]))
-    label_names = Map(function (i) strf('%s%s', label, i), label_values)
+    cluster_names = sort(unique(training_set[, cluster_feature]))
 
-    result = Map(function (k) {
-        training = training[training[, label] == k, c(features, target)]
-        validation = validation[validation[, label] == k, c(features, target)]
+    # train and validation result for each k cluster
+    cluster_results = Map(function (k) {
+        # filter k cluster data
+        training_set = training_set[training_set[, cluster_feature] == k, c(features, target_feature)]
+        validation_set = validation_set[validation_set[, cluster_feature] == k, c(features, target_feature)]
 
-        features = feature_engeneering(training, features, target)
+        # perform data reduction
+        features = feature_engeneering(training_set, features, target_feature)
+        training_set = training_set[, c(features, target_feature)]
+        validation_set = validation_set[, c(features, target_feature)]
 
-        training = training[, c(features, target)]
-        validation = validation[, c(features, target)]
+        # logist regression modeling
+        model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
 
-        # render_plot(function () {
-        #     correlation_analysis(training[, features])
-        # }, strf('../output/correlation-team-%s', k), width=18, height=12)
+        # perform validation
+        validation_result = validate(model, validation_set, features, target_feature)
 
-        model = train(as.formula(strf('%s ~ .', target)), data=training, method="glm", family="binomial")
+        # cluster result
+        return(list(k=k, features=features, model=model, validation_result=validation_result))
+    }, cluster_names)
 
-        validation_result = validate(model, validation, features, target)
+    # labeling cluster result names
+    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_names)
 
-        return(list(k=k, label=label, features=features, model=model, validation_result=validation_result))
-
-    }, label_values)
-    names(result) = label_names
-
-    return(result)
+    return(cluster_results)
 }
 
-tcr = train_clusters(training, validation, setdiff(c(features.selection.team), c('deaths')),  'winner', 'label', FSelector::information.gain)
-Map(function(i) i$validation_result$accuracy, tcr)
+train_result = train_by_cluster(training_set, validation_set, features.selection.team,  'winner', 'label')
+Map(function(k) k$validation_result$accuracy, train_result)
 # $label1
-# [1] 0.9471084
+# [1] 0.9166083
 #
 # $label2
-# [1] 0.9387211
+# [1] 0.9547879
 #
 # $label3
-# [1] 0.9589655
+# [1] 0.9193955
 #
 # $label4
-# [1] 0.9303642
+# [1] 0.9250218
 #
 # $label5
-# [1] 0.9278243
+# [1] 0.9337425
 #
 # $label6
-# [1] 0.944537
-
-predict_clusters = function (testing, target, label) {
-    return(Map(function (i) {
-        label_value = i$k
-        model = i$model
-        features = i$features
-        testing = testing
-        testing = testing[testing[, label] == label_value, ]
-        # target_values = as.numeric(as.factor(testing[, target])) # 0 1 -> 1 2
-        target_values = as.factor(testing[, target])
-
-        (function () {
-            predicted = predict(model, newdata=testing[, features, drop=FALSE])
-            confusion_matrix = table(predicted, testing[, target])
-            accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
-        })()
-
-        predicted_prob = predict(model, newdata=testing[, features, drop=FALSE], type="prob")
-
-        predicted_prob = sapply(1:nrow(testing), function (i) {
-            return(predicted_prob[i, target_values[i]])
-        })
-
-        predicted = sapply(1:nrow(testing), function (i) {
-            target = target_values[i]
-            if (predicted_prob[i] > 0.5 & target == 0 || predicted_prob[i] < 0.5 & target == 1)
-                return(0)
-            else
-                return(1)
-        })
-
-        confusion_matrix = table(predicted, target_values)
-        accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
-
-        return(list(accuracy=accuracy, confusion_matrix=confusion_matrix, predicted=predicted_prob, testing=target_values))
-    }, tcr))
-}
-
-xxx = predict_clusters(validation, 'winner', 'label')
-
-Map(function(i) i$accuracy, xxx)
-# $label1
-# [1] 0.9471084
-#
-# $label2
-# [1] 0.9387211
-#
-# $label3
-# [1] 0.9589655
-#
-# $label4
-# [1] 0.9303642
-#
-# $label5
-# [1] 0.9278243
-#
-# $label6
-# [1] 0.944537
+# [1] 0.9293833
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
@@ -783,38 +706,6 @@ relevant_features.team.random_forest = random.forest.importance(team.sampled, fe
 # random forest score > mean
 tmp = relevant_features.random_forest$is_selected
 mode(tmp) <- 'numeric'
-
-# TODO Classification [winner x loser] .................................................................................................
-
-team.sampled
-
-import_package('caret', attach=TRUE)
-# https://www.r-bloggers.com/evaluating-logistic-regression-models/
-(function (data, features) {
-    cluster = 'label'
-    cluster_value = '1'
-    target = 'winner'
-
-    features = features[[strf('%s%s', cluster, cluster_value)]]
-
-    data = as.data.frame(data[data[, cluster] == cluster_value, c(features, target), ])
-    data[, target] = as.factor(data[, target])
-
-    correlation_analysis(data[, features])
-    features.redundant = redundant_features(data[, features])
-    features = setdiff(features, features.redundant)
-
-    partitions = caret::createDataPartition(data[, target], p=0.6, list=FALSE)
-    training = as.data.frame(data[partitions, ])
-    testing = as.data.frame(data[-partitions, ])
-
-    formula = as.formula(strf('%s ~ .', target))
-    model = train(formula, data=training, method="glm", family="binomial")
-
-    predicted = predict(model, newdata=testing[, features, drop=FALSE])
-    accuracy = table(predicted, testing[, target])
-    return(sum(diag(accuracy))/sum(accuracy))
-})(team.sampled, relevant_features.team.information_gain$selection)
 
 # TODO feature selection using random forest
 # http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
