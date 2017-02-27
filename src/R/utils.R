@@ -5,6 +5,91 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
+#' Perform simple descriptive statistics
+descriptive_statistics = function (data, features) {
+    statistics = round(t(apply(data[, features], 2, function(col) {
+        return(cbind(min(col), max(col), mean(col), median(col), var(col), sd(col)))
+    })), digits=2)
+    colnames(statistics) = c('min', 'max', 'mean', 'meadian', 'var', 'sd')
+    return(statistics)
+}
+
+#' Viz clustered data exploring: Scatter and PCA plot for the first three features.
+#'
+#' In general, we can observe the k clusters found in k-means clustering. We can also observe that some clusters are
+#' more perceptible than others when the clustered data is discriminated between winners and losers.
+cluster_data_viz = function (data, features, target_feature, cluster_feature, pca_lim=c(1, -1)) {
+    winners = data[data[, target_feature] == 1, ]
+    losers = data[data[, target_feature] == 0, ]
+
+    # Clustered data plot for the first three features
+    render_plot(function () {
+        main = 'Exploring - Scatter plot'
+        plot(data[, features[1:3]], main=main, col=data[, cluster_feature])
+    }, '../output/exploring-scatterplot-player')
+
+    # Only winners
+    render_plot(function () {
+        main = 'Exploring clusters - Scatter plot for winners (true targets)'
+        plot(winners[, features[1:3]], main=main, col=winners[, cluster_feature])
+    }, '../output/exploring-scatterplot-winners-player')
+
+    # Only losers
+    render_plot(function () {
+        main = 'Exploring clusters - Scatter plot for losers (false targets)'
+        plot(losers[, features[1:3]], main=main, col=losers[, cluster_feature])
+    }, '../output/exploring-scatterplot-losers-player')
+
+    # 3-D visualization of 3 principal components of the clustered data
+    render_plot(function () {
+        par(mfrow=c(1, 3))
+        # max = max(data[, features[1:3]])
+        #lim = c(-max, max) # TODO review
+        lim = pca_lim
+        angle = 95
+        pca_plot(data[, features[1:3]], main='PCA', color=data[, cluster_feature], angle=angle, xlim=lim, ylim=lim,
+                 zlim=lim)
+        pca_plot(winners[, features[1:3]], main='PCA winners', color=winners[, cluster_feature], angle=angle, xlim=lim,
+                 ylim=lim, zlim=lim)
+        pca_plot(losers[, features[1:3]], main='PCA losers', color=losers[, cluster_feature], angle=angle, xlim=lim,
+                 ylim=lim, zlim=lim)
+    }, '../output/exploring-pca-player', width=18, height=9)
+}
+
+#' Statistical analysis of cluster analysis by discriminating a binary target
+#'
+#' Hypothesis 1. H1-0: There is no difference between the distributions of the clusters found in the learning model;
+#' H1-1 There is difference between the distributions of the clusters found in the learning model. Test: Kruskal-Wallis
+#' rank sum test
+#'
+#' Hypothesis 2. H2-0: For each cluster found in the learning model there is no difference between the medians of the
+#' winning players and losing players; (H2-1) for each cluster found there is difference between the medians of the
+#' winning players and losing players. Test: Wilcoxon rank sum test with continuity correction
+cluster_statistical_analysis = function (data, features, target_feature, cluster_feature) {
+    cluster_domain = sort(unique(data[, cluster_feature]))
+    cluster_values = data[, cluster_feature]
+    winners = data[data[, target_feature] == 1, ]
+    losers = data[data[, target_feature] == 0, ]
+
+    # Alternative hypothesis true: p.value < 0.05
+    h1 = kruskal.test(rowSums(data[, features]), cluster_values)
+
+    # Alternative hypothesis true for each cluster: p.value < 0.05
+    h2.p.values = values(Map(function (k) {
+        x = rowSums(winners[winners[, cluster_feature] == k, features])
+        y = rowSums(losers[losers[, cluster_feature] == k, features])
+        # TODO print(paste(shapiro.test(x)$p.value, shapiro.test(y)$p.value))
+        # TODO print(t.test(x, y, paired=FALSE)$p.value)
+        wilcox.test(x , y, paired=FALSE)$p.value
+    }, cluster_domain))
+
+    render_plot(function () {
+        par(mfrow=c(1, 2))
+        plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
+        plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
+    }, '../output/hypothesis-player', width=16, height=9)
+}
+
 #' Given a data set x, summarize the mean for each feature by label.
 #' TODO cluter boxplot
 centroid_analysis = function (data, features, plot_name) {
