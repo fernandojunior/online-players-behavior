@@ -20,7 +20,8 @@ get_10_players_matches = function (players) {
     players = players[players$matchId %in% matchIds, ]
 }
 
-#' Return matches with 5 players each team (5x5)
+#' Return matches with 5 players each team (5x5). As data were looked up by participants, some matches were left with
+#' less than 10 participants. So, these inconsistent (incomplete) matches need to be removed.
 get_5x5_matches = function (players) {
     players = get_10_players_matches(players)
     teams = aggregate(winner~matchId, players[, c('winner', 'matchId')], function(x) sum(as.numeric(x)))
@@ -48,8 +49,7 @@ data = read.csv('../data/data20170105025503.csv')
 
 # Remove some games with error or AFK players
 # Remove inconsistent matches, i.e. matches not 5x5
-data = remove_afk_players(data)
-data = get_5x5_matches(data)
+data = get_5x5_matches(remove_afk_players(data))
 
 # > nrow(data)
 # [1] 1036090
@@ -58,14 +58,23 @@ data = get_5x5_matches(data)
 # data = data[!duplicated(data[, 'summonerId']),]
 # > nrow(data)
 
-# ===================
-# Features definition
-# ===================
+# =============================
+# Feature definition/extraction
+# =============================
 
 features.info = c(
-    'matchId', 'matchMode', 'queueType', 'season', 'championId', 'summonerId',
+    'matchId',
+    'matchMode',
+    'queueType',
+    'season',
+    'championId',
+    'summonerId',
     'matchDuration', # In minutes
-    'matchCreation', 'matchCreationYear', 'matchCreationMonth', 'matchCreationDay', 'matchCreationHour',
+    'matchCreation',
+    'matchCreationYear',
+    'matchCreationMonth',
+    'matchCreationDay',
+    'matchCreationHour',
     'item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6',
     'combatPlayerScore', 'objectivePlayerScore', 'totalPlayerScore', 'totalScoreRank', 'unrealKills'  # ARAM
 )
@@ -74,9 +83,11 @@ features.target = 'winner'
 
 features.logical = c(
     # 'firstBloodAssist', 'firstBloodKill', 'firstTowerAssist', 'firstTowerKill'
-    'firstInhibitorAssist', 'firstInhibitorKill'
+    'firstInhibitorAssist',
+    'firstInhibitorKill'
 )
 
+# Categorical (nominal), ordinal or interval features
 features.categorical = c('champLevel')
 
 features.numeric = sort(setdiff(names(data), c(features.target, features.info, features.logical, features.categorical)))
@@ -94,58 +105,15 @@ features.numeric = sort(setdiff(names(data), c(features.target, features.info, f
 # [34] "trueDamageDealtToChampions"      "trueDamageTaken"                 "visionWardsBoughtInGame"
 # [37] "wardsKilled"                     "wardsPlaced"
 
-features.ong = c(
-    'firstBloodKill', 'firstTowerKill', 'firstTowerAssist', 'kills', 'assists', 'deaths', 'goldEarned',
-    'totalDamageDealt', 'magicDamageDealt', 'physicalDamageDealt', 'totalDamageDealtToChampions', 'totalDamageTaken',
-    'minionsKilled', 'neutralMinionsKilled', 'totalTimeCrowdControlDealt', 'wardsPlaced', 'towerKills',
-    'largestMultiKill', 'largestKillingSpree', 'largestCriticalStrike', 'totalHeal'
-)
+# ===========================================
+# Feature extraction by feature decomposition
+# ===========================================
+# OBS: minionsKilledEnemyTeam not in minionsKilled
 
-features.ong.numeric = c(
-    'goldEarned', 'kills', 'physicalDamageDealt', 'minionsKilled', 'totalDamageTaken',
-    'towerKills', 'largestCriticalStrike', 'neutralMinionsKilled', 'assists', 'totalTimeCrowdControlDealt',
-    'magicDamageDealt', 'wardsPlaced', 'totalHeal', 'deaths'
-)
-
-# =========================================
-# Feature extraction: Feature decomposition
-# =========================================
-data[, 'minionsKilledEnemyTeam'] = data[, 'minionsKilled'] - data[, 'neutralMinionsKilled']
 data[, 'physicalDamageDealtToMonsters'] = data[, 'physicalDamageDealt'] - data[, 'physicalDamageDealtToChampions']
 data[, 'magicDamageDealtToMonsters'] = data[, 'magicDamageDealt'] - data[, 'magicDamageDealtToChampions']
 
-# ========================
-# Simple feature selection
-# ========================
-
-features.numeric = sort(setdiff(names(data), c(features.target, features.info, features.logical, features.categorical)))
-# [1] "assists"                         "deaths"                          "doubleKills"
-# [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
-# [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
-# [10] "largestKillingSpree"             "largestMultiKill"                "magicDamageDealt"
-# [13] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
-# [16] "minionsKilled"                   "minionsKilledEnemyTeam"          "neutralMinionsKilled"
-# [19] "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"  "pentaKills"
-# [22] "physicalDamageDealt"             "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"
-# [25] "physicalDamageTaken"             "quadraKills"                     "sightWardsBoughtInGame"
-# [28] "totalDamageDealt"                "totalDamageDealtToChampions"     "totalDamageTaken"
-# [31] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
-# [34] "towerKills"                      "tripleKills"                     "trueDamageDealt"
-# [37] "trueDamageDealtToChampions"      "trueDamageTaken"                 "visionWardsBoughtInGame"
-# [40] "wardsKilled"                     "wardsPlaced"
-
-# Remove features with low variance
-features.selection = setdiff(features.numeric, filter_features(data[, features.numeric], var, max=8))
-# [1] "assists"                         "deaths"                          "goldEarned"
-# [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealt"                "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"
-# [10] "magicDamageTaken"                "minionsKilled"                   "minionsKilledEnemyTeam"
-# [13] "neutralMinionsKilled"            "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
-# [16] "physicalDamageDealt"             "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"
-# [19] "physicalDamageTaken"             "totalDamageDealt"                "totalDamageDealtToChampions"
-# [22] "totalDamageTaken"                "totalHeal"                       "totalTimeCrowdControlDealt"
-# [25] "totalUnitsHealed"                "trueDamageDealt"                 "trueDamageDealtToChampions"
-# [28] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
+features.numeric = c(features.numeric, 'physicalDamageDealtToMonsters', 'magicDamageDealtToMonsters')
 
 # Compound features
 features.compound = c(
@@ -160,15 +128,71 @@ features.compound = c(
 )
 
 # Remove compound feaures (leaving only atomic attributes - first normal form)
-features.selection = setdiff(features.selection, features.compound)
+features.numeric = setdiff(features.numeric, features.compound)
+# [1] "assists"                         "deaths"                          "doubleKills"
+# [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
+# [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
+# [10] "largestKillingSpree"             "largestMultiKill"                "magicDamageDealtToChampions"
+# [13] "magicDamageTaken"                "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [16] "pentaKills"                      "physicalDamageDealtToChampions"  "physicalDamageTaken"
+# [19] "quadraKills"                     "sightWardsBoughtInGame"          "totalHeal"
+# [22] "totalTimeCrowdControlDealt"      "totalUnitsHealed"                "towerKills"
+# [25] "tripleKills"                     "trueDamageDealtToChampions"      "trueDamageTaken"
+# [28] "visionWardsBoughtInGame"         "wardsKilled"                     "wardsPlaced"
+# [31] "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
+
+#########################
+# Descriptive statistics
+#########################
+
+# > descriptive_statistics(data, features.numeric)
+#                                  min    max     mean meadian           var       sd
+# assists                            0     37     6.55     5.0         25.00     5.00
+# deaths                             0     20     4.97     5.0          8.74     2.96
+# doubleKills                        0      9     0.47     0.0          0.75     0.86
+# goldEarned                      3157  24324  9441.09  9179.0    8188521.43  2861.56
+# goldSpent                        550  26778  8446.35  8200.0    7406350.05  2721.46
+# inhibitorKills                     0      4     0.14     0.0          0.16     0.40
+# killingSprees                      0     10     1.11     1.0          1.24     1.12
+# kills                              0     27     4.94     4.0         17.41     4.17
+# largestCriticalStrike              0   1736   176.28     0.0      90425.42   300.71
+# largestKillingSpree                0     26     2.50     2.0          7.00     2.65
+# largestMultiKill                   0      5     1.28     1.0          0.54     0.73
+# magicDamageDealtToChampions        0  44247  5965.14  3701.0   41895359.03  6472.66
+# magicDamageTaken                   0  31830  6015.04  5328.5   13040670.58  3611.19
+# neutralMinionsKilledEnemyJungle    0     20     2.57     1.0         17.31     4.16
+# neutralMinionsKilledTeamJungle     0     68    11.10     2.0        323.21    17.98
+# pentaKills                         0      2     0.00     0.0          0.00     0.04
+# physicalDamageDealtToChampions     0  52400  6354.05  3495.0   45975481.71  6780.52
+# physicalDamageTaken               49  47836 10837.24  9961.0   28951215.06  5380.63
+# quadraKills                        0      3     0.01     0.0          0.01     0.10
+# sightWardsBoughtInGame             0      0     0.00     0.0          0.00     0.00
+# totalHeal                          0  20183  3067.55  2100.0    9091878.88  3015.27
+# totalTimeCrowdControlDealt         0   2019   292.40   187.0      97881.87   312.86
+# totalUnitsHealed                   0      9     1.84     1.0          1.85     1.36
+# towerKills                         0      9     0.77     0.0          1.33     1.15
+# tripleKills                        0      5     0.06     0.0          0.08     0.27
+# trueDamageDealtToChampions         0   4576   519.82   240.0     579497.75   761.25
+# trueDamageTaken                    0   4325   541.82   382.0     309057.42   555.93
+# visionWardsBoughtInGame            0     16     0.71     0.0          1.13     1.06
+# wardsKilled                        0     12     1.14     1.0          2.28     1.51
+# wardsPlaced                        0     36     9.24     8.0         25.84     5.08
+# physicalDamageDealtToMonsters      0 328231 41916.53 27746.0 1542164943.87 39270.41
+# magicDamageDealtToMonsters         0 203453 23587.58 12337.0  754640013.66 27470.71
+
+# ==========================================
+# Modeling team data from player match stats
+# ==========================================
+
+# Remove low variance features
+features.selection.player = setdiff(features.numeric, filter_features(data[, features.numeric], var, max=7))
 # [1] "assists"                         "deaths"                          "goldEarned"
 # [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
-# [10] "minionsKilledEnemyTeam"          "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
-# [13] "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"   "physicalDamageTaken"
-# [16] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
-# [19] "trueDamageDealtToChampions"      "trueDamageTaken"                 "wardsKilled"
-# [22] "wardsPlaced"
+# [7] "magicDamageDealtToChampions"     "magicDamageTaken"                "neutralMinionsKilledEnemyJungle"
+# [10] "neutralMinionsKilledTeamJungle"  "physicalDamageDealtToChampions"  "physicalDamageTaken"
+# [13] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
+# [16] "trueDamageDealtToChampions"      "trueDamageTaken"                 "wardsKilled"
+# [19] "wardsPlaced"                     "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
 
 # ================
 # Outlier analysis
@@ -176,74 +200,137 @@ features.selection = setdiff(features.selection, features.compound)
 
 # Analyze and indentify extreme (IQR factor = 3) outliers of numeric features
 outliers = render_plot(function () {
-    return(outlier_analysis(data[, features.selection], factor=3))
+    return(outlier_analysis(data[, features.selection.player], factor=3))
 }, '../output/outliers-for-each-one', width=16, height=12)
-# outliers$total
-#> [1] 240702
+# > outliers$total
 # > t(outliers$thresholds)
-#                                   lower  upper
-# assists                             -19     37
-# deaths                               -8     20
-# goldEarned                        -6133  30239
-# goldSpent                         -6325  28325
-# kills                               -15     27
-# largestCriticalStrike             -1302   1736
-# magicDamageDealtToChampions      -29717  44252
-# magicDamageDealtToMonsters      -144318 203813
-# magicDamageTaken                 -14932  31898
-# minionsKilledEnemyTeam             -429    628
-# neutralMinionsKilledEnemyJungle     -15     20
-# neutralMinionsKilledTeamJungle      -51     68
-# physicalDamageDealtToChampions   -36712  52580
-# physicalDamageDealtToMonsters   -239124 347273
-# physicalDamageTaken              -20299  48469
-# totalHeal                        -12051  20191
-# totalTimeCrowdControlDealt        -1299   2019
-# totalUnitsHealed                     -5      9
-# trueDamageDealtToChampions        -3432   4576
-# trueDamageTaken                   -2742   4328
-# wardsKilled                          -9     12
-# wardsPlaced                         -13     36
+
+# Remove matches with extreme outliers from player match stats data
+extreme_outliers_matchIds = unique(data[outliers$outliers, 'matchId'])
+data = data[!(data$matchId %in% extreme_outliers_matchIds), ]
+
+# > nrow(data)
+# [1] 187450
 
 # Select only features where lower != upper from outlier analysis
-features.selection = colnames(outliers$thresholds)
-# [1] "assists"                         "deaths"                          "goldEarned"
-# [4] "goldSpent"                       "kills"                           "largestCriticalStrike"
-# [7] "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"      "magicDamageTaken"
-# [10] "minionsKilledEnemyTeam"          "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
-# [13] "physicalDamageDealtToChampions"  "physicalDamageDealtToMonsters"   "physicalDamageTaken"
-# [16] "totalHeal"                       "totalTimeCrowdControlDealt"      "totalUnitsHealed"
-# [19] "trueDamageDealtToChampions"      "trueDamageTaken"                 "wardsKilled"
-# [22] "wardsPlaced"
+features.selection.player = colnames(outliers$thresholds)
 
-# remove extreme outliers
-data = data[!outliers$outliers, ]
-# nrow(data)
-#> [1] 795388
+# Remove low variance features after outlier analyis
+features.selection.player = setdiff(features.selection.player, filter_features(data[, features.selection.player], var, max=7))
 
-# Remove teams with extreme outliers
-# As data were looked up by participants, some matches were left with less than
-# 10 participants. So, these inconsistent (incomplete) matches need to be removed.
-data = get_5x5_matches(data)
-# nrow(data)
-#> [1] 187450
+# > descriptive_statistics(data, features.selection)
+#                                  min    max     mean meadian           var       sd
+# assists                            0     37     6.55     5.0         25.00     5.00
+# deaths                             0     20     4.97     5.0          8.74     2.96
+# goldEarned                      3157  24324  9441.09  9179.0    8188521.43  2861.56
+# goldSpent                        550  26778  8446.35  8200.0    7406350.05  2721.46
+# kills                              0     27     4.94     4.0         17.41     4.17
+# largestCriticalStrike              0   1736   176.28     0.0      90425.42   300.71
+# magicDamageDealtToChampions        0  44247  5965.14  3701.0   41895359.03  6472.66
+# magicDamageTaken                   0  31830  6015.04  5328.5   13040670.58  3611.19
+# neutralMinionsKilledEnemyJungle    0     20     2.57     1.0         17.31     4.16
+# neutralMinionsKilledTeamJungle     0     68    11.10     2.0        323.21    17.98
+# physicalDamageDealtToChampions     0  52400  6354.05  3495.0   45975481.71  6780.52
+# physicalDamageTaken               49  47836 10837.24  9961.0   28951215.06  5380.63
+# totalHeal                          0  20183  3067.55  2100.0    9091878.88  3015.27
+# totalTimeCrowdControlDealt         0   2019   292.40   187.0      97881.87   312.86
+# trueDamageDealtToChampions         0   4576   519.82   240.0     579497.75   761.25
+# trueDamageTaken                    0   4325   541.82   382.0     309057.42   555.93
+# wardsPlaced                        0     36     9.24     8.0         25.84     5.08
+# physicalDamageDealtToMonsters      0 328231 41916.53 27746.0 1542164943.87 39270.41
+# magicDamageDealtToMonsters         0 203453 23587.58 12337.0  754640013.66 27470.71
+
+
+# ==========================================
+# Modeling team data from player match stats
+# ==========================================
+
+team = aggregate(. ~ matchId + winner, data=data[, c(features.selection.player, 'winner', 'matchId')],  FUN=sum)
+# > nrow(team)
+# [1] 37490
+
+# Simple descriptive statistics
+# > descriptive_statistics(team, features.numeric)
+#                                   min    max      mean  meadian           var       sd
+# assists                             0    122     32.75     31.0        350.60    18.72
+# deaths                              0     73     24.84     25.0        136.95    11.70
+# doubleKills                         0     13      2.34      2.0          4.15     2.04
+# goldEarned                      20603  93208  47205.47  46659.0  154273820.98 12420.70
+# goldSpent                       14525  91575  42231.75  41685.0  132433329.79 11507.97
+# inhibitorKills                      0      6      0.68      0.0          1.01     1.00
+# killingSprees                       0     20      5.53      5.0          9.89     3.15
+# kills                               0     73     24.69     24.0        136.91    11.70
+# largestCriticalStrike               0   4457    881.42    775.0     325420.88   570.46
+# largestKillingSpree                 0     43     12.52     12.0         53.57     7.32
+# largestMultiKill                    0     14      6.38      6.0          3.43     1.85
+# magicDamageDealtToChampions      1734 122100  29825.68  26985.5  227485814.93 15082.63
+# magicDamageTaken                 1734 123100  30075.21  27276.5  230008427.84 15166.03
+# neutralMinionsKilledEnemyJungle     0     59     12.84     11.0        107.94    10.39
+# neutralMinionsKilledTeamJungle      0    145     55.48     55.0        286.36    16.92
+# pentaKills                          0      2      0.01      0.0          0.01     0.09
+# physicalDamageDealtToChampions   1298 131831  31770.23  29408.5  215061398.52 14664.97
+# physicalDamageTaken             11711 160443  54186.21  51871.5  298809055.60 17286.09
+# quadraKills                         0      3      0.04      0.0          0.05     0.21
+# sightWardsBoughtInGame              0      0      0.00      0.0          0.00     0.00
+# totalHeal                        1756  60022  15337.77  13999.5   53805415.18  7335.22
+# totalTimeCrowdControlDealt         40   7639   1461.99   1300.0     550083.78   741.68
+# totalUnitsHealed                    3     24      9.22      9.0          5.27     2.30
+# towerKills                          0     12      3.87      3.0         11.34     3.37
+# tripleKills                         0      5      0.31      0.0          0.38     0.61
+# trueDamageDealtToChampions          0  12353   2599.11   2180.0    3047499.45  1745.71
+# trueDamageTaken                     0  13001   2709.09   2282.0    3305126.80  1818.00
+# visionWardsBoughtInGame             0     25      3.53      3.0          6.52     2.55
+# wardsKilled                         0     49      5.70      5.0         20.14     4.49
+# wardsPlaced                         8    109     46.19     45.0        191.86    13.85
+# physicalDamageDealtToMonsters   28629 718083 209582.67 198049.5 7127626515.10 84425.27
+# magicDamageDealtToMonsters       3492 489227 117937.89 108116.0 3582231246.48 59851.74
+
+# Remove low variance features
+features.selection.team = setdiff(features.numeric, filter_features(team[, features.numeric], var, max=7))
+#  [1] "assists"                         "deaths"                          "goldEarned"
+#  [4] "goldSpent"                       "killingSprees"                   "kills"
+#  [7] "largestCriticalStrike"           "largestKillingSpree"             "magicDamageDealtToChampions"
+# [10] "magicDamageTaken"                "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
+# [13] "physicalDamageDealtToChampions"  "physicalDamageTaken"             "totalHeal"
+# [16] "totalTimeCrowdControlDealt"      "towerKills"                      "trueDamageDealtToChampions"
+# [19] "trueDamageTaken"                 "wardsKilled"                     "wardsPlaced"
+# [22] "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
+
+# Outlier analysis
+outliers.team = render_plot(function () {
+    return(outlier_analysis(team[, features.numeric], factor=3))
+}, '../output/outliers-for-each-one', width=16, height=12)
+
+# Remove matches with extreme outliers from team and player match stats data
+extreme_outliers_mathIds = unique(team[outliers.team$outliers, 'matchId'])
+team = team[!team$matchId %in% extreme_outliers_mathIds, ]
+data = data[!data$matchId %in% extreme_outliers_mathIds, ]
+
+# > nrow(team)
+# [1] 36864
+
+# > nrow(data)
+# [1] 184320
 
 # ===================
 # Data transformation
 # ===================
 
-# As the match duration varies between the matches, the features were divided
-# by match duration to compute players performance per minute.
-data.performance = cbind(data[, features.numeric]/data[, 'matchDuration'], data[, c('matchId', 'winner')])
+# As the match duration varies between the matches, the features were divided by match duration to compute players
+# performance per minute.
+data.performance = cbind(
+    data[, c(features.info, 'matchId', 'winner')],
+    data[, features.numeric]/data[, 'matchDuration']
+)
 
-# team performance per minute
+# Team stats per minute
 team.performance = aggregate(. ~ matchId + winner, data=data.performance,  FUN=sum)
 
 # ==================
 # Data normalization
 # ==================
 
-# What is the player performance in relation to the team?
+# What is the individual player performance in relation to his team?
 # As the player performance varies between the matches and the features also are of different varieties, the player
 # performance was divided by team performance to compute relative performance, wich can ranges from 0 to 1, and thus
 # scale up the data in a uniform way. Relative performance of the players in their respective teams:
@@ -258,13 +345,11 @@ rownames(data.relative_performance) = rownames(data.performance)
 team.performance = sapply(team.performance, as.numeric)
 team.performance[is.nan(team.performance)] <- 0
 team.performance = as.data.frame(team.performance)
-team = as.data.frame(team.performance[, c(features.numeric, 'matchId', 'winner')])
 
 data.relative_performance = sapply(data.relative_performance, as.numeric)
 data.relative_performance[is.nan(data.relative_performance)] <- 0
 data.relative_performance = as.data.frame(data.relative_performance)
-
-data.normalized = data.relative_performance
+# data.relative_performance = cbind(data[, setdiff(features.info, c('matchId', 'winner'))], data.relative_performance)
 
 # Since the team performances are of different varieties, their scales are also
 # different. In order to maintain uniform scalability we normalize the features.
@@ -280,11 +365,11 @@ team.normalized = as.data.frame(cbind(
 # Correlation matrix of normalized data using Spearman method, which does not
 # require the features follow a normal distribuition or linear correlation.
 correlations = render_plot(function () {
-    return(correlation_analysis(data.normalized[, features.selection])$estimates)
+    return(correlation_analysis(data.relative_performance[, features.selection.player])$estimates)
 }, '../output/correlation-player', width=18, height=12)
 
 correlations = render_plot(function () {
-    return(correlation_analysis(team.normalized[, features.selection])$estimates)
+    return(correlation_analysis(team.normalized[, features.selection.team])$estimates)
 }, '../output/correlation-team', width=18, height=12)
 
 # ====================================
@@ -303,7 +388,7 @@ features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
 # [22] "trueDamageTaken"
 
 # Redundant features
-features.redundant.player = redundant_features(data.normalized[, features.selection], threshold=0.65)
+features.redundant.player = redundant_features(data.relative_performance[, features.selection], threshold=0.65)
 # [1] "goldEarned"                    "physicalDamageDealtToMonsters" "magicDamageDealtToChampions"
 # [4] "goldSpent"
 
@@ -333,7 +418,7 @@ features.selection.team = setdiff(features.selection, c(features.redundant.team,
 # ========================
 
 # Dimensionality reduction of the normalized data with selected features
-data.reduced = data.normalized[, features.selection.player]
+data.reduced = data.relative_performance[, features.selection.player]
 
 team.reduced = team.normalized[, features.selection.team]
 
@@ -354,19 +439,19 @@ RENDER_PLOT_CLOSE = FALSE
 # Perform a cluster analysis on data using k-means for each k = [1:kmax]. Also
 # render a knee of the error curve plot to find the optimal k
 fits = render_plot(function () {
-    return(cluster_analysis(data.normalized[, features.selection.player], kmax=20)$fits)
+    return(cluster_analysis(data.relative_performance[, features.selection.player], kmax=120)$fits)
 }, '../output/k-means-error-curve-player')
 
 fits.team = render_plot(function () {
-    return(cluster_analysis(team.normalized[, features.selection.team], kmax=20)$fits)
+    return(cluster_analysis(team.normalized[, features.selection.team], kmax=120)$fits)
 }, '../output/k-means-error-curve-team')
 
 # render_plot(function () {
-#     return(bagging_cluster_analysis(data.normalized[, features.selection.player], kmax=120, ntests=10))
+#     return(bagging_cluster_analysis(data.relative_performance[, features.selection.player], kmax=120, ntests=10))
 # }, '../output/k-means-error-curve-player-avaraged')
 #
 # render_plot(function () {
-#     return(bagging_cluster_analysis(data.normalized, kmax=120, ncol=ncol(data.normalized[, features.selection.player]), ntests=10))
+#     return(bagging_cluster_analysis(data.relative_performance, kmax=120, ncol=ncol(data.relative_performance[, features.selection.player]), ntests=10))
 # }, '../output/k-means-error-curve-player-bagging')
 #
 # render_plot(function () {
@@ -377,189 +462,96 @@ fits.team = render_plot(function () {
 #     return(bagging_cluster_analysis(team.normalized, kmax=120, ncol=ncol(team.normalized[, features.selection.team]), ntests=10))
 # }, '../output/k-means-error-curve-team-bagging')
 
-# Which is the optimal fit in this case? Analysing the error curve plot, the
-# k = 7 fit seems to have the best trade-off, as the rate difference does not
-# vary so much after it.
-fit = fits[[7]]
-# each(function (i) write.csv(fit[i], strf('../output/fit/%s.csv', i)), names(fit))
+# Which is the optimal fit in this case? Analysing the error curve plot, the k = x fit seems to have the best trade-off,
+# as the WSS rate for k > 8 does not vary so much after it.
+fit = fits[[8]]
 
 fit.team = fits.team[[6]]
 
 # Labeling data
 data = cbind(data, label=fit$cluster)
-player = cbind(data.performance, label=fit$cluster)
+data.performance = cbind(data.performance, label=fit$cluster)
+data.relative_performance = cbind(data.relative_performance, label=fit$cluster)
 
-team = cbind(team.performance, label=fit.team$cluster)
+team.performance = cbind(team.performance, label=fit.team$cluster)
 team.normalized = cbind(team.normalized, label=fit.team$cluster)
-
-labeled = cbind(winner=data[, 'winner'], data[, features.info], data.normalized[, features.selection.player], label=fit$cluster)
-labeled.team = cbind(label=fit.team$cluster, team.normalized[, c(features.selection.team, 'matchId', 'winner')])
 
 ###############################################################################
 # Clustered data balancing (undersampling) by discriminating winners and losers
 ###############################################################################
 
 # Undersampling clustered data based on min size
-labeled = balance(labeled, 'winner', 'label', 0.8)$data
+balanced = balance(data.relative_performance, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
-# 1 19567    6938  12629
-# 2 27568   13040  14528
-# 3 15614    7912   7702
-# 4 35330   17536  17794
-# 5 17857   11725   6132
-# 6 31255   16082  15173
-# 7 40259   20492  19767
+# 1 35827   18317  17510
+# 2 24702   11298  13404
+# 3 15491    7213   8278
+# 4 19528    6938  12590
+# 5 23159   11902  11257
+# 6 17871   11737   6134
+# 7 17457    8991   8466
+# 8 33415   17329  16086
 #
 # $relative_size
 #     winners    losers
-# 1 0.3545766 0.6454234
-# 2 0.4730122 0.5269878
-# 3 0.5067247 0.4932753
-# 4 0.4963487 0.5036513
-# 5 0.6566053 0.3433947
-# 6 0.5145417 0.4854583
-# 7 0.5090042 0.4909958
+# 1 0.5112625 0.4887375
+# 2 0.4573719 0.5426281
+# 3 0.4656252 0.5343748
+# 4 0.3552847 0.6447153
+# 5 0.5139255 0.4860745
+# 6 0.6567624 0.3432376
+# 7 0.5150369 0.4849631
+# 8 0.5185994 0.4814006
 #
 # $min_size
-# [1] 4906
+# [1] 4907
 
-labeled.team = balance(labeled.team, 'winner', 'label')$data
+balanced.team = balance(team.normalized, 'winner', 'label')$data
 # $size
 #    all winners losers
-# 1 9268    4692   4576
-# 2 8580    3127   5453
-# 3 5073    3562   1511
-# 4 1853    1412    441
+# 1 4841    1234   3607
+# 2 1853    1412    441
+# 3 9268    4692   4576
+# 4 8580    3127   5453
 # 5 7875    4718   3157
-# 6 4841    1234   3607
+# 6 5073    3562   1511
 #
 # $relative_size
 #     winners    losers
-# 1 0.5062581 0.4937419
-# 2 0.3644522 0.6355478
-# 3 0.7021486 0.2978514
-# 4 0.7620076 0.2379924
+# 1 0.2549060 0.7450940
+# 2 0.7620076 0.2379924
+# 3 0.5062581 0.4937419
+# 4 0.3644522 0.6355478
 # 5 0.5991111 0.4008889
-# 6 0.2549060 0.7450940
+# 6 0.7021486 0.2978514
 #
 # $min_size
 # [1] 353
 
-##########################################
-# TODO Statistical analysis of the results
-##########################################
+################################################################################################
+# TODO Improve Statistical analysis of cluster analysis by discriminating a winner binary target
+################################################################################################
 
-(function (data, features) {
-    winners = data[data$winner == 1, ]
-    losers = data[data$winner == 0, ]
+cluster_statistical_analysis(data.relative_performance, features.selection.player, 'winner', 'label')
 
-    # Hypothesis 1. H1-0: There is no difference between the distributions of the
-    # clusters found in the learning model; H1-1 There is difference between the
-    # distributions of the clusters found in the learning model. Test:
-    # Kruskal-Wallis rank sum test
+cluster_statistical_analysis(team.normalized, features.selection.team, 'winner', 'label')
 
-    # Alternative hypothesis true: p.value < 0.05
-    h1 = kruskal.test(rowSums(data[, features]), data$label)
+##############################
+# Cluster data exploring (Viz)
+##############################
 
-    # Hypothesis 2. H2-0: For each cluster found in the learning model there is no
-    # difference between the medians of the winning players and losing players;
-    # (H2-1) for each cluster found there is difference between the medians of the
-    # winning players and losing players. Test: Wilcoxon rank sum test with
-    # continuity correction
+cluster_data_viz(balanced, features.selection.player, 'winner', 'label', pca_lim=c(-1, 1))
 
-    # Alternative hypothesis true for each cluster: p.value < 0.05
-    h2.p.values = values(Map(function (k) {
-        x = rowSums(winners[winners$label == k, features])
-        y = rowSums(losers[losers$label == k, features])
-        # TODO print(paste(shapiro.test(x)$p.value, shapiro.test(y)$p.value))
-        # TODO print(t.test(x, y, paired=FALSE)$p.value)
-        wilcox.test(x , y, paired=FALSE)$p.value
-    }, sort(unique(data$label))))
+cluster_data_viz(balanced.team, features.selection.team, 'winner', 'label', pca_lim=c(-0.1, 0.1))
 
-    render_plot(function () {
-        par(mfrow=c(1, 2))
-        plot(1, h1$p.value, main='Hypothesis - H1', xlab='h1', ylab='p.value')
-        plot(h2.p.values, main='Hypothesis - H2', xlab='k', ylab='p.values')
-    }, '../output/hypothesis-player', width=16, height=9)
+################################
+# TODO Improve Centroid analysis
+################################
 
-    # TODO compare median between clusters
-})(labeled, features.selection.player)
+centroid_analysis(balanced, features.selection.player, '../output/exploring-centers-player')
 
-########################
-# Exploring labeled data
-########################
-
-# Plot of labeled data. Only the top selected features
-render_plot(function () {
-    main = 'Exploring - Scatter plot'
-    plot(labeled[, features.selection.player[1:3]], main=main, col=labeled$label)
-}, '../output/exploring-scatter-plot-player')
-
-render_plot(function () {
-    main = 'Exploring - Scatter plot'
-    plot(labeled.team[, features.selection.team[1:3]], main=main, col=labeled.team$label)
-}, '../output/exploring-scatter-plot-team')
-
-# Only winners
-render_plot(function () {
-    main = 'Exploring - Scatter plot winners'
-    plot(winners[, features.selection.player[1:3]], main=main, col=winners$label)
-}, '../output/exploring-scatter-plot-winners-player')
-
-render_plot(function () {
-    main = 'Exploring - Scatter plot winners'
-    plot(winners.team[, features.selection.team[1:3]], main=main, col=winners.team$label)
-}, '../output/exploring-scatter-plot-winners-team')
-
-# Only losers
-render_plot(function () {
-    main = 'Exploring - Scatter plot losers'
-    plot(losers[, features.selection.player[1:3]], main=main, col=losers$label)
-}, '../output/exploring-scatter-plot-losers-player')
-
-render_plot(function () {
-    main = 'Exploring - Scatter plot losers'
-    plot(losers.team[, features.selection.team[1:3]], main=main, col=losers.team$label)
-}, '../output/exploring-scatter-plot-losers-player')
-
-# 3-D visualization of 3 principal components of the labeled data
-render_plot(function () {
-    par(mfrow=c(1, 3))
-    lim = c(-2, 2)
-    angle = 0
-    pca_plot(labeled[, features.selection.player[1:3]], main='PCA', color=labeled$label,
-             angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(winners[, features.selection.player[1:3]], main='PCA winners',
-             color=winners$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(losers[, features.selection.player[1:3]], main='PCA losers',
-             color=losers$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-}, '../output/exploring-pca-player', width=18, height=9)
-
-render_plot(function () {
-    par(mfrow=c(1, 3))
-    lim = c(-0.1, 0.1)
-    angle = 95
-    features = features.selection.team
-    pca_plot(labeled.team[, features], main='PCA', color=labeled.team$label,
-             angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(winners.team[, features], main='PCA winners',
-             color=winners.team$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-    pca_plot(losers.team[, features], main='PCA losers',
-             color=losers.team$label, angle=angle, xlim=lim, ylim=lim, zlim=lim)
-}, '../output/exploring-pca-team', width=18, height=9)
-
-# In general, we can observe the k clusters found in k-means clustering. We can
-# also observe that some clusters are more perceptible than others when the
-# labeled data is discriminated between winners and losers.
-
-########################
-# TODO Centroid analysis
-########################
-
-centroid_analysis(labeled, features.selection.player, '../output/exploring-centers-player')
-
-centroid_analysis(labeled.team, setdiff(features.selection.team, 'magicDamageDealtToMonsters'), '../output/exploring-centers-team')
+centroid_analysis(balanced.team, setdiff(features.selection.team, 'magicDamageDealtToMonsters'), '../output/exploring-centers-team')
 
 #######################
 # TODO Predictive model
@@ -568,7 +560,8 @@ centroid_analysis(labeled.team, setdiff(features.selection.team, 'magicDamageDea
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
 
-training_set = balance(team, 'winner', 'label', prop=0.8)$data
+# Balance clustered 'label' data (undersampling) by discriminating 'winner' winners and losers
+training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
 # 1 8986    4566   4420
@@ -588,14 +581,14 @@ training_set = balance(team, 'winner', 'label', prop=0.8)$data
 # 6 0.7045222 0.2954778
 #
 # $min_size
-# [1] 343
+# [1] 353
 
-validation_set = team[!(rownames(team) %in% rownames(training_set)), ]
+validation_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
 
 # > nrow(training_set)
-# [1] 4116
+# [1] 4236
 # > nrow(validation_set)
-# [1] 32260
+# [1] 33254
 
 #' Validate a prediction model given a validation set
 validate = function (model, validation_set, features, target_feature) {
@@ -662,22 +655,22 @@ train_by_cluster = function (training_set, validation_set, features, target_feat
 train_result = train_by_cluster(training_set, validation_set, features.selection.team,  'winner', 'label')
 Map(function(k) k$validation_result$accuracy, train_result)
 # $label1
-# [1] 0.9166083
+# [1] 0.9558039
 #
 # $label2
-# [1] 0.9547879
+# [1] 0.9555018
 #
 # $label3
-# [1] 0.9193955
+# [1] 0.9509961
 #
 # $label4
-# [1] 0.9250218
+# [1] 0.9160243
 #
 # $label5
-# [1] 0.9337425
+# [1] 0.9288604
 #
 # $label6
-# [1] 0.9293833
+# [1] 0.9476896
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
