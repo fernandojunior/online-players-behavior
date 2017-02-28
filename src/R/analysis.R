@@ -133,52 +133,6 @@ features.compound = c(
 
 # Remove compound feaures (leaving only atomic attributes - first normal form)
 features.numeric = setdiff(features.numeric, features.compound)
-# [1] "assists"                         "deaths"                          "doubleKills"
-# [4] "goldEarned"                      "goldSpent"                       "inhibitorKills"
-# [7] "killingSprees"                   "kills"                           "largestCriticalStrike"
-# [10] "largestKillingSpree"             "largestMultiKill"                "magicDamageDealtToChampions"
-# [13] "magicDamageTaken"                "neutralMinionsKilledEnemyJungle" "neutralMinionsKilledTeamJungle"
-# [16] "pentaKills"                      "physicalDamageDealtToChampions"  "physicalDamageTaken"
-# [19] "quadraKills"                     "sightWardsBoughtInGame"          "totalHeal"
-# [22] "totalTimeCrowdControlDealt"      "totalUnitsHealed"                "towerKills"
-# [25] "tripleKills"                     "trueDamageDealtToChampions"      "trueDamageTaken"
-# [28] "visionWardsBoughtInGame"         "wardsKilled"                     "wardsPlaced"
-# [31] "physicalDamageDealtToMonsters"   "magicDamageDealtToMonsters"
-
-# > descriptive_statistics(data, features.numeric)
-#                                  min    max     mean meadian           var       sd
-# assists                            0     37     6.55     5.0         25.00     5.00
-# deaths                             0     20     4.97     5.0          8.74     2.96
-# doubleKills                        0      9     0.47     0.0          0.75     0.86
-# goldEarned                      3157  24324  9441.09  9179.0    8188521.43  2861.56
-# goldSpent                        550  26778  8446.35  8200.0    7406350.05  2721.46
-# inhibitorKills                     0      4     0.14     0.0          0.16     0.40
-# killingSprees                      0     10     1.11     1.0          1.24     1.12
-# kills                              0     27     4.94     4.0         17.41     4.17
-# largestCriticalStrike              0   1736   176.28     0.0      90425.42   300.71
-# largestKillingSpree                0     26     2.50     2.0          7.00     2.65
-# largestMultiKill                   0      5     1.28     1.0          0.54     0.73
-# magicDamageDealtToChampions        0  44247  5965.14  3701.0   41895359.03  6472.66
-# magicDamageTaken                   0  31830  6015.04  5328.5   13040670.58  3611.19
-# neutralMinionsKilledEnemyJungle    0     20     2.57     1.0         17.31     4.16
-# neutralMinionsKilledTeamJungle     0     68    11.10     2.0        323.21    17.98
-# pentaKills                         0      2     0.00     0.0          0.00     0.04
-# physicalDamageDealtToChampions     0  52400  6354.05  3495.0   45975481.71  6780.52
-# physicalDamageTaken               49  47836 10837.24  9961.0   28951215.06  5380.63
-# quadraKills                        0      3     0.01     0.0          0.01     0.10
-# sightWardsBoughtInGame             0      0     0.00     0.0          0.00     0.00
-# totalHeal                          0  20183  3067.55  2100.0    9091878.88  3015.27
-# totalTimeCrowdControlDealt         0   2019   292.40   187.0      97881.87   312.86
-# totalUnitsHealed                   0      9     1.84     1.0          1.85     1.36
-# towerKills                         0      9     0.77     0.0          1.33     1.15
-# tripleKills                        0      5     0.06     0.0          0.08     0.27
-# trueDamageDealtToChampions         0   4576   519.82   240.0     579497.75   761.25
-# trueDamageTaken                    0   4325   541.82   382.0     309057.42   555.93
-# visionWardsBoughtInGame            0     16     0.71     0.0          1.13     1.06
-# wardsKilled                        0     12     1.14     1.0          2.28     1.51
-# wardsPlaced                        0     36     9.24     8.0         25.84     5.08
-# physicalDamageDealtToMonsters      0 328231 41916.53 27746.0 1542164943.87 39270.41
-# magicDamageDealtToMonsters         0 203453 23587.58 12337.0  754640013.66 27470.71
 
 # ======================================================
 # Modeling team match stats data from player match stats
@@ -392,21 +346,13 @@ correlations = render_plot(function () {
 
 # Rank the most correlated features by mean of correlations for each one
 features.selection = names(rev(sort(colMeans(abs(correlations), na.rm=TRUE))))
-# [1] "goldEarned"                      "goldSpent"                       "kills"
-# [4] "assists"                         "neutralMinionsKilledEnemyJungle" "deaths"
-# [7] "physicalDamageDealtToMonsters"   "physicalDamageDealtToChampions"  "totalHeal"
-# [10] "minionsKilledEnemyTeam"          "magicDamageDealtToChampions"     "magicDamageDealtToMonsters"
-# [13] "wardsPlaced"                     "totalTimeCrowdControlDealt"      "largestCriticalStrike"
-# [16] "trueDamageDealtToChampions"      "neutralMinionsKilledTeamJungle"  "magicDamageTaken"
-# [19] "physicalDamageTaken"             "wardsKilled"                     "totalUnitsHealed"
-# [22] "trueDamageTaken"
 
 # Redundant features
-features.redundant.player = redundant_features(data.relative_performance[, features.selection], threshold=0.65)
+features.redundant.player = redundant_features(data.relative_performance[, features.redundant.player], threshold=0.65)
 # [1] "goldEarned"                    "physicalDamageDealtToMonsters" "magicDamageDealtToChampions"
 # [4] "goldSpent"
 
-features.redundant.team = redundant_features(team.normalized[, features.selection], threshold=0.65)
+features.redundant.team = redundant_features(team.normalized[, features.redundant.team], threshold=0.65)
 # [1] "goldEarned"                    "kills"                         "goldSpent"
 # [4] "physicalDamageDealtToMonsters" "magicDamageDealtToChampions"
 
