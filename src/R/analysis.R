@@ -15,18 +15,18 @@ RENDER_PLOT_CLOSE = TRUE
 # =========================
 
 #' Return matches with 10 players
-get_10_players_matches = function (players) {
+get_players_from_5plus5_matches = function (players) {
     matchIds = names(Filter(Curry(eq, 10), table(players$matchId)))
     players = players[players$matchId %in% matchIds, ]
 }
 
 #' Return matches with 5 players each team (5x5). As data were looked up by participants, some matches were left with
 #' less than 10 participants. So, these inconsistent (incomplete) matches need to be removed.
-get_5x5_matches = function (players) {
-    players = get_10_players_matches(players)
-    teams = aggregate(winner~matchId, players[, c('winner', 'matchId')], function(x) sum(as.numeric(x)))
+get_players_from_5x5_matches = function (data) {
+    data = get_players_from_5plus5_matches(data)
+    teams = aggregate(winner~matchId, data[, c('winner', 'matchId')], function(x) sum(as.numeric(x)))
     matchIds = teams[teams$winner == 5, 'matchId']
-    return(players[players$matchId %in% matchIds, ])
+    return(data[data$matchId %in% matchIds, ])
 }
 
 #' Remove AFK players
@@ -48,9 +48,9 @@ unselect_redundant_features = function (data, features) {
     return(setdiff(features, redundant_features))
 }
 
-# ============================
-# Load player match stats data
-# ============================
+# ======================================
+# Load players' match statistics dataset
+# ======================================
 
 # A data set with n = 85470 points/tuples/rows, where a point p represents a feature vector of a participant in a
 # specific match. Each match has only 10 participants.
@@ -64,7 +64,7 @@ data = read.csv('../data/data20170105025503.csv')
 # =============
 
 # Remove some games with error or AFK players and inconsistent matches, i.e. matches not 5x5
-data = get_5x5_matches(remove_afk_players(data))
+data = get_players_from_5x5_matches(remove_afk_players(data))
 
 # > nrow(data)
 # [1] 1036090
@@ -74,7 +74,7 @@ data = get_5x5_matches(remove_afk_players(data))
 # > nrow(data)
 
 # =============================
-# Feature definition/extraction
+# Feature definition and extraction
 # =============================
 
 features.target = 'winner'
@@ -133,17 +133,17 @@ features.numeric = setdiff(features.numeric, c(
     'magicDamageDealt' # magicDamageDealtToChampions + magicDamageDealtToMonsters
 ))
 
-# ==============================
-# Modeling team match stats data
-# ==============================
+# ========================================
+# Modeling teams' match statistics dataset
+# ========================================
 team = aggregate(. ~ matchId + winner, data=data[, c(features.numeric, 'winner', 'matchId')],  FUN=sum)
 
 # > nrow(team)
 # [1] 207218
 
-# ======================
-# Descriptive statistics
-# ======================
+# ================
+# Data exploration
+# ================
 
 descriptive_statistics(data, features.numeric)
 # > descriptive_statistics(data, features.numeric)
@@ -262,13 +262,16 @@ features.selection.team = unselect_low_variance_features(team, colnames(outliers
 
 # As the match duration varies between the matches, the features were divided by match duration to compute players
 # performance per minute.
-data.performance = cbind(
-    data[, c(features.info, 'matchId', 'winner')],
+data.performance = as.data.frame(cbind(
+    data[, c('matchId', 'winner')],
     data[, features.numeric]/data[, 'matchDuration']
-)
+))
 
 # Team stats per minute
 team.performance = aggregate(. ~ matchId + winner, data=data.performance,  FUN=sum)
+team.performance = as.data.frame(sapply(team.performance, as.numeric))
+rownames(team.performance) = rownames(team)
+team.performance[is.na(team.performance)] <- 0
 
 # ==================
 # Data normalization
@@ -284,15 +287,9 @@ data.relative_performance = as.data.frame(t(map(function (i) {
     x[, features.numeric] = x[, features.numeric]/t[, features.numeric]
     return(x)
 }, 1:nrow(data.performance))))
+data.relative_performance = as.data.frame(sapply(data.relative_performance, as.numeric))
 rownames(data.relative_performance) = rownames(data.performance)
-
-team.performance = sapply(team.performance, as.numeric)
-team.performance[is.nan(team.performance)] <- 0
-team.performance = as.data.frame(team.performance)
-
-data.relative_performance = sapply(data.relative_performance, as.numeric)
-data.relative_performance[is.nan(data.relative_performance)] <- 0
-data.relative_performance = as.data.frame(data.relative_performance)
+data.relative_performance[is.na(data.relative_performance)] <- 0
 
 # Since the team performances are of different varieties, their scales are also different. In order to maintain uniform
 # scalability we normalize the features.
