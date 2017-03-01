@@ -1,14 +1,36 @@
-#' Provide feature selection functions to quantify the discriminative power of features.
-#' In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
-#' a feature (its discriminative power) to the classification process.
-#'
-#' References:
+# Provide feature selection functions to quantify the discriminative power of features.
+# In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
+# a feature (its discriminative power) to the classification process.
+#
+# References:
 # - Data Classification Algorithms and Applications (2015)
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
 
-import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
+import('utils', attach=c('correlation_analysis'))
+
+#' Redundant features of a matrix that are equal or grater than correlation threshold
+redundant_features = function (data, threshold=0.65, redundant_features_=NULL) {
+    # absolute correlation matrix
+    correlation_matrix = abs(correlation_analysis(data)$estimates)
+
+    # highly correlated by feature (correation vector sum | correation >= threshold)
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) {
+        return(sum(row[row >= threshold]))
+    })
+
+    if (is.null(highly_correlated_sum)) {
+        return(NULL)
+    } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
+        most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
+        redundant_features_ = c(redundant_features_, most_redundant)
+        features = setdiff(colnames(data), most_redundant)
+        return(redundant_features(data[, features], threshold, redundant_features_))
+    } else {
+        return(redundant_features_)
+    }
+}
 
 #' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
 #'
@@ -47,28 +69,6 @@ filter_features = function (x, f, min=NULL, max=NULL) {
         return(features)
     else
         return(NULL)
-}
-
-#' Redundant features of a matrix that are equal or grater than correlation threshold
-redundant_features = function (data, threshold=0.65, redundant_features_=NULL) {
-    # absolute correlation matrix
-    correlation_matrix = abs(correlation_analysis(data)$estimates)
-
-    # highly correlated by feature (correation vector sum | correation >= threshold)
-    highly_correlated_sum = apply(correlation_matrix, 1, function(row) {
-        return(sum(row[row >= threshold]))
-    })
-
-    if (is.null(highly_correlated_sum)) {
-        return(NULL)
-    } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
-        most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
-        redundant_features_ = c(redundant_features_, most_redundant)
-        features = setdiff(colnames(data), most_redundant)
-        return(redundant_features(data[, features], threshold, redundant_features_))
-    } else {
-        return(redundant_features_)
-    }
 }
 
 #' Given a dataset, compute feature scores with a method handler and select features based on a score filter

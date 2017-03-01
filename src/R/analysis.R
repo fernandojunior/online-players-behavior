@@ -2,10 +2,10 @@ options(scipen=999)
 options("width"=120)
 
 library('modules')
+import('utils', attach=TRUE)
 import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('feature_selection', attach=TRUE)
-import('utils', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
 RENDER_PLOT_CLOSE = TRUE
@@ -109,7 +109,7 @@ features.info = c(
     # 'firstBloodAssist',
     # 'firstBloodKill',
     'firstInhibitorAssist',
-    'firstInhibitorKill',
+    'firstInhibitorKill'
     # 'firstTowerAssist',
     # 'firstTowerKill',
 )
