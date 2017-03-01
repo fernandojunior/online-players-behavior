@@ -69,13 +69,13 @@ data = get_players_from_5x5_matches(remove_afk_players(data))
 # > nrow(data)
 # [1] 1036090
 
-# TODO Remove duplicated rows by summonerId to decrease bias
+# TODO Collect mode data to remove duplicated rows by summonerId and so as decrease bias
 # data = data[!duplicated(data[, 'summonerId']),]
 # > nrow(data)
 
-# =============================
-# Feature definition and extraction
-# =============================
+# ==================
+# Feature extraction
+# ==================
 
 features.target = 'winner'
 
@@ -85,14 +85,15 @@ features.info = c(
     'matchMode',
     'queueType',
     'season',
-    'championId',
-    'summonerId',
     'matchDuration', # In minutes
     'matchCreation',
     'matchCreationYear',
     'matchCreationMonth',
     'matchCreationDay',
     'matchCreationHour',
+    'summonerId',
+    'championId',
+    'champLevel',
     'item0',
     'item1',
     'item2',
@@ -100,21 +101,20 @@ features.info = c(
     'item4',
     'item5',
     'item6',
-    'combatPlayerScore',  # ARAM
-    'objectivePlayerScore',  # ARAM
-    'totalPlayerScore',  # ARAM
-    'totalScoreRank',  # ARAM
-    'unrealKills', # ARAM
+    # 'combatPlayerScore',  # ARAM
+    # 'objectivePlayerScore',  # ARAM
+    # 'totalPlayerScore',  # ARAM
+    # 'totalScoreRank',  # ARAM
+    # 'unrealKills', # ARAM
     # 'firstBloodAssist',
     # 'firstBloodKill',
     'firstInhibitorAssist',
     'firstInhibitorKill',
     # 'firstTowerAssist',
     # 'firstTowerKill',
-    'champLevel'
 )
 
-# Feature extraction / feature decomposition
+# Feature extraction / decomposition
 # OBS: minionsKilledEnemyTeam not in minionsKilled
 data[, 'physicalDamageDealtToMonsters'] = data[, 'physicalDamageDealt'] - data[, 'physicalDamageDealtToChampions']
 data[, 'magicDamageDealtToMonsters'] = data[, 'magicDamageDealt'] - data[, 'magicDamageDealtToChampions']
@@ -272,9 +272,9 @@ team.performance = aggregate(. ~ matchId + winner, data=data.performance,  FUN=s
 team.performance = as.data.frame(sapply(team.performance, as.numeric))
 rownames(team.performance) = rownames(team)
 
-# ==================
-# Data normalization
-# ==================
+# =============
+# Data Scalling
+# =============
 
 # What is the individual player performance in relation to his team?
 # As the player performance varies between the matches and the features also are of different varieties, the player
