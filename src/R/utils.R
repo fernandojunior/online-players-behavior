@@ -5,7 +5,7 @@ import_package('scatterplot3d', attach=TRUE)  # scatterplot3d
 import('fun', attach=TRUE)
 import('correlation', attach=c('correlation_matrix'))
 
-#' Perform simple descriptive statistics
+#' Perform simple statistical description of the dataset
 descriptive_statistics = function (data, features) {
     statistics = round(t(apply(data[, features], 2, function(col) {
         return(cbind(min(col), max(col), mean(col), median(col), var(col), sd(col)))

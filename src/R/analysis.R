@@ -271,7 +271,6 @@ data.performance = as.data.frame(cbind(
 team.performance = aggregate(. ~ matchId + winner, data=data.performance,  FUN=sum)
 team.performance = as.data.frame(sapply(team.performance, as.numeric))
 rownames(team.performance) = rownames(team)
-team.performance[is.na(team.performance)] <- 0
 
 # ==================
 # Data normalization
@@ -341,8 +340,7 @@ descriptive_statistics(data, features.selection.player)
 descriptive_statistics(team, features.selection.team)
 # > descriptive_statistics(team, features.selection.team)
 #                                   min    max      mean  meadian           var       sd
-# assists                             0    122     32.75     31.0        350.53    18.72
-# deaths                              0     73     24.83     25.0        136.89    11.70
+# killingSprees                       0     20      5.53      5.0          9.89     3.14
 # largestCriticalStrike               0   4322    881.23    775.0     325100.80   570.18
 # magicDamageDealtToMonsters       3492 489227 117921.01 108112.0 3581338203.01 59844.28
 # magicDamageTaken                 1734 123100  30070.68  27272.5  229958245.14 15164.37
@@ -369,12 +367,12 @@ setdiff(features.numeric, features.selection.player)
 
 setdiff(features.numeric, features.selection.team)
 # > setdiff(features.numeric, features.selection.team)
-#  [1] "doubleKills"                    "goldEarned"                     "goldSpent"
-#  [4] "inhibitorKills"                 "killingSprees"                  "kills"
-#  [7] "largestKillingSpree"            "largestMultiKill"               "magicDamageDealtToChampions"
-# [10] "pentaKills"                     "physicalDamageDealtToChampions" "quadraKills"
-# [13] "sightWardsBoughtInGame"         "totalUnitsHealed"               "towerKills"
-# [16] "tripleKills"                    "visionWardsBoughtInGame"
+#  [1] "assists"                        "deaths"                         "doubleKills"
+#  [4] "goldEarned"                     "goldSpent"                      "inhibitorKills"
+#  [7] "kills"                          "largestKillingSpree"            "largestMultiKill"
+# [10] "magicDamageDealtToChampions"    "pentaKills"                     "physicalDamageDealtToChampions"
+# [13] "quadraKills"                    "sightWardsBoughtInGame"         "totalUnitsHealed"
+# [16] "towerKills"                     "tripleKills"                    "visionWardsBoughtInGame"
 
 # ========================
 # Dimensionality reduction
@@ -427,9 +425,9 @@ fits.team = render_plot(function () {
 
 # Which is the optimal fit in this case? Analysing the error curve plot, the k = x fit seems to have the best trade-off,
 # as the WSS rate for k > 8 does not vary so much after it.
-fit = fits[[8]]
+fit = fits[[7]]
 
-fit.team = fits.team[[6]]
+fit.team = fits.team[[7]]
 
 # Labeling data
 data = cbind(data, label=fit$cluster)
@@ -447,50 +445,51 @@ team.normalized = cbind(team.normalized, label=fit.team$cluster)
 balanced = balance(data.relative_performance, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
-# 1 35827   18317  17510
-# 2 24702   11298  13404
-# 3 15491    7213   8278
-# 4 19528    6938  12590
-# 5 23159   11902  11257
-# 6 17871   11737   6134
-# 7 17457    8991   8466
-# 8 33415   17329  16086
+# 1 24915   12812  12103
+# 2 17945   11839   6106
+# 3 19601    9453  10148
+# 4 18269    9417   8852
+# 5 19501    6789  12712
+# 6 33513   17334  16179
+# 7 53626   26041  27585
 #
 # $relative_size
 #     winners    losers
-# 1 0.5112625 0.4887375
-# 2 0.4573719 0.5426281
-# 3 0.4656252 0.5343748
-# 4 0.3552847 0.6447153
-# 5 0.5139255 0.4860745
-# 6 0.6567624 0.3432376
-# 7 0.5150369 0.4849631
-# 8 0.5185994 0.4814006
+# 1 0.5142284 0.4857716
+# 2 0.6597381 0.3402619
+# 3 0.4822713 0.5177287
+# 4 0.5154634 0.4845366
+# 5 0.3481360 0.6518640
+# 6 0.5172321 0.4827679
+# 7 0.4856040 0.5143960
 #
 # $min_size
-# [1] 4907
+# [1] 4885
 
 balanced.team = balance(team.normalized, 'winner', 'label')$data
+# > balanced.team = balance(team.normalized, 'winner', 'label')$data
 # $size
 #    all winners losers
-# 1 4841    1234   3607
-# 2 1853    1412    441
-# 3 9268    4692   4576
-# 4 8580    3127   5453
-# 5 7875    4718   3157
-# 6 5073    3562   1511
+# 1 4849     364   4485
+# 2 6432    3478   2954
+# 3 3838    2637   1201
+# 4 6274     319   5955
+# 5 6648    3671   2977
+# 6 5343    4723    620
+# 7 4090    3545    545
 #
 # $relative_size
-#     winners    losers
-# 1 0.2549060 0.7450940
-# 2 0.7620076 0.2379924
-# 3 0.5062581 0.4937419
-# 4 0.3644522 0.6355478
-# 5 0.5991111 0.4008889
-# 6 0.7021486 0.2978514
+#      winners    losers
+# 1 0.07506702 0.9249330
+# 2 0.54073383 0.4592662
+# 3 0.68707660 0.3129234
+# 4 0.05084476 0.9491552
+# 5 0.55219615 0.4478039
+# 6 0.88396032 0.1160397
+# 7 0.86674817 0.1332518
 #
 # $min_size
-# [1] 353
+# [1] 255
 
 ################################################################################################
 # TODO Improve Statistical analysis of cluster analysis by discriminating a winner binary target
@@ -500,21 +499,17 @@ cluster_statistical_analysis(data.relative_performance, features.selection.playe
 
 cluster_statistical_analysis(team.normalized, features.selection.team, 'winner', 'label')
 
-##############################
-# Cluster data exploring (Viz)
-##############################
+################################
+# Cluster data exploration (Viz)
+################################
 
 cluster_data_viz(balanced, features.selection.player, 'winner', 'label', pca_lim=c(-1, 1))
 
-cluster_data_viz(balanced.team, features.selection.team, 'winner', 'label', pca_lim=c(-0.1, 0.1))
-
-################################
-# TODO Improve Centroid analysis
-################################
+cluster_data_viz(balanced.team, features.selection.team, 'winner', 'label', pca_lim=c(-0.01, 0.01))
 
 centroid_analysis(balanced, features.selection.player, '../output/exploring-centers-player')
 
-centroid_analysis(balanced.team, setdiff(features.selection.team, 'magicDamageDealtToMonsters'), '../output/exploring-centers-team')
+centroid_analysis(balanced.team, features.selection.team, '../output/exploring-centers-team')
 
 #######################
 # TODO Predictive model
@@ -525,33 +520,36 @@ import_package('logistf', attach=TRUE)
 
 # Balance clustered 'label' data (undersampling) by discriminating 'winner' winners and losers
 training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
+# > training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
-# 1 8986    4566   4420
-# 2 1812    1383    429
-# 3 7607    4554   3053
-# 4 4750    1197   3553
-# 5 8334    3045   5289
-# 6 4887    3443   1444
+# 1 4849     364   4485
+# 2 6432    3478   2954
+# 3 3838    2637   1201
+# 4 6274     319   5955
+# 5 6648    3671   2977
+# 6 5343    4723    620
+# 7 4090    3545    545
 #
 # $relative_size
-#     winners    losers
-# 1 0.5081237 0.4918763
-# 2 0.7632450 0.2367550
-# 3 0.5986591 0.4013409
-# 4 0.2520000 0.7480000
-# 5 0.3653708 0.6346292
-# 6 0.7045222 0.2954778
+#      winners    losers
+# 1 0.07506702 0.9249330
+# 2 0.54073383 0.4592662
+# 3 0.68707660 0.3129234
+# 4 0.05084476 0.9491552
+# 5 0.55219615 0.4478039
+# 6 0.88396032 0.1160397
+# 7 0.86674817 0.1332518
 #
 # $min_size
-# [1] 353
+# [1] 255
 
 validation_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
 
 # > nrow(training_set)
-# [1] 4236
+# [1] 3570
 # > nrow(validation_set)
-# [1] 33254
+# [1] 33904
 
 #' Validate a prediction model given a validation set
 validate = function (model, validation_set, features, target_feature) {

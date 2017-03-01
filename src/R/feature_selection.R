@@ -53,23 +53,24 @@ filter_features = function (x, f, min=NULL, max=NULL) {
 }
 
 #' Redundant features of a matrix that are equal or grater than correlation threshold
-redundant_features = function (data, redundats_=NULL, threshold=0.7) {
-    correlation_matrix = render_plot(function () {
-        return(correlation_analysis(data)$estimates)
-    }, close=TRUE, save=FALSE)
+redundant_features = function (data, threshold=0.65, redundant_features_=NULL) {
+    # absolute correlation matrix
+    correlation_matrix = abs(correlation_analysis(data)$estimates)
 
-    # highly correlated sum (>= 0.7) by feature
-    highly_correlated_sum = apply(correlation_matrix, 1, function(row) sum(row[abs(row) >= threshold]))
+    # highly correlated by feature (correation vector sum | correation >= threshold)
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) {
+        return(sum(row[row >= threshold]))
+    })
 
     if (is.null(highly_correlated_sum)) {
         return(NULL)
     } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
         most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
-        redundats_ = c(redundats_, most_redundant)
+        redundant_features_ = c(redundant_features_, most_redundant)
         features = setdiff(colnames(data), most_redundant)
-        return(redundant_features(data[, features], redundats_, threshold))
+        return(redundant_features(data[, features], threshold, redundant_features_))
     } else {
-        return(redundats_)
+        return(redundant_features_)
     }
 }
 
