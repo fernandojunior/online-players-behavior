@@ -511,9 +511,9 @@ centroid_analysis(balanced, features.selection.player, '../output/exploring-cent
 
 centroid_analysis(balanced.team, features.selection.team, '../output/exploring-centers-team')
 
-#######################
-# TODO Predictive model
-#######################
+# ==========================================================================
+# TODO Modeling binary classfifier to predict a team victory / match outcome
+# ==========================================================================
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
@@ -584,7 +584,7 @@ train_by_cluster = function (training_set, validation_set, features, target_feat
     # target classes can't be numeric
     training_set[, target_feature] = as.factor(training_set[, target_feature])
 
-    cluster_names = sort(unique(training_set[, cluster_feature]))
+    cluster_domain = sort(unique(training_set[, cluster_feature]))
 
     # train and validation result for each k cluster
     cluster_results = Map(function (k) {
@@ -597,7 +597,7 @@ train_by_cluster = function (training_set, validation_set, features, target_feat
         training_set = training_set[, c(features, target_feature)]
         validation_set = validation_set[, c(features, target_feature)]
 
-        # logist regression modeling
+        # classfifier model
         model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
 
         # perform validation
@@ -605,10 +605,10 @@ train_by_cluster = function (training_set, validation_set, features, target_feat
 
         # cluster result
         return(list(k=k, features=features, model=model, validation_result=validation_result))
-    }, cluster_names)
+    }, cluster_domain)
 
     # labeling cluster result names
-    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_names)
+    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_domain)
 
     return(cluster_results)
 }
@@ -637,34 +637,17 @@ install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
 # TODO library(ROCR)
 
-relevant_features.information_gain = information_gain(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
-relevant_features.team.information_gain = information_gain(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
+# TODO feature selection using known methods (intersection)
+gini_index_selection = gini_index_selector(data, features.numeric, 'winner')
+information_gain_selection = information_gain_selector(data, features.numeric, 'winner')
+relieff_selection = relieff_selector(data, features.numeric, 'winner')
+random_forest_selection = random_forest_selector(data, features.numeric, 'winner')
 
-relevant_features.gini = gini(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x < 0.7)
-relevant_features.team.gini = gini(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x < 0.7)
+table(c(
+    gini_index_selection$features,
+    information_gain_selection$features,
+    relieff_selection$features,
+    random_forest_selection$features
+))
 
-relevant_features.relieff = relieff(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > 0)
-relevant_features.team.relieff = relieff(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > 0)
-
-relevant_features.random_forest = random.forest.importance(data.sampled, features.selection.player, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
-relevant_features.team.random_forest = random.forest.importance(team.sampled, features.selection.team, 'winner', 'label', criteria_handler=function (x) x > apply(x, 1, mean))
-
-# TODO remove features present in all clusters
-
-# TODO correlation analysis by cluster to remove redundant ones
-
-# intersection
-(relevant_features.information_gain$is_selected) * (relevant_features.gini$is_selected) * (relevant_features.relieff$is_selected)
-(relevant_features.team.information_gain$is_selected) * (relevant_features.team.gini$is_selected) * (relevant_features.team.relieff$is_selected)
-
-# random forest score > mean
-tmp = relevant_features.random_forest$is_selected
-mode(tmp) <- 'numeric'
-
-# TODO feature selection using random forest
-# http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
-# https://cran.r-project.org/web/packages/varSelRF/varSelRF.pdf
-
-# TODO
-# http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
-# http://rstudio-pubs-static.s3.amazonaws.com/35817_2552e05f1d4e4db8ba87b334101a43da.html
+# TODO remove features present in all clusters?

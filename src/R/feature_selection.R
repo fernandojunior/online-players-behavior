@@ -1,22 +1,21 @@
-# feature selection to quantify the discriminative power of attributes.
-# In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
-# a feature (its discriminative power) to the classification process.
-# References:
+#' Provide feature selection functions to quantify the discriminative power of features.
+#' In order to perform feature selection, a number of different measures are used in order to quantify the relevance of
+#' a feature (its discriminative power) to the classification process.
+#'
+#' References:
 # - Data Classification Algorithms and Applications (2015)
 # - COMPARISON OF FILTER BASED FEATURE SELECTION ALGORITHMS: AN OVERVIEW
 # - https://pdfs.semanticscholar.org/8adc/91eb8713fdef1ac035d2832990457eec4868.pdf
-
-
 
 import('utils', attach=c('correlation_analysis'))
 import_package('FSelector', attach, attach=TRUE)
 
 #' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
+#'
 #' TODO: Improve
-feature_engeneering = function (data, features, target, correlation_threshold=0.65, feature_selector=FSelector::information.gain) {
+feature_engeneering = function (data, features, target, feature_selector=information_gain_selector) {
     # remove redundant features
-    redundant_features = redundant_features(data[, features], threshold=correlation_threshold)
-    features = setdiff(features, redundant_features)
+    features = setdiff(features, redundant_features(data[, features], threshold))
 
     # remove zero variance features, ie, features with a single 'class'
     zero_variance_features = filter_features(data[, features], function(y) {
@@ -24,10 +23,8 @@ feature_engeneering = function (data, features, target, correlation_threshold=0.
     }, max=1)
     features = setdiff(features, zero_variance_features)
 
-    # select features using feature selection method (score handler) and criteria handler
-    features = feature_selection(data, features, target, function (x) {
-        feature_selector(as.formula(strf('%s ~ .', target)), x)
-    }, selector=function (x) x > 0)$features
+    # select features using a feature selector
+    features = feature_selector(data, features, target)$features
 
     return(features)
 }
@@ -74,13 +71,13 @@ redundant_features = function (data, threshold=0.65, redundant_features_=NULL) {
     }
 }
 
-#' Given a dataset, compute feature scores with a method to select features based on a selector
+#' Given a dataset, compute feature scores with a method handler and select features based on a score filter
 #'
 #' References:
 #' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #'
-#' @seealso information_gain, gini, relieff
-feature_selection = function (data, features, target, method_handler, selector) {
+#' @seealso cluster_information_gain, gini, relieff
+feature_selection = function (data, features, target, method_handler, score_filter) {
     data = if (!is.data.frame(data)) as.data.frame(data) else data
     features = sort(features)
 
@@ -89,112 +86,75 @@ feature_selection = function (data, features, target, method_handler, selector) 
     scores = method_handler(data)
     scores = scores[order(scores$attr_importance, decreasing=TRUE), , drop=FALSE]
 
-    # select features by applying selector on computed scores
-    is_selected = selector(scores)
-    features = rownames(is_selected)[is_selected]
+    # select features by applying score filter on computed scores
+    is_selected = score_filter(scores)
+    features = sort(rownames(is_selected)[is_selected])
 
     return(list(scores=scores, features=features))
 }
 
-#' Compute a feature selection score matrix (feature_selection_handler) for a given data set for each cluster given a target
+#' Perform feature selection using information gain method for a given data set and target feature.
 #'
-#' References:
-#' http://ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
-#'
-#' @seealso information_gain, gini, relieff
-cluster_feature_selection = function (data, features, target, cluster, scores_handler, criteria_handler=NULL, remove_redundant=TRUE) {
-    data = as.data.frame(data)
-    features = sort(features)
-    clusters = sort(unique(data[, cluster]))
-    cluster_names = lapply(clusters, function (i) strf('%s%s', cluster, i))
-
-    # matrix to collect the scores (information gain) for each feature x cluster
-    score_matrix = matrix(0, nrow=length(clusters), ncol=length(features))
-    dimnames(score_matrix) <- list(cluster_names, features)
-
-    # compute scores for each cluster given a binary target feature
-    for(i in clusters) {
-        cluster_data = data[data[, cluster] == i, c(features, target)]
-        score = scores_handler(cluster_data)
-        score_matrix[strf('%s%s', cluster, i), ] = round(score[order(rownames(score)), ], digits=3)
-    }
-
-    result = list(score=score_matrix)
-
-    if (!is.null(criteria_handler)) {
-        is_selected = criteria_handler(score_matrix)
-
-        result$selection = apply(is_selected, 1, function (row) {
-            return(colnames(is_selected)[row])
-        })
-
-        result$redundant = lapply(clusters, function (i) {
-            cluster_data = data[data[, cluster] == i, c(result$selection[[strf('%s%s', cluster, i)]] )]
-            redundant_features(cluster_data)
-        })
-        names(result$redundant) = cluster_names
-
-        if (remove_redundant == TRUE) {
-            result$selection = lapply(cluster_names, function (i) {
-                return(setdiff(values(result$selection[[i]]), result$redundant[[i]]))
-            })
-            names(result$selection) = cluster_names
-        }
-    }
-
-    return(result)
-}
-
-#' Compute the information gain for a given data set for each label given a target
 #' References:
 #' http://stackoverflow.com/questions/33241638/use-of-formula-in-information-gain-in-r
 #' http://stackoverflow.com/questions/1859554/what-is-entropy-and-information-gain
-information_gain = function (data, features, target, label, criteria_handler=NULL) {
-    return(cluster_feature_selection(data, features, target, label, function (cluster) {
-        FSelector::information.gain(as.formula(strf('%s ~ .', target)), cluster)
-    }, criteria_handler))
+information_gain_selector = function (data, features, target, score_filter=function (x) x > 0) {
+    return(feature_selection(data, features, target, function (data) {
+        FSelector::information.gain(as.formula(strf('%s ~ .', target)), data)
+    }, score_filter))
 }
 
-#' Compute the gini index for a given data set for each label given a binary target
+#' Perform feature selection using gini index method. Compute the gini index for a given data set and binary target.
+#' The scores range from 0 to 1 with closer to zero scores assigned to important features.
+#'
 #' References:
 #' https://www.r-bloggers.com/calculating-a-gini-coefficients-for-a-number-of-locales-at-once-in-r/
 #' http://stats.stackexchange.com/questions/95839/gini-decrease-and-gini-impurity-of-children-nodes
 #' https://www.analyticsvidhya.com/blog/2016/04/complete-tutorial-tree-based-modeling-scratch-in-python/
-gini = function (data, features, target, label, criteria_handler=NULL) {
-    # calculate a gini index for a data matrix x and multiply by a given proportion p
-    gini_ = function (x, p=1) {
-        return(as.data.frame(apply(x, 2, ineq::Gini)) * p)
+gini_index_selector = function (data, features, target, score_filter=function (x) x < 0.7) {
+    # calculate a gini index for a dataset x and multiply by a given proportion p
+    gini_index = function (x, proportion=1) {
+        attr_importance = as.data.frame(apply(x, 2, ineq::Gini)) * proportion
+        return(attr_importance)
     }
 
-    # compute scores for each cluster given a binary target feature
-    return(cluster_feature_selection(data, features, target, label, function (cluster) {
-        cluster_target_0 = cluster[cluster[, target] == 0, ]
-        cluster_target_1 = cluster[cluster[, target] == 1, ]
+    # compute scores given a binary target feature
+    return(feature_selection(data, features, target, function (data) {
+        data_target_0 = data[data[, target] == 0, ]
+        data_target_1 = data[data[, target] == 1, ]
 
-        score_target_0 = gini_(cluster_target_0[, features], (nrow(cluster_target_0) / nrow(cluster)))
-        score_target_1 = gini_(cluster_target_1[, features], (nrow(cluster_target_1) / nrow(cluster)))
+        score_target_0 = gini_index(data_target_0[, features], (nrow(data_target_0) / nrow(data)))
+        score_target_1 = gini_index(data_target_1[, features], (nrow(data_target_1) / nrow(data)))
         score = score_target_0 + score_target_1
+        colnames(score) = c('attr_importance')
         return(score)
-    }, criteria_handler))
+    }, score_filter))
 }
 
-#' Compute the ReliefF for a given data set for each label given a target. The weights range from -1 to 1 with large
-#' positive weights assigned to important features.
+#' Perform feature selection using ReliefF method. Compute the ReliefF for a given data set and target. The scores
+# range from -1 to 1 with large positive scores assigned to important features.
 #'
 #' References:
 #' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
 #' https://www.mathworks.com/help/stats/relieff.html?requestedDomain=www.mathworks.com
-relieff = function (data, features, target, label, criteria_handler=NULL) {
-    return(cluster_feature_selection(data, features, target, label, function (cluster) {
-        FSelector::relief(as.formula(strf('%s ~ .', target)), cluster)
-    }, criteria_handler))
+relieff_selector = function (data, features, target, score_filter=function (x) x > 0) {
+    return(feature_selection(data, features, target, function (data) {
+        FSelector::relief(as.formula(strf('%s ~ .', target)), data)
+    }, score_filter))
 }
 
-#' Compute the feature relevance using random forest for a given data set for each label given a target
+#' Perform feature selection using random forest. Compute the feature relevance using random forest for a given data
+#' set and target.
+#'
 #' References:
 #' ijirts.org/volume2issue2/IJIRTSV2I2034.pdf
-random.forest.importance = function (data, features, target, label, criteria_handler=NULL) {
-    return(cluster_feature_selection(data, features, target, label, function (cluster) {
-        FSelector::random.forest.importance(as.formula(strf('%s ~ .', target)), cluster)
-    }, criteria_handler))
+#'
+#' TODO Review:
+#' http://stats.stackexchange.com/questions/56092/feature-selection-packages-in-r-which-do-both-regression-and-classification
+#' https://cran.r-project.org/web/packages/varSelRF/varSelRF.pdf
+#' http://rstudio-pubs-static.s3.amazonaws.com/35817_2552e05f1d4e4db8ba87b334101a43da.html
+random_forest_selector = function (data, features, target, score_filter=function (x) x > apply(x, 1, mean)) {
+    return(feature_selection(data, features, target, function (data) {
+        FSelector::random.forest.importance(as.formula(strf('%s ~ .', target)), data)
+    }, score_filter))
 }
