@@ -332,39 +332,42 @@ features.selection.team = unselect_redundant_features(team.normalized, features.
 descriptive_statistics(data, features.selection.player)
 # > descriptive_statistics(data, features.selection.player)
 #                                 min    max     mean meadian           var       sd
-# assists                           0     37     6.55     5.0         24.99     5.00
-# deaths                            0     20     4.97     5.0          8.74     2.96
-# kills                             0     27     4.94     4.0         17.40     4.17
-# largestCriticalStrike             0   1736   176.25     0.0      90396.23   300.66
-# magicDamageDealtToMonsters        0 203453 23584.20 12335.0  754433017.70 27466.94
-# magicDamageTaken                  0  31830  6014.14  5328.0   13038175.01  3610.84
-# neutralMinionsKilledEnemyJungle   0     20     2.57     1.0         17.31     4.16
-# neutralMinionsKilledTeamJungle    0     68    11.10     2.0        323.20    17.98
-# physicalDamageDealtToMonsters     0 328231 41910.22 27740.0 1541665215.44 39264.04
-# physicalDamageTaken              49  47836 10835.40  9959.5   28931485.11  5378.80
-# totalHeal                         0  20183  3067.04  2099.5    9089531.27  3014.88
-# totalTimeCrowdControlDealt        0   2019   292.36   187.0      97850.26   312.81
-# trueDamageDealtToChampions        0   4576   519.74   240.0     579366.59   761.16
-# trueDamageTaken                   0   4325   541.72   382.0     308918.76   555.80
-# wardsPlaced                       0     36     9.24     8.0         25.83     5.08
+# assists                           0     40     7.18       6         27.06     5.20
+# deaths                            0     21     5.30       5          9.00     3.00
+# kills                             0     30     5.28       4         18.64     4.32
+# largestCriticalStrike             0   1974   191.00       0     103947.40   322.41
+# magicDamageDealtToMonsters        0 231041 26184.54   13950  917867572.81 30296.33
+# magicDamageTaken                  0  34448  6655.88    5957   14895254.11  3859.44
+# minionsKilled                     0    436   100.24     103       4640.92    68.12
+# neutralMinionsKilledEnemyJungle   0     22     2.77       1         19.66     4.43
+# neutralMinionsKilledTeamJungle    0     76    12.06       3        370.34    19.24
+# physicalDamageDealtToMonsters     0 371730 45931.28   30018 1884693731.73 43413.06
+# physicalDamageTaken              49  53496 11706.32   10754   33177115.74  5759.96
+# totalHeal                         0  22651  3424.07    2361   11140264.21  3337.70
+# totalTimeCrowdControlDealt        0   2271   322.18     207     120320.28   346.87
+# trueDamageDealtToChampions        0   5210   585.50     280     737398.97   858.72
+# trueDamageTaken                   0   4870   609.40     432     376711.38   613.77
+# wardsPlaced                       0     39     9.97       9         30.29     5.50
 
 descriptive_statistics(team, features.selection.team)
 # > descriptive_statistics(team, features.selection.team)
 #                                   min    max      mean  meadian           var       sd
-# killingSprees                       0     20      5.53      5.0          9.89     3.14
-# largestCriticalStrike               0   4322    881.23    775.0     325100.80   570.18
-# magicDamageDealtToMonsters       3492 489227 117921.01 108112.0 3581338203.01 59844.28
-# magicDamageTaken                 1734 123100  30070.68  27272.5  229958245.14 15164.37
-# neutralMinionsKilledEnemyJungle     0     59     12.84     11.0        107.95    10.39
-# neutralMinionsKilledTeamJungle      0    145     55.48     55.0        286.30    16.92
-# physicalDamageDealtToMonsters   28629 718083 209551.11 198025.5 7124174775.47 84404.83
-# physicalDamageTaken             11711 160443  54177.00  51859.5  298468683.81 17276.25
-# totalHeal                        1756  60022  15335.20  13997.0   53790618.64  7334.21
-# totalTimeCrowdControlDealt         40   7639   1461.78   1300.0     549757.58   741.46
-# trueDamageDealtToChampions          0  12353   2598.68   2180.0    3046197.94  1745.34
-# trueDamageTaken                     0  13001   2708.60   2281.5    3303897.15  1817.66
-# wardsKilled                         0     44      5.70      5.0         20.03     4.48
-# wardsPlaced                         8    109     46.19     45.0        191.74    13.85
+# deaths                              0     73     26.52     26.0        138.94    11.79
+# killingSprees                       0     20      5.96      6.0         10.19     3.19
+# largestCriticalStrike               0   4810    954.99    843.0     366081.03   605.05
+# magicDamageDealtToMonsters       2664 580692 130922.68 120375.5 4369120017.71 66099.32
+# magicDamageTaken                 1455 124565  33279.40  30657.0  264374240.71 16259.59
+# minionsKilled                     142   1162    501.19    497.0      14236.12   119.32
+# neutralMinionsKilledEnemyJungle     0     66     13.86     12.0        120.71    10.99
+# neutralMinionsKilledTeamJungle      0    147     60.31     59.0        357.44    18.91
+# physicalDamageDealtToMonsters   39029 750026 229656.41 218217.0 8456794760.68 91960.83
+# physicalDamageTaken             17634 182880  58531.59  56348.5  341814355.64 18488.22
+# totalHeal                        1756  69652  17120.33  15681.0   66585242.38  8159.98
+# totalTimeCrowdControlDealt         40   8456   1610.91   1428.0     690768.72   831.12
+# trueDamageDealtToChampions          0  14058   2927.48   2442.0    3894966.34  1973.57
+# trueDamageTaken                     0  15304   3047.02   2556.0    4159299.50  2039.44
+# wardsKilled                         0     49      6.58      5.0         25.70     5.07
+# wardsPlaced                         9    118     49.84     48.0        221.47    14.88
 
 # Unselected features from numeric features
 setdiff(features.numeric, features.selection.player)
@@ -537,33 +540,33 @@ training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # > training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
-# 1 4849     364   4485
-# 2 6432    3478   2954
-# 3 3838    2637   1201
-# 4 6274     319   5955
-# 5 6648    3671   2977
-# 6 5343    4723    620
-# 7 4090    3545    545
+# 1 6491     662   5829
+# 2 9528    5255   4273
+# 3 7408    6357   1051
+# 4 8178     502   7676
+# 5 9009    4776   4233
+# 6 5435    3650   1785
+# 7 5325    4485    840
 #
 # $relative_size
-#      winners    losers
-# 1 0.07506702 0.9249330
-# 2 0.54073383 0.4592662
-# 3 0.68707660 0.3129234
-# 4 0.05084476 0.9491552
-# 5 0.55219615 0.4478039
-# 6 0.88396032 0.1160397
-# 7 0.86674817 0.1332518
+#     winners    losers
+# 1 0.1019874 0.8980126
+# 2 0.5515323 0.4484677
+# 3 0.8581263 0.1418737
+# 4 0.0613842 0.9386158
+# 5 0.5301365 0.4698635
+# 6 0.6715731 0.3284269
+# 7 0.8422535 0.1577465
 #
 # $min_size
-# [1] 255
+# [1] 402
 
 testing_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
 
 # > nrow(training_set)
-# [1] 3570
+# [1] 5628
 # > nrow(testing_set)
-# [1] 33904
+# [1] 45746
 
 #' Test a predictive model given a testing set
 test_model = function (model, testing_set, features, target_feature) {
@@ -629,7 +632,7 @@ train_model_by = function (training_set, testing_set, features, target_feature, 
         render_plot(function () correlation_analysis(training_set[, learning_result$features]))
         learning_result$k = k
         return(learning_result)
-    }, cluster_domain)
+    }, cluster_classes)
 
     # labeling cluster result names
     names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_classes)
@@ -640,25 +643,25 @@ train_model_by = function (training_set, testing_set, features, target_feature, 
 learning_result = train_model_by(training_set, testing_set, features.selection.team,  'winner', 'label')
 Map(function(k) k$performance$accuracy, learning_result)
 # $label1
-# [1] 0.9525097
+# [1] 0.9022332
 #
 # $label2
-# [1] 0.9187447
+# [1] 0.9340899
 #
 # $label3
-# [1] 0.9025564
+# [1] 0.9071775
 #
 # $label4
-# [1] 0.8900849
+# [1] 0.9726065
 #
 # $label5
-# [1] 0.9374898
+# [1] 0.9401584
 #
 # $label6
-# [1] 0.9283245
+# [1] 0.9382423
 #
 # $label7
-# [1] 0.9153953
+# [1] 0.9358549
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
