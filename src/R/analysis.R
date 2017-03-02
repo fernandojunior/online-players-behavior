@@ -43,7 +43,7 @@ unselect_low_variance_features = function (data, features) {
 
 #' Remove redundant features from selected data features
 unselect_redundant_features = function (data, features) {
-    redundant_features = redundant_features(data[, features], threshold=0.65)
+    redundant_features = redundant_features(data[, features], correlation_threshold=0.65)
     print(redundant_features)
     return(setdiff(features, redundant_features))
 }
@@ -518,6 +518,9 @@ centroid_analysis(balanced.team, features.selection.team, '../output/exploring-c
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
 
+RENDER_PLOT_SAVE = NULL
+RENDER_PLOT_CLOSE = NULL
+
 # Balance clustered 'label' data (undersampling) by discriminating 'winner' winners and losers
 training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # > training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
@@ -544,26 +547,26 @@ training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # $min_size
 # [1] 255
 
-validation_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
+testing_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
 
 # > nrow(training_set)
 # [1] 3570
-# > nrow(validation_set)
+# > nrow(testing_set)
 # [1] 33904
 
-#' Validate a prediction model given a validation set
-validate = function (model, validation_set, features, target_feature) {
-    targets = as.factor(validation_set[, target_feature])
+#' Test a predictive model given a testing set
+test_model = function (model, testing_set, features, target_feature) {
+    # target classes can't be numeric
+    targets = as.factor(testing_set[, target_feature])
 
-    outcomes_prob_by_target = predict(model, newdata=validation_set[, features, drop=FALSE], type="prob")
+    outcomes_prob_by_target = predict(model, newdata=testing_set[, features, drop=FALSE], type="prob")
 
-    outcomes = sapply(1:nrow(validation_set), function (i) {
-        target = targets[i]
-        outcome_prob = outcomes_prob_by_target[i, target]
-        if (outcome_prob > 0.5 & target == 0 || outcome_prob < 0.5 & target == 1)
+    outcomes = sapply(1:nrow(testing_set), function (i) {
+        current_target = targets[i]
+        outcome_prob = outcomes_prob_by_target[i, current_target]
+        if (outcome_prob > 0.5 & current_target == 0 || outcome_prob < 0.5 & current_target == 1)
             return(0)
-        else
-            return(1)
+        return(1)
     })
 
     confusion_matrix = table(outcomes, targets)
@@ -572,66 +575,79 @@ validate = function (model, validation_set, features, target_feature) {
     return(list(confusion_matrix=confusion_matrix, accuracy=accuracy))
 }
 
+train_model = function (training_set, testing_set, features, target_feature) {
+    training_set = training_set[, c(features, target_feature)]
+    testing_set = testing_set[, c(features, target_feature)]
+
+    # perform data reduction
+    features = feature_engeneering(training_set, features, target_feature, correlation_threshold=0.55)
+    training_set = training_set[, c(features, target_feature)]
+    testing_set = testing_set[, c(features, target_feature)]
+
+    # classfifier model
+    model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
+
+    # test performance
+    performance = test_model(model, testing_set, features, target_feature)
+
+    # result
+    return(list(features=features, model=model, performance=performance))
+}
+
 # partitions = caret::createDataPartition(training[, target_feature], p=0.6, list=FALSE)
 # training_set = as.data.frame(training[partitions, ])
-# validation_set = as.data.frame(training[-partitions, ])
+# testing_set = as.data.frame(training[-partitions, ])
 
-#' Train and validate binary prediction model for each cluster
-train_by_cluster = function (training_set, validation_set, features, target_feature, cluster_feature) {
+#' Train and test binary prediction model for each cluster
+train_model_by = function (training_set, testing_set, features, target_feature, cluster_feature) {
     training_set = training_set[, c(features, target_feature, cluster_feature)]
     training_set = if (!is.data.frame(training_set)) as.data.frame(training_set) else training_set
 
-    # target classes can't be numeric
+    # target classes can't be numeric in Predictive modeling
     training_set[, target_feature] = as.factor(training_set[, target_feature])
 
-    cluster_domain = sort(unique(training_set[, cluster_feature]))
+    cluster_classes = sort(unique(training_set[, cluster_feature]))
 
     # train and validation result for each k cluster
     cluster_results = Map(function (k) {
         # filter k cluster data
         training_set = training_set[training_set[, cluster_feature] == k, c(features, target_feature)]
-        validation_set = validation_set[validation_set[, cluster_feature] == k, c(features, target_feature)]
+        testing_set = testing_set[testing_set[, cluster_feature] == k, c(features, target_feature)]
 
-        # perform data reduction
-        features = feature_engeneering(training_set, features, target_feature)
-        training_set = training_set[, c(features, target_feature)]
-        validation_set = validation_set[, c(features, target_feature)]
-
-        # classfifier model
-        model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
-
-        # perform validation
-        validation_result = validate(model, validation_set, features, target_feature)
-
-        # cluster result
-        return(list(k=k, features=features, model=model, validation_result=validation_result))
+        learning_result = train_model(training_set, testing_set, features, target_feature)
+        render_plot(function () correlation_analysis(training_set[, learning_result$features]))
+        learning_result$k = k
+        return(learning_result)
     }, cluster_domain)
 
     # labeling cluster result names
-    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_domain)
+    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_classes)
 
     return(cluster_results)
 }
 
-train_result = train_by_cluster(training_set, validation_set, features.selection.team,  'winner', 'label')
-Map(function(k) k$validation_result$accuracy, train_result)
+learning_result = train_model_by(training_set, testing_set, features.selection.team,  'winner', 'label')
+Map(function(k) k$performance$accuracy, learning_result)
 # $label1
-# [1] 0.9558039
+# [1] 0.9525097
 #
 # $label2
-# [1] 0.9555018
+# [1] 0.9187447
 #
 # $label3
-# [1] 0.9509961
+# [1] 0.9025564
 #
 # $label4
-# [1] 0.9160243
+# [1] 0.8900849
 #
 # $label5
-# [1] 0.9288604
+# [1] 0.9374898
 #
 # $label6
-# [1] 0.9476896
+# [1] 0.9283245
+#
+# $label7
+# [1] 0.9153953
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)

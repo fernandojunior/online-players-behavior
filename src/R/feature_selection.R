@@ -10,47 +10,6 @@
 import_package('FSelector', attach, attach=TRUE)
 import('utils', attach=c('correlation_analysis'))
 
-#' Redundant features of a matrix that are equal or grater than correlation threshold
-redundant_features = function (data, threshold=0.65, redundant_features_=NULL) {
-    # absolute correlation matrix
-    correlation_matrix = abs(correlation_analysis(data)$estimates)
-
-    # highly correlated by feature (correation vector sum | correation >= threshold)
-    highly_correlated_sum = apply(correlation_matrix, 1, function(row) {
-        return(sum(row[row >= threshold]))
-    })
-
-    if (is.null(highly_correlated_sum)) {
-        return(NULL)
-    } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
-        most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
-        redundant_features_ = c(redundant_features_, most_redundant)
-        features = setdiff(colnames(data), most_redundant)
-        return(redundant_features(data[, features], threshold, redundant_features_))
-    } else {
-        return(redundant_features_)
-    }
-}
-
-#' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
-#'
-#' TODO: Improve
-feature_engeneering = function (data, features, target, feature_selector=information_gain_selector) {
-    # remove redundant features
-    features = setdiff(features, redundant_features(data[, features], threshold))
-
-    # remove zero variance features, ie, features with a single 'class'
-    zero_variance_features = filter_features(data[, features], function(y) {
-        return(if (is.integer(y)) length(unique(y)) else NULL)
-    }, max=1)
-    features = setdiff(features, zero_variance_features)
-
-    # select features using a feature selector
-    features = feature_selector(data, features, target)$features
-
-    return(features)
-}
-
 #' Select the features of a matrix x such that min >= f(x) =< max optional thresholds
 filter_features = function (x, f, min=NULL, max=NULL) {
     y = apply(x, 2, f)
@@ -69,6 +28,48 @@ filter_features = function (x, f, min=NULL, max=NULL) {
         return(features)
     else
         return(NULL)
+}
+
+#' Redundant features of a matrix that are equal or grater than correlation threshold
+redundant_features = function (data, correlation_threshold=0.65, redundant_features_=NULL) {
+    # absolute correlation matrix
+    correlation_matrix = render_plot(function () abs(correlation_analysis(data)$estimates), save=FALSE, close=TRUE)
+
+    # highly correlated by feature (correation vector sum | correation >= correlation_threshold)
+    highly_correlated_sum = apply(correlation_matrix, 1, function(row) {
+        return(sum(row[row >= correlation_threshold]))
+    })
+
+    if (is.null(highly_correlated_sum)) {
+        return(NULL)
+    } else if (length(highly_correlated_sum[highly_correlated_sum > 0]) > 1) {
+        most_redundant = names(sort(highly_correlated_sum, decreasing=TRUE)[1])
+        redundant_features_ = c(redundant_features_, most_redundant)
+        features = setdiff(colnames(data), most_redundant)
+        return(redundant_features(data[, features], correlation_threshold, redundant_features_))
+    } else {
+        return(redundant_features_)
+    }
+}
+
+#' Function to automatize feature engeneering: redundant_features, zero_variance_features, feature_selection
+#'
+#' TODO: Improve
+feature_engeneering = function (data, features, target, correlation_threshold=0.65,
+                                feature_selector=information_gain_selector) {
+    # remove redundant features
+    features = setdiff(features, redundant_features(data[, features], correlation_threshold=correlation_threshold))
+
+    # remove zero variance features, ie, features with a single 'class'
+    zero_variance_features = filter_features(data[, features], function(y) {
+        return(if (is.integer(y)) length(unique(y)) else NULL)
+    }, max=1)
+    features = setdiff(features, zero_variance_features)
+
+    # select features using a feature selector
+    features = feature_selector(data, features, target)$features
+
+    return(features)
 }
 
 #' Given a dataset, compute feature scores with a method handler and select features based on a score filter
