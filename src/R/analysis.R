@@ -31,12 +31,12 @@ get_players_from_5x5_matches = function (data) {
 
 #' Remove AFK players
 remove_afk_players = function (data) {
-    return(data[!(data$totalDamageDealtToChampions == 0 | data$goldSpent <= 500 | data$matchDuration < 20), ])
+    return(data[!(data$totalDamageDealtToChampions == 0 | data$matchDuration < 20 | data$goldSpent <= 3000), ])
 }
 
-#' Remove low variance features from selected data features
-unselect_low_variance_features = function (data, features) {
-    low_variance_features = filter_features(data[, features], var, max=7)
+#' Remove low variance features from selected raw data features
+unselect_low_variance_features = function (raw_data, features) {
+    low_variance_features = filter_features(raw_data[, features], function(col) round(var(col)), max=7)
     print(low_variance_features)
     return(setdiff(features, low_variance_features))
 }
@@ -46,6 +46,19 @@ unselect_redundant_features = function (data, features) {
     redundant_features = redundant_features(data[, features], correlation_threshold=0.65)
     print(redundant_features)
     return(setdiff(features, redundant_features))
+}
+
+#' Analyze and indentify matches with outliers (IQR factor = x) from player and team data
+get_outlier_match_ids = function (players, teams, IQR_factor=1.5) {
+    are_outlier_players = render_plot(function () {
+        return(outlier_analysis(players[, setdiff(colnames(players), 'matchId')], factor=IQR_factor)$outliers)
+    }, '../output/outliers-player', width=16, height=12)
+
+    are_outlier_teams = render_plot(function () {
+        return(outlier_analysis(teams[, setdiff(colnames(teams), 'matchId')], factor=IQR_factor)$outliers)
+    }, '../output/outliers-team', width=16, height=12)
+
+    return(unique(c(players[are_outlier_players, 'matchId'], teams[are_outlier_teams, 'matchId'])))
 }
 
 # ======================================
@@ -67,7 +80,7 @@ data = read.csv('../data/data20170105025503.csv')
 data = get_players_from_5x5_matches(remove_afk_players(data))
 
 # > nrow(data)
-# [1] 1036090
+# [1] 1009770
 
 # TODO Collect mode data to remove duplicated rows by summonerId and so as decrease bias
 # data = data[!duplicated(data[, 'summonerId']),]
@@ -101,17 +114,17 @@ features.info = c(
     'item4',
     'item5',
     'item6',
-    # 'combatPlayerScore',  # ARAM
-    # 'objectivePlayerScore',  # ARAM
-    # 'totalPlayerScore',  # ARAM
-    # 'totalScoreRank',  # ARAM
-    # 'unrealKills', # ARAM
-    # 'firstBloodAssist',
-    # 'firstBloodKill',
+    'combatPlayerScore',  # ARAM
+    'objectivePlayerScore',  # ARAM
+    'totalPlayerScore',  # ARAM
+    'totalScoreRank',  # ARAM
+    'unrealKills', # ARAM
+    'firstBloodAssist',
+    'firstBloodKill',
     'firstInhibitorAssist',
-    'firstInhibitorKill'
-    # 'firstTowerAssist',
-    # 'firstTowerKill',
+    'firstInhibitorKill',
+    'firstTowerAssist',
+    'firstTowerKill'
 )
 
 # Feature extraction / decomposition
@@ -127,7 +140,6 @@ features.numeric = setdiff(features.numeric, c(
     'totalDamageDealtToChampions', # physicalDamageDealtToChampions + magicDamageDealtToChampions
     'totalDamageTaken', # physicalDamageTaken + magicDamageTaken
     'neutralMinionsKilled', # neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle
-    'minionsKilled', #  neutralMinionsKilledEnemyJungle + neutralMinionsKilledTeamJungle + minionsKilledEnemyTeam
     'trueDamageDealt', # trueDamageDealtToChampions + trueDamageDealtToMonsters
     'physicalDamageDealt', # physicalDamageDealtToChampions + physicalDamageDealtToMonsters
     'magicDamageDealt' # magicDamageDealtToChampions + magicDamageDealtToMonsters
@@ -139,7 +151,7 @@ features.numeric = setdiff(features.numeric, c(
 team = aggregate(. ~ matchId + winner, data=data[, c(features.numeric, 'winner', 'matchId')],  FUN=sum)
 
 # > nrow(team)
-# [1] 207218
+# [1] 201954
 
 # ================
 # Data exploration
@@ -148,74 +160,76 @@ team = aggregate(. ~ matchId + winner, data=data[, c(features.numeric, 'winner',
 descriptive_statistics(data, features.numeric)
 # > descriptive_statistics(data, features.numeric)
 #                                  min    max     mean meadian           var       sd
-# assists                            0     53     9.17       8         36.74     6.06
-# deaths                             0     33     6.32       6         10.72     3.27
-# doubleKills                        0     13     0.61       0          1.00     1.00
-# goldEarned                      3122  43409 12230.98   11957   14853645.09  3854.04
-# goldSpent                        535  63737 11158.36   10900   13816975.64  3717.12
+# assists                            0     53     9.28       8         36.65     6.05
+# deaths                             0     33     6.37       6         10.63     3.26
+# doubleKills                        0     13     0.62       0          1.01     1.00
+# goldEarned                      3381  43409 12324.99   12044   14581987.34  3818.64
+# goldSpent                       3005  63737 11255.80   10975   13468195.75  3669.90
 # inhibitorKills                     0     10     0.19       0          0.23     0.48
-# killingSprees                      0     12     1.45       1          1.77     1.33
-# kills                              0     42     6.29       5         23.39     4.84
-# largestCriticalStrike              0   3840   235.12       0     155227.06   393.99
-# largestKillingSpree                0     29     2.81       2          6.58     2.57
-# largestMultiKill                   0      6     1.40       1          0.57     0.76
-# magicDamageDealtToChampions        0 128451  8970.28    5360   99515769.33  9975.76
-# magicDamageTaken                   0  80065  9098.80    8046   30648713.40  5536.13
-# neutralMinionsKilledEnemyJungle    0    132     4.02       1         50.56     7.11
-# neutralMinionsKilledTeamJungle     0    178    14.79       4        515.29    22.70
+# killingSprees                      0     12     1.47       1          1.77     1.33
+# kills                              0     42     6.34       5         23.46     4.84
+# largestCriticalStrike              0   3840   237.16       0     156860.70   396.06
+# largestKillingSpree                0     29     2.82       2          6.57     2.56
+# largestMultiKill                   0      6     1.41       1          0.57     0.76
+# magicDamageDealtToChampions        0 128451  9074.89    5457  100549138.71 10027.42
+# magicDamageDealtToMonsters         0 691841 37066.88   19499 1979653360.87 44493.30
+# magicDamageTaken                   0  80065  9205.25    8150   30520693.83  5524.55
+# minionsKilled                      0    753   124.01     124       6924.06    83.21
+# neutralMinionsKilledEnemyJungle    0    132     4.04       1         50.79     7.13
+# neutralMinionsKilledTeamJungle     0    178    14.92       4        519.78    22.80
 # pentaKills                         0      3     0.00       0          0.00     0.05
-# physicalDamageDealtToChampions     0 120687  9232.15    4732  105080249.50 10250.87
-# physicalDamageTaken                0 112521 14895.72   13371   62825173.15  7926.23
+# physicalDamageDealtToChampions     0 120687  9331.40    4834  106248368.02 10307.68
+# physicalDamageDealtToMonsters      0 913487 61493.67   36433 3939565664.99 62765.96
+# physicalDamageTaken                0 112521 15031.73   13507   62688066.54  7917.58
 # quadraKills                        0      5     0.01       0          0.01     0.12
 # sightWardsBoughtInGame             0      0     0.00       0          0.00     0.00
-# totalHeal                          0 110945  5024.79    3384   28222862.19  5312.52
-# totalTimeCrowdControlDealt         0  26386   506.48     284     611388.45   781.91
-# totalUnitsHealed                   0    142     2.49       1         18.68     4.32
-# towerKills                         0     10     0.94       1          1.50     1.23
-# tripleKills                        0      7     0.09       0          0.11     0.32
-# trueDamageDealtToChampions         0 500151   987.35     428    5558953.87  2357.74
-# trueDamageTaken                    0 501088  1016.52     648    4018263.08  2004.56
-# visionWardsBoughtInGame            0     29     0.84       0          1.55     1.25
-# wardsKilled                        0     81     2.14       1         10.24     3.20
-# wardsPlaced                        0    595    12.36      11         56.88     7.54
-# physicalDamageDealtToMonsters      0 913487 60927.52   35792 3900361598.99 62452.88
-# magicDamageDealtToMonsters         0 691841 36682.91   19173 1959656258.61 44268.00
+# totalHeal                          0 110945  5080.25    3427   28489269.56  5337.53
+# totalTimeCrowdControlDealt         0  26386   511.24     288     617193.22   785.62
+# totalUnitsHealed                   0    142     2.50       1         18.86     4.34
+# towerKills                         0     10     0.95       1          1.51     1.23
+# tripleKills                        0      7     0.09       0          0.11     0.33
+# trueDamageDealtToChampions         0 500151   999.10     440    5619292.14  2370.50
+# trueDamageTaken                    0 501088  1028.38     658    4052023.63  2012.96
+# visionWardsBoughtInGame            0     29     0.84       0          1.57     1.25
+# wardsKilled                        0     81     2.17       1         10.34     3.22
+# wardsPlaced                        0    595    12.48      11         56.95     7.55
 
 descriptive_statistics(team, features.numeric)
 # > descriptive_statistics(team, features.numeric)
 #                                   min     max      mean  meadian            var        sd
-# assists                             0     166     45.84     44.0         508.31     22.55
-# deaths                              0      96     31.58     32.0         159.58     12.63
-# doubleKills                         0      16      3.05      3.0           4.95      2.23
-# goldEarned                      20387  167863  61154.91  60916.0   292978978.54  17116.63
-# goldSpent                       14245  173490  55791.81  55395.0   262537517.63  16203.01
-# inhibitorKills                      0      14      0.97      0.0           1.47      1.21
-# killingSprees                       0      27      7.27      7.0          11.93      3.45
-# kills                               0      94     31.43     32.0         159.41     12.63
-# largestCriticalStrike               0    6832   1175.60   1041.0      538117.54    733.56
-# largestKillingSpree                 0      49     14.03     14.0          39.41      6.28
-# largestMultiKill                    0      15      7.00      7.0           3.11      1.76
-# magicDamageDealtToChampions      1454  277258  44851.41  40831.5   563467827.51  23737.48
-# magicDamageTaken                 1455  280380  45494.02  41414.0   575104062.40  23981.33
-# neutralMinionsKilledEnemyJungle     0     179     20.08     17.0         272.19     16.50
-# neutralMinionsKilledTeamJungle      0     236     73.97     71.0         767.06     27.70
-# pentaKills                          0       3      0.01      0.0           0.01      0.10
-# physicalDamageDealtToChampions   1298  209321  46160.76  42946.5   482431013.08  21964.31
-# physicalDamageTaken             11711  276723  74478.62  70797.5   732989853.03  27073.79
+# assists                             0     166     46.41     45.0         501.83     22.40
+# deaths                              0      96     31.86     32.0         157.25     12.54
+# doubleKills                         0      16      3.09      3.0           4.95      2.23
+# goldEarned                      21241  167863  61624.94  61313.0   285885117.17  16908.14
+# goldSpent                       17525  173490  56279.00  55783.0   254935731.04  15966.71
+# inhibitorKills                      0      14      0.97      0.0           1.48      1.22
+# killingSprees                       0      27      7.34      7.0          11.81      3.44
+# kills                               0      94     31.71     32.0         157.08     12.53
+# largestCriticalStrike               0    6832   1185.81   1051.0      538830.36    734.05
+# largestKillingSpree                 0      49     14.11     14.0          38.85      6.23
+# largestMultiKill                    0      15      7.04      7.0           3.05      1.75
+# magicDamageDealtToChampions      1454  277258  45374.46  41341.0   559898084.93  23662.17
+# magicDamageDealtToMonsters       2664 1636239 185334.42 165063.0 11104812464.71 105379.37
+# magicDamageTaken                 1455  280380  46026.27  41934.0   571260353.46  23901.05
+# minionsKilled                     142    1988    620.06    606.0       29672.00    172.26
+# neutralMinionsKilledEnemyJungle     0     179     20.20     17.0         272.66     16.51
+# neutralMinionsKilledTeamJungle      0     236     74.58     72.0         759.39     27.56
+# pentaKills                          0       3      0.01      0.0           0.01      0.11
+# physicalDamageDealtToChampions   2516  209321  46657.02  43445.0   478524140.52  21875.19
+# physicalDamageDealtToMonsters   25356 1622946 307468.35 286914.5 19065412611.47 138077.56
+# physicalDamageTaken             12963  276723  75158.66  71446.5   722512844.62  26879.60
 # quadraKills                         0       5      0.06      0.0           0.07      0.26
 # sightWardsBoughtInGame              0       0      0.00      0.0           0.00      0.00
-# totalHeal                        1756  178665  25123.93  22127.0   204083617.81  14285.78
-# totalTimeCrowdControlDealt         40   44982   2532.42   1953.0     5085974.16   2255.21
-# totalUnitsHealed                    2     149     12.46     10.0          79.87      8.94
-# towerKills                          0      15      4.70      5.0          10.31      3.21
-# tripleKills                         0       7      0.43      0.0           0.51      0.71
-# trueDamageDealtToChampions          0  706412   4936.76   3597.0    37731918.11   6142.63
-# trueDamageTaken                     0  717334   5082.62   3764.0    38076385.36   6170.61
-# visionWardsBoughtInGame             0      43      4.18      4.0           9.02      3.00
-# wardsKilled                         0     173     10.72      8.0         119.62     10.94
-# wardsPlaced                         7     621     61.82     60.0         457.36     21.39
-# physicalDamageDealtToMonsters   25356 1622946 304637.62 284105.5 19206507752.27 138587.55
-# magicDamageDealtToMonsters       2664 1636239 183414.57 163108.5 11128259582.07 105490.57
+# totalHeal                        1756  178665  25401.26  22394.0   203814822.76  14276.37
+# totalTimeCrowdControlDealt         40   44982   2556.19   1974.0     5118253.86   2262.36
+# totalUnitsHealed                    3     149     12.52     10.0          80.57      8.98
+# towerKills                          0      15      4.73      5.0          10.25      3.20
+# tripleKills                         0       7      0.44      0.0           0.51      0.72
+# trueDamageDealtToChampions          0  706412   4995.48   3654.0    38146615.15   6176.29
+# trueDamageTaken                     0  717334   5141.91   3822.0    38482885.65   6203.46
+# visionWardsBoughtInGame             0      43      4.21      4.0           9.08      3.01
+# wardsKilled                         0     173     10.87      8.0         120.48     10.98
+# wardsPlaced                         7     621     62.39     60.0         449.11     21.19
 
 # ========================
 # Simple feature selection
@@ -229,32 +243,29 @@ features.selection.team = unselect_low_variance_features(team, features.numeric)
 # Outlier analysis
 # ================
 
-# Analyze and indentify extreme (IQR factor = 3) outliers of numeric features
-outliers.player = render_plot(function () {
-    return(outlier_analysis(data[, features.selection.player], factor=3))
-}, '../output/outliers-player', width=16, height=12)
-
-outliers.team = render_plot(function () {
-    return(outlier_analysis(team[, features.selection.team], factor=3))
-}, '../output/outliers-team', width=16, height=12)
+# Analyze and indentify matches with extreme outliers
+outlier_match_ids = get_outlier_match_ids(
+    data[, c(features.selection.player, 'matchId')],
+    team[, c(features.selection.team, 'matchId')],
+    IQR_factor=3.5
+)
 
 # Remove matches with extreme outliers from team and player match stats data
-extreme_outliers_mathIds = unique(c(data[outliers.player$outliers, 'matchId'], team[outliers.team$outliers, 'matchId']))
-data = data[!data$matchId %in% extreme_outliers_mathIds, ]
-team = team[!team$matchId %in% extreme_outliers_mathIds, ]
+data = data[!data$matchId %in% outlier_match_ids, ]
+team = team[!team$matchId %in% outlier_match_ids, ]
 
-# Select only features where lower != upper from outlier analysis and remove low variance features
-features.selection.player = unselect_low_variance_features(data, colnames(outliers.player$thresholds))
-features.selection.team = unselect_low_variance_features(team, colnames(outliers.team$thresholds))
+# Remove low variance features after outliers clean
+features.selection.player = unselect_low_variance_features(data, features.selection.player)
+features.selection.team = unselect_low_variance_features(team, features.selection.team)
 
-# > length(extreme_outliers_mathIds)
-# [1] 84872
+# > length(outlier_match_ids)
+# [1] 75290
 
 # > nrow(data)
-# [1] 187370
+# [1] 256870
 
 # > nrow(team)
-# [1] 37474
+# [1] 51374
 
 # ===================
 # Data transformation
