@@ -669,9 +669,6 @@ train_model_by_cluster = function (training_set, testing_set, features, target_f
     training_set = training_set[, c(features, target_feature, cluster_feature)]
     training_set = if (!is.data.frame(training_set)) as.data.frame(training_set) else training_set
 
-    # target classes can't be numeric in Predictive modeling
-    training_set[, target_feature] = as.factor(training_set[, target_feature])
-
     cluster_classes = sort(unique(training_set[, cluster_feature]))
 
     # train and validation result for each k cluster
