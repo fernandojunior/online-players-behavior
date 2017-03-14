@@ -459,51 +459,51 @@ team.normalized = cbind(team.normalized, label=fit.team$cluster)
 balanced = balance(data.relative_performance, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
-# 1 24915   12812  12103
-# 2 17945   11839   6106
-# 3 19601    9453  10148
-# 4 18269    9417   8852
-# 5 19501    6789  12712
-# 6 33513   17334  16179
-# 7 53626   26041  27585
+# 1 51389   25866  25523
+# 2 50328   25180  25148
+# 3 24002   12332  11670
+# 4 45408   23356  22052
+# 5 30934   14802  16132
+# 6 32785   16606  16179
+# 7 22024   10293  11731
 #
 # $relative_size
 #     winners    losers
-# 1 0.5142284 0.4857716
-# 2 0.6597381 0.3402619
-# 3 0.4822713 0.5177287
-# 4 0.5154634 0.4845366
-# 5 0.3481360 0.6518640
-# 6 0.5172321 0.4827679
-# 7 0.4856040 0.5143960
+# 1 0.5033373 0.4966627
+# 2 0.5003179 0.4996821
+# 3 0.5137905 0.4862095
+# 4 0.5143587 0.4856413
+# 5 0.4785026 0.5214974
+# 6 0.5065121 0.4934879
+# 7 0.4673538 0.5326462
 #
 # $min_size
-# [1] 4885
+# [1] 8234
 
 balanced.team = balance(team.normalized, 'winner', 'label')$data
 # > balanced.team = balance(team.normalized, 'winner', 'label')$data
 # $size
 #    all winners losers
-# 1 4849     364   4485
-# 2 6432    3478   2954
-# 3 3838    2637   1201
-# 4 6274     319   5955
-# 5 6648    3671   2977
-# 6 5343    4723    620
-# 7 4090    3545    545
+# 1 6491     662   5829
+# 2 9528    5255   4273
+# 3 7408    6357   1051
+# 4 8178     502   7676
+# 5 9009    4776   4233
+# 6 5435    3650   1785
+# 7 5325    4485    840
 #
 # $relative_size
-#      winners    losers
-# 1 0.07506702 0.9249330
-# 2 0.54073383 0.4592662
-# 3 0.68707660 0.3129234
-# 4 0.05084476 0.9491552
-# 5 0.55219615 0.4478039
-# 6 0.88396032 0.1160397
-# 7 0.86674817 0.1332518
+#     winners    losers
+# 1 0.1019874 0.8980126
+# 2 0.5515323 0.4484677
+# 3 0.8581263 0.1418737
+# 4 0.0613842 0.9386158
+# 5 0.5301365 0.4698635
+# 6 0.6715731 0.3284269
+# 7 0.8422535 0.1577465
 #
 # $min_size
-# [1] 255
+# [1] 402
 
 ################################################################################################
 # TODO Improve Statistical analysis of cluster analysis by discriminating a winner binary target
@@ -531,6 +531,7 @@ centroid_analysis(balanced.team, features.selection.team, '../output/exploring-c
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
+import_package('ROCR', attach=TRUE)
 
 RENDER_PLOT_SAVE = NULL
 RENDER_PLOT_CLOSE = NULL
@@ -568,38 +569,87 @@ testing_set = team.performance[!(rownames(team.performance) %in% rownames(traini
 # > nrow(testing_set)
 # [1] 45746
 
+# TODO
+# http://journals.plos.org/plosone/article/figure/image?size=large&id=info:doi/10.1371/journal.pone.0118432.t001
+# https://www.slideshare.net/PratapDangeti/machine-learning-with-scikitlearn-72720571?trk=v-feed
+
+#           targets
+# outcomes  0  1
+#        0  TN FN
+#        1  FP TP
+confusion_matrix = function (outcomes, targets) {
+    return(table(outcomes, targets))
+}
+
+precision = function (tp, fp) {
+    return(tp / (tp + fp))
+}
+
+recall = function (tp, fn) {
+    return(tp / (tp + fn))
+}
+
+# confusion_matrix: outcomes x targets
+f_measure = function (confusion_matrix) {
+    precision = precision(confusion_matrix[2, 2], confusion_matrix[2, 1])
+    recall = recall(confusion_matrix[2, 2], confusion_matrix[1, 2])
+    return(2 * (precision * recall) / (precision + recall))
+}
+
+roc_curve = function (outcomes, targets) {
+    # outcomes = as.numeric(outcomes)
+    # targets = as.numeric(targets)
+    performance <- performance(prediction(predictions=outcomes, labels=targets) , "tpr", "fpr")
+    # changing params for the ROC plot - width, etc
+    # par(mar=c(5,5,2,2),xaxs = "i",yaxs = "i",cex.axis=1.3,cex.lab=1.4)
+    # plotting the ROC curve
+    plot(performance,col="black",lty=3, lwd=3)
+    # plot(perf,col="black",lty=3, lwd=3)
+}
+
 #' Test a predictive model given a testing set
 test_model = function (model, testing_set, features, target_feature) {
-    # target classes can't be numeric
-    targets = as.factor(testing_set[, target_feature])
+    targets = testing_set[, target_feature]
 
-    outcomes_prob_by_target = predict(model, newdata=testing_set[, features, drop=FALSE], type="prob")
+    outcome_probs = predict(model, newdata=testing_set[, features, drop=FALSE], type="prob")[, 2]
+    # outcome_probs = predict(model, newdata=testing_set[, features, drop=FALSE], type="response") # when using glm
+    outcomes = ifelse(outcome_probs > 0.5, 1, 0)
 
-    outcomes = sapply(1:nrow(testing_set), function (i) {
-        current_target = targets[i]
-        outcome_prob = outcomes_prob_by_target[i, current_target]
-        if (outcome_prob > 0.5 & current_target == 0 || outcome_prob < 0.5 & current_target == 1)
-            return(0)
-        return(1)
-    })
+    render_plot(function () roc_curve(outcome_probs, targets))
 
-    confusion_matrix = table(outcomes, targets)
+    confusion_matrix = confusion_matrix(outcomes, targets)
     accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
     # TODO precision and recall
-    return(list(confusion_matrix=confusion_matrix, accuracy=accuracy))
+    return(list(
+        confusion_matrix=confusion_matrix,
+        accuracy=accuracy,
+        f_measure=f_measure(confusion_matrix),
+        outcomes=outcomes,
+        outcome_probs=outcome_probs,
+        targets=testing_set[, target_feature]
+    ))
 }
+
+# test_model(learning_result$label7$model, testing_set, features.selection.team, 'winner')
+
+#test_model(learning_result$label7$model, learning_result$label7$outcome_probs, targets)
 
 train_model = function (training_set, testing_set, features, target_feature) {
     training_set = training_set[, c(features, target_feature)]
     testing_set = testing_set[, c(features, target_feature)]
+
+    # target classes can't be numeric to model a classfifier
+    training_set[, target_feature] = as.factor(training_set[, target_feature])
+    testing_set[, target_feature] = as.factor(testing_set[, target_feature])
 
     # perform data reduction
     features = feature_engeneering(training_set, features, target_feature, correlation_threshold=0.55)
     training_set = training_set[, c(features, target_feature)]
     testing_set = testing_set[, c(features, target_feature)]
 
-    # classfifier model
+    # model a binary classfifier using logist regression
     model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
+    # model <- glm(as.formula(strf('%s ~ .', target_feature)), family=binomial(link='logit'), data=training_set)
 
     # test performance
     performance = test_model(model, testing_set, features, target_feature)
@@ -608,12 +658,14 @@ train_model = function (training_set, testing_set, features, target_feature) {
     return(list(features=features, model=model, performance=performance))
 }
 
+# tmp = train_model(training_set, testing_set, features.selection.team, 'winner')
+
 # partitions = caret::createDataPartition(training[, target_feature], p=0.6, list=FALSE)
 # training_set = as.data.frame(training[partitions, ])
 # testing_set = as.data.frame(training[-partitions, ])
 
 #' Train and test binary prediction model for each cluster
-train_model_by = function (training_set, testing_set, features, target_feature, cluster_feature) {
+train_model_by_cluster = function (training_set, testing_set, features, target_feature, cluster_feature) {
     training_set = training_set[, c(features, target_feature, cluster_feature)]
     training_set = if (!is.data.frame(training_set)) as.data.frame(training_set) else training_set
 
@@ -640,28 +692,28 @@ train_model_by = function (training_set, testing_set, features, target_feature, 
     return(cluster_results)
 }
 
-learning_result = train_model_by(training_set, testing_set, features.selection.team,  'winner', 'label')
+learning_result = train_model_by_cluster(training_set, testing_set, features.selection.team,  'winner', 'label')
 Map(function(k) k$performance$accuracy, learning_result)
 # $label1
-# [1] 0.9022332
+# [1] 0.9094426
 #
 # $label2
-# [1] 0.9340899
+# [1] 0.9281293
 #
 # $label3
 # [1] 0.9071775
 #
 # $label4
-# [1] 0.9726065
+# [1] 0.9650122
 #
 # $label5
-# [1] 0.9401584
+# [1] 0.9511274
 #
 # $label6
-# [1] 0.9382423
+# [1] 0.9276614
 #
 # $label7
-# [1] 0.9358549
+# [1] 0.9183809
 
 install.packages('ROCR', dependencies=TRUE)
 import_package('ROCR', attach=TRUE)
@@ -671,13 +723,13 @@ import_package('ROCR', attach=TRUE)
 gini_index_selection = gini_index_selector(data, features.numeric, 'winner')
 information_gain_selection = information_gain_selector(data, features.numeric, 'winner')
 relieff_selection = relieff_selector(data, features.numeric, 'winner')
-random_forest_selection = random_forest_selector(data, features.numeric, 'winner')
+# random_forest_selection = random_forest_selector(data, features.numeric, 'winner')
 
 table(c(
     gini_index_selection$features,
     information_gain_selection$features,
-    relieff_selection$features,
-    random_forest_selection$features
+    relieff_selection$features
+    # random_forest_selection$features
 ))
 
 # TODO remove features present in all clusters?

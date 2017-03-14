@@ -15,4 +15,6 @@ install.packages('ineq', dependencies=TRUE)
 
 install.packages('caret', dependencies=TRUE)
 
+install.packages('ROCR', dependencies=TRUE)
+
 library(caret)
