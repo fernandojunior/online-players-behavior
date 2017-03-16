@@ -572,6 +572,7 @@ testing_set = team.performance[!(rownames(team.performance) %in% rownames(traini
 # TODO
 # http://journals.plos.org/plosone/article/figure/image?size=large&id=info:doi/10.1371/journal.pone.0118432.t001
 # https://www.slideshare.net/PratapDangeti/machine-learning-with-scikitlearn-72720571?trk=v-feed
+# https://www.analyticsvidhya.com/blog/2016/02/7-important-model-evaluation-error-metrics/
 
 #           targets
 # outcomes  0  1
@@ -581,27 +582,37 @@ confusion_matrix = function (outcomes, targets) {
     return(table(outcomes, targets))
 }
 
+# the proportion of the total number of predictions that were correct.
 accuracy = function (confusion_matrix) {
     return(sum(diag(confusion_matrix))/sum(confusion_matrix))
 }
 
+# The proportion of  positive predictive cases that were correctly identified.
 # Aliases: positive predictive value
 precision = function (tp, fp) {
-    return(tp / (tp + fp))
+    pp = (tp + fp)
+    return(tp / pp)
 }
+# taxa de previsoes de times que realmente venceram em relacao ao total de previsoes de times vencedores
 
+# The proportion of actual positive cases which are correctly identified.
 # Aiases: sensitivity, true positive rate
 recall = function (tp, fn) {
-    return(tp / (tp + fn))
+    p = (tp + fn)
+    return(tp / p)
 }
+# taxa de previsoes de times que realmente venceram em relacao ao total de times vencedores
 
+# The proportion of actual negative cases which are correctly identified.
 # Alias: true negative rate
 specificity = function (tn, fp) {
     return(tn / (tn + fp))
 }
 
+# Alias?
 false_positive_rate = function (tn) {
-    return(fp / (tn + fp))
+    n = tn + fp
+    return(fp / n)
 }
 
 # confusion_matrix: outcomes x targets
@@ -686,7 +697,7 @@ train_model_by_cluster = function (training_set, testing_set, features, target_f
     training_set = training_set[, c(features, target_feature, cluster_feature)]
     training_set = if (!is.data.frame(training_set)) as.data.frame(training_set) else training_set
 
-    cluster_classes = sort(unique(training_set[, cluster_feature]))
+    cluster_domain = sort(unique(training_set[, cluster_feature]))
 
     # train and validation result for each k cluster
     cluster_results = Map(function (k) {
@@ -698,10 +709,10 @@ train_model_by_cluster = function (training_set, testing_set, features, target_f
         render_plot(function () correlation_analysis(training_set[, learning_result$features]))
         learning_result$k = k
         return(learning_result)
-    }, cluster_classes)
+    }, cluster_domain)
 
     # labeling cluster result names
-    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_classes)
+    names(cluster_results) = Map(function (k) strf('%s%s', cluster_feature, k), cluster_domain)
 
     return(cluster_results)
 }
