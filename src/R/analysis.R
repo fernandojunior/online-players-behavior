@@ -581,25 +581,52 @@ confusion_matrix = function (outcomes, targets) {
     return(table(outcomes, targets))
 }
 
+accuracy = function (confusion_matrix) {
+    return(sum(diag(confusion_matrix))/sum(confusion_matrix))
+}
+
+# Aliases: positive predictive value
 precision = function (tp, fp) {
     return(tp / (tp + fp))
 }
 
+# Aiases: sensitivity, true positive rate
 recall = function (tp, fn) {
     return(tp / (tp + fn))
 }
 
+# Alias: true negative rate
+specificity = function (tn, fp) {
+    return(tn / (tn + fp))
+}
+
+false_positive_rate = function (tn) {
+    return(fp / (tn + fp))
+}
+
 # confusion_matrix: outcomes x targets
 f_measure = function (confusion_matrix) {
-    precision = precision(confusion_matrix[2, 2], confusion_matrix[2, 1])
-    recall = recall(confusion_matrix[2, 2], confusion_matrix[1, 2])
+    tp = confusion_matrix[2, 2]
+    fp = confusion_matrix[2, 1]
+    fn = confusion_matrix[1, 2]
+    precision = precision(tp, fp)
+    recall = recall(tp, fn)
     return(2 * (precision * recall) / (precision + recall))
+}
+
+evaluate_outcomes = function (targets, outcomes) {
+    confusion_matrix=confusion_matrix(outcomes, targets)
+    return(list(
+        confusion_matrix=confusion_matrix,
+        accuracy=accuracy(confusion_matrix),
+        f_measure=f_measure(confusion_matrix)
+    ))
 }
 
 roc_curve = function (outcomes, targets) {
     # outcomes = as.numeric(outcomes)
     # targets = as.numeric(targets)
-    performance <- performance(prediction(predictions=outcomes, labels=targets) , "tpr", "fpr")
+    performance = ROCR::performance(prediction(predictions=outcomes, labels=targets) , "tpr", "fpr")
     # changing params for the ROC plot - width, etc
     # par(mar=c(5,5,2,2),xaxs = "i",yaxs = "i",cex.axis=1.3,cex.lab=1.4)
     # plotting the ROC curve
@@ -607,32 +634,23 @@ roc_curve = function (outcomes, targets) {
     # plot(perf,col="black",lty=3, lwd=3)
 }
 
+predict_outcomes = function (model, data, features) {
+    probabilities = predict(model, newdata=data[, features, drop=FALSE], type="prob")[, 2]
+    # outcome_probs = predict(model, newdata=data[, features, drop=FALSE], type="response") # when using glm
+    outcomes = ifelse(probabilities > 0.5, 1, 0)
+    return(list(probabilities=probabilities, outcomes=outcomes))
+}
+
 #' Test a predictive model given a testing set
 test_model = function (model, testing_set, features, target_feature) {
     targets = testing_set[, target_feature]
-
-    outcome_probs = predict(model, newdata=testing_set[, features, drop=FALSE], type="prob")[, 2]
-    # outcome_probs = predict(model, newdata=testing_set[, features, drop=FALSE], type="response") # when using glm
-    outcomes = ifelse(outcome_probs > 0.5, 1, 0)
-
-    render_plot(function () roc_curve(outcome_probs, targets))
-
-    confusion_matrix = confusion_matrix(outcomes, targets)
-    accuracy = sum(diag(confusion_matrix))/sum(confusion_matrix)
-    # TODO precision and recall
-    return(list(
-        confusion_matrix=confusion_matrix,
-        accuracy=accuracy,
-        f_measure=f_measure(confusion_matrix),
-        outcomes=outcomes,
-        outcome_probs=outcome_probs,
-        targets=testing_set[, target_feature]
-    ))
+    prediction = predict_outcomes(model, testing_set, features)
+    performance = evaluate_outcomes(targets, prediction$outcomes)
+    render_plot(function () roc_curve(prediction$probabilities, targets))
+    return(list(prediction=prediction, performance=performance))
 }
 
 # test_model(learning_result$label7$model, testing_set, features.selection.team, 'winner')
-
-#test_model(learning_result$label7$model, learning_result$label7$outcome_probs, targets)
 
 train_model = function (training_set, testing_set, features, target_feature) {
     training_set = training_set[, c(features, target_feature)]
@@ -651,11 +669,10 @@ train_model = function (training_set, testing_set, features, target_feature) {
     model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, method="glm", family="binomial")
     # model <- glm(as.formula(strf('%s ~ .', target_feature)), family=binomial(link='logit'), data=training_set)
 
-    # test performance
-    performance = test_model(model, testing_set, features, target_feature)
+    # outcomes and performance
+    test = test_model(model, testing_set, features, target_feature)
 
-    # result
-    return(list(features=features, model=model, performance=performance))
+    return(list(features=features, model=model, test=test))
 }
 
 # tmp = train_model(training_set, testing_set, features.selection.team, 'winner')
@@ -690,7 +707,7 @@ train_model_by_cluster = function (training_set, testing_set, features, target_f
 }
 
 learning_result = train_model_by_cluster(training_set, testing_set, features.selection.team,  'winner', 'label')
-Map(function(k) k$performance$accuracy, learning_result)
+Map(function(k) k$test$performance$accuracy, learning_result)
 # $label1
 # [1] 0.9094426
 #
