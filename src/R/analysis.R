@@ -594,17 +594,20 @@ precision = function (tp, fp) {
     return(tp / pp)
 }
 # taxa de previsoes de times que realmente venceram em relacao ao total de previsoes de times vencedores
+# previsão de times vencedores que realmente vencenram
+# previsões corretas de times vencedores
 
 # The proportion of actual positive cases which are correctly identified.
-# Aiases: sensitivity, true positive rate
+# Aiases: sensitivity, true positive rate, probability of detection
 recall = function (tp, fn) {
     p = (tp + fn)
     return(tp / p)
 }
 # taxa de previsoes de times que realmente venceram em relacao ao total de times vencedores
+# previsões corretas de times vencedores em relação total de times vencedores
 
 # The proportion of actual negative cases which are correctly identified.
-# Alias: true negative rate
+# Alias: true negative rate, fall-out or probability of false alarm
 specificity = function (tn, fp) {
     return(tn / (tn + fp))
 }
