@@ -531,14 +531,13 @@ centroid_analysis(balanced.team, features.selection.team, '../output/exploring-c
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
-import_package('ROCR', attach=TRUE)
+import('evaluation_measures', attach=TRUE)
 
 RENDER_PLOT_SAVE = NULL
 RENDER_PLOT_CLOSE = NULL
 
 # Balance clustered 'label' data (undersampling) by discriminating 'winner' winners and losers
 training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
-# > training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
 # 1 6491     662   5829
@@ -561,92 +560,16 @@ training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
 #
 # $min_size
 # [1] 402
-
-testing_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
-
 # > nrow(training_set)
 # [1] 5628
+
+testing_set = team.performance[!(rownames(team.performance) %in% rownames(training_set)), ]
 # > nrow(testing_set)
 # [1] 45746
 
 # TODO
-# http://journals.plos.org/plosone/article/figure/image?size=large&id=info:doi/10.1371/journal.pone.0118432.t001
 # https://www.slideshare.net/PratapDangeti/machine-learning-with-scikitlearn-72720571?trk=v-feed
 # https://www.analyticsvidhya.com/blog/2016/02/7-important-model-evaluation-error-metrics/
-
-#           targets
-# outcomes  0  1
-#        0  TN FN
-#        1  FP TP
-confusion_matrix = function (outcomes, targets) {
-    return(table(outcomes, targets))
-}
-
-# the proportion of the total number of predictions that were correct.
-accuracy = function (confusion_matrix) {
-    return(sum(diag(confusion_matrix))/sum(confusion_matrix))
-}
-
-# The proportion of  positive predictive cases that were correctly identified.
-# Aliases: positive predictive value
-precision = function (tp, fp) {
-    pp = (tp + fp)
-    return(tp / pp)
-}
-# taxa de previsoes de times que realmente venceram em relacao ao total de previsoes de times vencedores
-# previsão de times vencedores que realmente vencenram
-# previsões corretas de times vencedores
-
-# The proportion of actual positive cases which are correctly identified.
-# Aiases: sensitivity, true positive rate, probability of detection
-recall = function (tp, fn) {
-    p = (tp + fn)
-    return(tp / p)
-}
-# taxa de previsoes de times que realmente venceram em relacao ao total de times vencedores
-# previsões corretas de times vencedores em relação total de times vencedores
-
-# The proportion of actual negative cases which are correctly identified.
-# Alias: true negative rate, fall-out or probability of false alarm
-specificity = function (tn, fp) {
-    return(tn / (tn + fp))
-}
-
-# Alias?
-false_positive_rate = function (tn) {
-    n = tn + fp
-    return(fp / n)
-}
-
-# confusion_matrix: outcomes x targets
-f_measure = function (confusion_matrix) {
-    tp = confusion_matrix[2, 2]
-    fp = confusion_matrix[2, 1]
-    fn = confusion_matrix[1, 2]
-    precision = precision(tp, fp)
-    recall = recall(tp, fn)
-    return(2 * (precision * recall) / (precision + recall))
-}
-
-evaluate_outcomes = function (targets, outcomes) {
-    confusion_matrix=confusion_matrix(outcomes, targets)
-    return(list(
-        confusion_matrix=confusion_matrix,
-        accuracy=accuracy(confusion_matrix),
-        f_measure=f_measure(confusion_matrix)
-    ))
-}
-
-roc_curve = function (outcomes, targets) {
-    # outcomes = as.numeric(outcomes)
-    # targets = as.numeric(targets)
-    performance = ROCR::performance(prediction(predictions=outcomes, labels=targets) , "tpr", "fpr")
-    # changing params for the ROC plot - width, etc
-    # par(mar=c(5,5,2,2),xaxs = "i",yaxs = "i",cex.axis=1.3,cex.lab=1.4)
-    # plotting the ROC curve
-    plot(performance,col="black",lty=3, lwd=3)
-    # plot(perf,col="black",lty=3, lwd=3)
-}
 
 predict_outcomes = function (model, data, features) {
     probabilities = predict(model, newdata=data[, features, drop=FALSE], type="prob")[, 2]
@@ -660,8 +583,7 @@ test_model = function (model, testing_set, features, target_feature) {
     targets = testing_set[, target_feature]
     prediction = predict_outcomes(model, testing_set, features)
     performance = evaluate_outcomes(targets, prediction$outcomes)
-    render_plot(function () roc_curve(prediction$probabilities, targets))
-    return(list(prediction=prediction, performance=performance))
+    return(list(targets=targets, prediction=prediction, performance=performance))
 }
 
 # test_model(learning_result$label7$model, testing_set, features.selection.team, 'winner')
@@ -721,43 +643,44 @@ train_model_by_cluster = function (training_set, testing_set, features, target_f
 }
 
 learning_result = train_model_by_cluster(training_set, testing_set, features.selection.team,  'winner', 'label')
-Map(function(k) k$test$performance$accuracy, learning_result)
+
+# Learning performance
+Map(function(k) unlist(k$test$performance)[c('accuracy', 'f_measure')], learning_result)
 # $label1
-# [1] 0.9094426
+#  accuracy f_measure
+# 0.9632495 0.7043847
 #
 # $label2
-# [1] 0.9281293
+#  accuracy f_measure
+# 0.8931683 0.9020597
 #
 # $label3
-# [1] 0.9071775
+#  accuracy f_measure
+# 0.9120230 0.9490842
 #
 # $label4
-# [1] 0.9650122
+#  accuracy f_measure
+# 0.9734201 0.4922280
 #
 # $label5
-# [1] 0.9511274
+#  accuracy f_measure
+# 0.9433272 0.9460369
 #
 # $label6
-# [1] 0.9276614
+#  accuracy f_measure
+# 0.9244224 0.9448124
 #
 # $label7
-# [1] 0.9183809
+#  accuracy f_measure
+# 0.9097545 0.9477860
 
-install.packages('ROCR', dependencies=TRUE)
-import_package('ROCR', attach=TRUE)
-# TODO library(ROCR)
+# RORC curve
+Map(function(k) roc_curve(k$test$prediction$probabilities, k$test$targets), learning_result)
 
-# TODO feature selection using known methods (intersection)
+# TODO feature selection using known methods
 gini_index_selection = gini_index_selector(data, features.numeric, 'winner')
 information_gain_selection = information_gain_selector(data, features.numeric, 'winner')
 relieff_selection = relieff_selector(data, features.numeric, 'winner')
 # random_forest_selection = random_forest_selector(data, features.numeric, 'winner')
 
-table(c(
-    gini_index_selection$features,
-    information_gain_selection$features,
-    relieff_selection$features
-    # random_forest_selection$features
-))
-
-# TODO remove features present in all clusters?
+table(c(gini_index_selection$features, information_gain_selection$features, relieff_selection$features))
