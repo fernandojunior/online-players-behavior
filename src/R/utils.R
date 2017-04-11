@@ -108,12 +108,12 @@ centroid_analysis = function (data, features, plot_name) {
     }, plot_name, width=16, height=9)
 }
 
-#' Balance data using undersample method based on target (binary) and label (multiclass) features
-balance = function (data, target, label, prop=0.8) {
+#' Balance data using undersample method based on target (binary) and cluster (multiclass) features
+balance_by_cluster = function (data, target, cluster, prop=0.8) {
     # Discriminate clustered data between target (winners and losers) to analyse sizes
     winners = data[data[, target] == 1, ]
     losers = data[data[, target] == 0, ]
-    clusters_size = cbind(all=table(data[, label]), winners=table(winners[, label]), losers=table(losers[, label]))
+    clusters_size = cbind(all=table(data[, cluster]), winners=table(winners[, cluster]), losers=table(losers[, cluster]))
 
     relative_clusters_size = cbind(
         winners=clusters_size[, 'winners'] / clusters_size[, 'all'],
@@ -124,12 +124,13 @@ balance = function (data, target, label, prop=0.8) {
     # boxplot(values(relative_clusters_size))$stats
 
     # Min cluster size between winners and losers to undersample data
-    min_clusters_size = round(min(table(winners[, 'label']), table(losers[, 'label'])) * prop)
+    # TODO remove hardcoded
+    min_clusters_size = round(min(table(winners[, cluster]), table(losers[, cluster])) * prop)
 
     cluster_size_analysis = list(size=clusters_size, relative_size=relative_clusters_size, min_size=min_clusters_size)
 
     # balance data based on cluster size analysis
-    balanced = rbind(undersample(winners, label, min_clusters_size), undersample(losers, label, min_clusters_size))
+    balanced = rbind(undersample(winners, cluster, min_clusters_size), undersample(losers, cluster, min_clusters_size))
 
     print(cluster_size_analysis)
 

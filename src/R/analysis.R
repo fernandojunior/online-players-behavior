@@ -8,7 +8,7 @@ import('outliers', attach=TRUE)
 import('feature_selection', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
-RENDER_PLOT_CLOSE = TRUE
+RENDER_PLOT_CLOSE = FALSE
 
 # =========================
 # Specific domain functions
@@ -456,7 +456,7 @@ team.normalized = cbind(team.normalized, label=fit.team$cluster)
 ###############################################################################
 
 # Undersampling clustered data based on min size
-balanced = balance(data.relative_performance, 'winner', 'label', 0.8)$data
+balanced_data = balance_by_cluster(data.relative_performance, 'winner', 'label', 0.8)$data
 # $size
 #     all winners losers
 # 1 51389   25866  25523
@@ -480,8 +480,8 @@ balanced = balance(data.relative_performance, 'winner', 'label', 0.8)$data
 # $min_size
 # [1] 8234
 
-balanced.team = balance(team.normalized, 'winner', 'label')$data
-# > balanced.team = balance(team.normalized, 'winner', 'label')$data
+balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
+# > balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
 # $size
 #    all winners losers
 # 1 6491     662   5829
@@ -517,13 +517,18 @@ cluster_statistical_analysis(team.normalized, features.selection.team, 'winner',
 # Cluster data exploration (Viz)
 ################################
 
-cluster_data_viz(balanced, features.selection.player, 'winner', 'label', pca_lim=c(-1, 1))
+cluster_data_viz(balanced_data, features.selection.player, 'winner', 'label', pca_lim=c(-1, 1))
 
-cluster_data_viz(balanced.team, features.selection.team, 'winner', 'label', pca_lim=c(-0.01, 0.01))
+cluster_data_viz(balanced_data.team, features.selection.team, 'winner', 'label', pca_lim=c(-0.01, 0.01))
 
-centroid_analysis(balanced, features.selection.player, '../output/exploring-centers-player')
+centroid_analysis(balanced_data, features.selection.player, '../output/exploring-centers-player')
 
-centroid_analysis(balanced.team, features.selection.team, '../output/exploring-centers-team')
+centroid_analysis(balanced_data.team, features.selection.team, '../output/exploring-centers-team')
+
+# ==============================================================================
+# TODO Modeling multiclass classfifier to predict a team victory / match outcome
+# ===============================================================================
+
 
 # ==========================================================================
 # TODO Modeling binary classfifier to predict a team victory / match outcome
@@ -537,7 +542,7 @@ RENDER_PLOT_SAVE = NULL
 RENDER_PLOT_CLOSE = NULL
 
 # Balance clustered 'label' data (undersampling) by discriminating 'winner' winners and losers
-training_set = balance(team.performance, 'winner', 'label', prop=0.8)$data
+training_set = balance_by_cluster(team.performance, 'winner', 'label', prop=0.8)$data
 # $size
 #    all winners losers
 # 1 6491     662   5829
