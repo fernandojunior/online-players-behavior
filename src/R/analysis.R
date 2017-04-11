@@ -6,6 +6,7 @@ import('utils', attach=TRUE)
 import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('feature_selection', attach=TRUE)
+import('evaluation_measures', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
 RENDER_PLOT_CLOSE = FALSE
@@ -505,6 +506,43 @@ balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
 # $min_size
 # [1] 402
 
+write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
+
+# predict team cluster
+(function () {
+  library(class)
+  balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
+  training_index = sample(nrow(balanced_data.team))
+  training_index = sample(rownames(balanced_data.team), round(nrow(balanced_data.team) * 0.8))
+  training_set = balanced_data.team[rownames(balanced_data.team) %in% training_index , ]
+  testing_set = balanced_data.team[!(rownames(balanced_data.team) %in% training_index),]
+  print(nrow(training_set))
+  print(nrow(testing_set))
+
+  k = length(unique(balanced_data.team$label))
+  features = features.selection.team
+  factor = training_set[, 'label']
+  result = knn(training_set[, features], testing_set[, features], factor, k = k, prob=TRUE)
+  confusion_matrix = confusion_matrix(result, testing_set[, 'label'])
+  print(confusion_matrix)
+  print(accuracy(confusion_matrix))
+
+  for(k in sort(unique(balanced_data.team$label))) {
+    cluster = balanced_data.team[balanced_data.team$label == k, ]
+    fe = feature_engeneering(cluster, features, 'label', correlation_threshold=0.65,
+                                    feature_selector=information_gain_selector)
+    render_plot(function () outlier_analysis(cluster[, fe], factor=1.5))
+    print(k)
+    print(fe)
+
+  }
+
+  # return (result)
+})()
+
+
+
+
 ################################################################################################
 # TODO Improve Statistical analysis of cluster analysis by discriminating a winner binary target
 ################################################################################################
@@ -536,7 +574,7 @@ centroid_analysis(balanced_data.team, features.selection.team, '../output/explor
 
 import_package('caret', attach=TRUE)
 import_package('logistf', attach=TRUE)
-import('evaluation_measures', attach=TRUE)
+
 
 RENDER_PLOT_SAVE = NULL
 RENDER_PLOT_CLOSE = NULL
