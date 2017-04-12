@@ -452,6 +452,68 @@ data.relative_performance = cbind(data.relative_performance, label=fit$cluster)
 team.performance = cbind(team.performance, label=fit.team$cluster)
 team.normalized = cbind(team.normalized, label=fit.team$cluster)
 
+
+#=======================
+# Cluster classification
+#=======================
+
+information_gain_selector(data.performance, features.selection.player, 'label')
+
+#, score_filter=function (x) x > 0
+information_gain_selector(team.performance, features.selection.team, 'label')
+
+#, score_filter=function (x) x > 0
+relieff_selector(team.performance, features.selection.team, 'label')
+
+write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
+
+# predict team cluster
+(function () {
+  library(class)
+  options("width"=220)
+  features = features.selection.team
+  performance = balance_by_cluster(team.performance, 'winner', 'label')$data
+  normalized = performance
+  normalized[, features] = normalize(performance[, features])
+
+  print(descriptive_statistics(performance[, features]))
+  print(information_gain_selector(performance, features, 'label'))
+  features = feature_engeneering(performance, features, 'label', correlation_threshold=0.65,
+                                 feature_selector=information_gain_selector)
+
+  training_index = sample(nrow(normalized))
+  training_index = sample(rownames(normalized), round(nrow(normalized) * 0.8))
+  training_set = normalized[rownames(normalized) %in% training_index , ]
+  testing_set = normalized[!(rownames(normalized) %in% training_index),]
+  print(nrow(training_set))
+  print(nrow(testing_set))
+
+  k = length(unique(normalized$label))
+
+  factor = training_set[, 'label']
+  result = knn(training_set[, features], testing_set[, features], factor, k = k, prob=TRUE)
+  confusion_matrix = confusion_matrix(result, testing_set[, 'label'])
+  print(confusion_matrix)
+  print(accuracy(confusion_matrix))
+
+  cluster_centers = apply(performance[, features], 2, mean)
+
+  for(k in sort(unique(normalized$label))) {
+    cluster = performance[performance$label == k, ]
+    cluster_features = feature_engeneering(cluster, features, 'label', correlation_threshold=0.65,
+                                    feature_selector=information_gain_selector)
+    render_plot(function () outlier_analysis(cluster[, cluster_features], factor=1.5))
+    print(k)
+    cluster_centers = cbind(cluster_centers, apply(cluster[, features], 2, mean))
+    print(cluster_features)
+  }
+
+  print(round(cluster_centers, 2))
+
+  # return (result)
+})()
+
+
 ###############################################################################
 # Clustered data balancing (undersampling) by discriminating winners and losers
 ###############################################################################
@@ -505,43 +567,6 @@ balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
 #
 # $min_size
 # [1] 402
-
-write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
-
-# predict team cluster
-(function () {
-  library(class)
-  balanced_data.team = balance_by_cluster(team.normalized, 'winner', 'label')$data
-  training_index = sample(nrow(balanced_data.team))
-  training_index = sample(rownames(balanced_data.team), round(nrow(balanced_data.team) * 0.8))
-  training_set = balanced_data.team[rownames(balanced_data.team) %in% training_index , ]
-  testing_set = balanced_data.team[!(rownames(balanced_data.team) %in% training_index),]
-  print(nrow(training_set))
-  print(nrow(testing_set))
-
-  k = length(unique(balanced_data.team$label))
-  features = features.selection.team
-  factor = training_set[, 'label']
-  result = knn(training_set[, features], testing_set[, features], factor, k = k, prob=TRUE)
-  confusion_matrix = confusion_matrix(result, testing_set[, 'label'])
-  print(confusion_matrix)
-  print(accuracy(confusion_matrix))
-
-  for(k in sort(unique(balanced_data.team$label))) {
-    cluster = balanced_data.team[balanced_data.team$label == k, ]
-    fe = feature_engeneering(cluster, features, 'label', correlation_threshold=0.65,
-                                    feature_selector=information_gain_selector)
-    render_plot(function () outlier_analysis(cluster[, fe], factor=1.5))
-    print(k)
-    print(fe)
-
-  }
-
-  # return (result)
-})()
-
-
-
 
 ################################################################################################
 # TODO Improve Statistical analysis of cluster analysis by discriminating a winner binary target
