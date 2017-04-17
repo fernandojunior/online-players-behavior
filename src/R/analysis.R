@@ -512,9 +512,9 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
   # return (result)
 })()
 
-# ===================================
-# Modeling match composition outcomes
-# ===================================
+# ===========================
+# Modeling match outcome data
+# ===========================
 
 match_outcomes = (function () {
   teams = team.performance
@@ -568,7 +568,9 @@ table(match_outcomes$team1_cluster, match_outcomes$team2_cluster)
   # 6  376  513  443  409  438  305  314
   # 7  468  478  291  545  411  278  161
 
+# ======================
 # Predict match outcomes
+# ======================
 
 (function (length_proportion=1) {
   import_package('caret', attach=TRUE)
@@ -595,10 +597,10 @@ table(match_outcomes$team1_cluster, match_outcomes$team2_cluster)
       train_control = trainControl(method="cv", number=10, savePredictions = TRUE)
 
       # Logistic regression
-      model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="glm", family="binomial")
+      # model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="glm", family="binomial")
 
       # Decision Tree
-      # model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="rpart")
+      model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="rpart")
 
       # outcomes and performance
       test = test_model(model, testing_set, features, target_feature)
@@ -623,7 +625,7 @@ table(match_outcomes$team1_cluster, match_outcomes$team2_cluster)
   print(train_model(training_set, testing_set, features, target)$test$performance)
   print('training_set')
   print(train_model(training_set, training_set, features, target)$test$performance)
-})(length_proportion=1)
+})(length_proportion=0.1)
 
 # Logistic regression:
 # CV: 10 folds
@@ -640,6 +642,23 @@ table(match_outcomes$team1_cluster, match_outcomes$team2_cluster)
 # 12844 0.5   0.8623713    0.8686695
 # 6422  0.25  0.8687644    0.863102
 # 2569  0.1   0.8657315    0.8611788
+
+
+# Decision tree:
+# CV: 10 folds
+# $accuracy
+# size  prop  testing_set  training_set
+# 25687 1     0.7607553    0.7723114
+# 12844 0.5   0.7582717    0.7784915
+# 6422  0.25  0.767134     0.7759829
+# 2569  0.1   0.6848249    0.73
+
+# $f_measure
+# size  prop  testing_set  training_set
+# 25687 1     0.7286377    0.7343138
+# 12844 0.5   0.7920991    0.8053703
+# 6422  0.25  0.7964602    0.8034159
+# 2569  0.1   0.7294404    0.7781325
 
 
 ###############################################################################
