@@ -481,7 +481,6 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
   features = feature_engeneering(performance, features, 'label', correlation_threshold=0.65,
                                  feature_selector=information_gain_selector)
 
-  training_index = sample(nrow(normalized))
   training_index = sample(rownames(normalized), round(nrow(normalized) * 0.8))
   training_set = normalized[rownames(normalized) %in% training_index , ]
   testing_set = normalized[!(rownames(normalized) %in% training_index),]
@@ -512,6 +511,135 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
 
   # return (result)
 })()
+
+# ===================================
+# Modeling match composition outcomes
+# ===================================
+
+match_outcomes = (function () {
+  teams = team.performance
+  # teams = balance_by_cluster(team.performance, 'winner', 'label', prop=1)$data
+  cluster_feature = 'label'
+
+  match_ids = sample(unique(teams$matchId))
+  cluster_domain = order(unique(teams$label))
+  n = length(match_ids)
+
+  features = c('match_id', 'team1_cluster', 'team2_cluster', 'winner')
+  match_outcomes = matrix(NA, nrow=n, ncol=length(features))
+  colnames(match_outcomes) = features
+
+  odd_row = TRUE
+
+  for(i in c(1:n)) {
+    match_id = match_ids[i]
+    winner_cluster = teams[teams$matchId == match_id & teams$winner == TRUE, cluster_feature]
+    loser_cluster = teams[teams$matchId == match_id & teams$winner == FALSE, cluster_feature]
+
+    if (length(winner_cluster) == 0 || length(loser_cluster) == 0) {
+      next
+    }
+
+    if (odd_row) {
+      match_outcomes[i, ] = c(match_id, winner_cluster, loser_cluster, TRUE)
+    } else {
+      match_outcomes[i, ] = c(match_id, loser_cluster, winner_cluster, FALSE)
+    }
+
+    odd_row = !odd_row
+  }
+
+  match_outcomes = as.data.frame(match_outcomes[complete.cases(match_outcomes), ])
+  match_outcomes[, 'team1_cluster'] = as.factor(match_outcomes[, 'team1_cluster'])
+  match_outcomes[, 'team2_cluster'] = as.factor(match_outcomes[, 'team2_cluster'])
+  match_outcomes[, 'winner'] = as.factor(match_outcomes[, 'winner'])
+  return(match_outcomes)
+})()
+
+write.csv(match_outcomes, './match_outcomes.csv', row.names=FALSE)
+
+table(match_outcomes$team1_cluster, match_outcomes$team2_cluster)
+  #      1    2    3    4    5    6    7
+  # 1  195  663  589  232  750  342  482
+  # 2  685  710  761  971  655  445  516
+  # 3  575  709  438  570  641  479  300
+  # 4  270 1051  554  289  997  410  540
+  # 5  669  661  620 1051  679  378  380
+  # 6  376  513  443  409  438  305  314
+  # 7  468  478  291  545  411  278  161
+
+# Predict match outcomes
+
+(function (length_proportion=1) {
+  import_package('caret', attach=TRUE)
+  import_package('logistf', attach=TRUE)
+  predict_outcomes = function (model, data, features) {
+      probabilities = predict(model, newdata=data[, features, drop=FALSE], type="prob")[, 2]
+      outcomes = ifelse(probabilities > 0.5, 1, 0)
+      return(list(probabilities=probabilities, outcomes=outcomes))
+  }
+
+  #' Test a predictive model given a testing set
+  test_model = function (model, testing_set, features, target_feature) {
+      targets = testing_set[, target_feature]
+      prediction = predict_outcomes(model, testing_set, features)
+      performance = evaluate_outcomes(targets, prediction$outcomes)
+      return(list(targets=targets, prediction=prediction, performance=performance))
+  }
+
+  train_model = function (training_set, testing_set, features, target_feature) {
+      training_set = training_set[, c(features, target_feature)]
+      testing_set = testing_set[, c(features, target_feature)]
+
+      # model a binary classfifier
+      train_control = trainControl(method="cv", number=10, savePredictions = TRUE)
+
+      # Logistic regression
+      model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="glm", family="binomial")
+
+      # Decision Tree
+      # model = train(as.formula(strf('%s ~ .', target_feature)), data=training_set, trControl=train_control, method="rpart")
+
+      # outcomes and performance
+      test = test_model(model, testing_set, features, target_feature)
+
+      return(list(features=features, model=model, test=test))
+  }
+
+  # define training control
+
+  data = match_outcomes[, ]
+  length = ceiling(nrow(data) * length_proportion)
+  data = data[1:length, ]
+  features = c('team1_cluster', 'team2_cluster')
+  target = 'winner'
+
+  training_index = sample(rownames(data), round(nrow(data) * 0.8))
+  training_set = data[rownames(data) %in% training_index , ]
+  testing_set = data[!(rownames(data) %in% training_index), ]
+  print('Data')
+  print(length)
+  print('testing_set')
+  print(train_model(training_set, testing_set, features, target)$test$performance)
+  print('training_set')
+  print(train_model(training_set, training_set, features, target)$test$performance)
+})(length_proportion=1)
+
+# Logistic regression:
+# CV: 10 folds
+# $accuracy
+# size  prop  testing_set  training_set
+# 25687 1     0.8528324    0.8668613
+# 12844 0.5   0.8594784    0.8623713
+# 6422  0.25  0.8668224    0.8594784
+# 2569  0.1   0.8696498    0.8613139
+
+# $f_measure
+# size  prop  testing_set  training_set
+# 25687 1     0.8512982    0.8647419
+# 12844 0.5   0.8623713    0.8686695
+# 6422  0.25  0.8687644    0.863102
+# 2569  0.1   0.8657315    0.8611788
 
 
 ###############################################################################
