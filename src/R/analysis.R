@@ -467,6 +467,43 @@ relieff_selector(team.performance, features.selection.team, 'label')
 
 write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
 
+# team cluster feature relevance heatmap/analysis
+(function () {
+  library(class)
+  options("width"=220)
+  features = features.selection.team
+  performance = team.performance
+  normalized[, features] = normalize(performance[, features])
+
+  k = length(unique(normalized$label))
+
+  cluster_centers = apply(performance[, features], 2, mean)
+
+  basematrix = matrix(NA, length(features), k)
+  rownames(basematrix) = features
+
+  for(k in sort(unique(normalized$label))) {
+    cluster = performance[performance$label == k, ]
+    relevance = as.data.frame(information_gain_selector(cluster, features, 'label')$scores)
+    relevance = relevance[order(rownames(relevance)), ]
+    basematrix[, k] = relevance
+  }
+
+  basematrix = round(basematrix, digits=2)
+  m=basematrix
+
+  render_plot(function() {
+    par(oma=c(2,12,2,2))
+    image(1:ncol(m), 1:nrow(m), t(m), col = rev(heat.colors(100)), axes = FALSE, xlab=NA, ylab=NA)
+    axis(1, 1:ncol(m), colnames(m))
+    axis(2, 1:nrow(m), rownames(m), las=2)
+    for (x in 1:ncol(m))
+      for (y in 1:nrow(m))
+        text(x, y, m[y,x])
+  })
+})()
+
+
 # predict team cluster
 (function () {
   library(class)
