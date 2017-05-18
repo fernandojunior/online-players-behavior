@@ -7,6 +7,7 @@ import('fun', attach=TRUE)
 import('outliers', attach=TRUE)
 import('feature_selection', attach=TRUE)
 import('evaluation_measures', attach=TRUE)
+import_package('fmsb', attach=TRUE)
 
 RENDER_PLOT_SAVE = TRUE
 RENDER_PLOT_CLOSE = FALSE
@@ -509,6 +510,52 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
   basematrix[, k + 1] = relevance
 
   relevance_plot(round(basematrix, digits=2))
+})()
+
+# cluster center performance analsys
+(function() {
+  options("width"=220)
+  import_package('fmsb', attach=TRUE)
+
+  features = sort(features.selection.team, decreasing=TRUE)
+  features_length = length(features)
+  performance = team.performance
+  cluster_names = sort(unique(performance$label))
+  k = length(cluster_names)
+
+  # center/mean performance matrix
+  center_matrix = matrix(NA, length(features), k + 1)
+  rownames(center_matrix) = features
+  colnames(center_matrix) = c(c(1:k), 'all')
+
+  # compute center for each cluster
+  for(k in cluster_names) {
+    center_matrix[, k] = apply(performance[performance$label == k, features], 2, mean)
+  }
+
+  # compute center for all data
+  center_matrix[, k + 1] = apply(performance[, features], 2, mean)
+
+  normalized_matrix = t(apply(center_matrix, 1, normalize))
+
+  par(mfrow=c(1,8))
+  for(k in colnames(normalized_matrix)) {
+    radar_data = as.data.frame(rbind(rep(1, features_length) , rep(0, features_length), normalized_matrix[, k]))
+    colnames(radar_data) = sort(c(1:ncol(radar_data)), decreasing=TRUE)
+    # render_plot(function() {
+      radarchart(radar_data, title=strf('Cluster %s', k), axistype=1, cglcol="grey", cglty=1, caxislabels=seq(0,0.5,1), cglwd=0.8, vlcex=1)
+    # })
+  }
+
+  print(center_matrix)
+  print(cbind(c(1:16), sort(features.selection.team)))
+})()
+
+# cluster win/loss rate analysis
+(function () {
+  wlrate = rbind(win_rate=c(0.11, 0.55, 0.86, 0.06, 0.53, 0.67, 0.84), loss_rate=c(0.89, 0.45, 0.14, 0.94, 0.47, 0.33, 0.16))
+  colnames(wlrate) = 1:7
+  barplot(wlrate, beside=TRUE, main='Cluster win/loss rate')
 })()
 
 # predict team cluster
