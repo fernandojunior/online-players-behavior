@@ -494,20 +494,25 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
 
   # relevance matrix
   basematrix = matrix(NA, length(features), k + 1)
-  rownames(basematrix) = features
+
+  rownames(basematrix) = sort(features, decreasing=TRUE)
   colnames(basematrix) = c(c(1:k), 'all')
+
+  print(basematrix)
 
   # relevance for each cluster
   for(k in sort(unique(normalized$label))) {
     cluster = performance[performance$label == k, ]
     cluster_relevance = information_gain_selector(cluster, features, 'label')$scores
-    basematrix[, k] = cluster_relevance[order(rownames(cluster_relevance)), ]
+    basematrix[, k] = cluster_relevance[order(rownames(cluster_relevance), decreasing=TRUE), ]
   }
 
   # general relevance
   relevance = information_gain_selector(performance, features, 'label')$scores
-  relevance = relevance[order(rownames(relevance)), ]
+  relevance = relevance[order(rownames(relevance), decreasing=TRUE), ]
   basematrix[, k + 1] = relevance
+
+  print(basematrix)
 
   relevance_plot(round(basematrix, digits=2))
 })()
