@@ -453,9 +453,9 @@ team.performance = cbind(team.performance, label=fit.team$cluster)
 team.normalized = cbind(team.normalized, label=fit.team$cluster)
 
 
-#=======================
-# Cluster classification
-#=======================
+#====================================
+# Cluster analysis and classification
+#====================================
 
 information_gain_selector(data.performance, features.selection.player, 'label')
 
@@ -471,28 +471,8 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
 (function () {
   library(class)
   options("width"=220)
-  features = features.selection.team
-  performance = team.performance
-  normalized[, features] = normalize(performance[, features])
 
-  k = length(unique(normalized$label))
-
-  cluster_centers = apply(performance[, features], 2, mean)
-
-  basematrix = matrix(NA, length(features), k)
-  rownames(basematrix) = features
-
-  for(k in sort(unique(normalized$label))) {
-    cluster = performance[performance$label == k, ]
-    relevance = as.data.frame(information_gain_selector(cluster, features, 'label')$scores)
-    relevance = relevance[order(rownames(relevance)), ]
-    basematrix[, k] = relevance
-  }
-
-  basematrix = round(basematrix, digits=2)
-  m=basematrix
-
-  render_plot(function() {
+  relevance_plot = function(m) {
     par(oma=c(2,12,2,2))
     image(1:ncol(m), 1:nrow(m), t(m), col = rev(heat.colors(100)), axes = FALSE, xlab=NA, ylab=NA)
     axis(1, 1:ncol(m), colnames(m))
@@ -500,9 +480,36 @@ write.csv(balanced_data.team, '../data/team.normalized.csv', row.names=FALSE)
     for (x in 1:ncol(m))
       for (y in 1:nrow(m))
         text(x, y, m[y,x])
-  })
-})()
+  }
 
+  features = features.selection.team
+  performance = team.performance
+  normalized = performance
+  normalized[, features] = normalize(performance[, features])
+
+  k = length(unique(normalized$label))
+
+  cluster_centers = apply(performance[, features], 2, mean)
+
+  # relevance matrix
+  basematrix = matrix(NA, length(features), k + 1)
+  rownames(basematrix) = features
+  colnames(basematrix) = c(c(1:k), 'all')
+
+  # relevance for each cluster
+  for(k in sort(unique(normalized$label))) {
+    cluster = performance[performance$label == k, ]
+    cluster_relevance = information_gain_selector(cluster, features, 'label')$scores
+    basematrix[, k] = cluster_relevance[order(rownames(cluster_relevance)), ]
+  }
+
+  # general relevance
+  relevance = information_gain_selector(performance, features, 'label')$scores
+  relevance = relevance[order(rownames(relevance)), ]
+  basematrix[, k + 1] = relevance
+
+  relevance_plot(round(basematrix, digits=2))
+})()
 
 # predict team cluster
 (function () {
