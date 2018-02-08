@@ -2,7 +2,7 @@
 Collect LoL matches from Riot API at a specific match id range.
 
 How to use:
-$ python collector.py --start 710229426 --end 728819142 --path --total 10000 ../data/201602 --api_key SUA_CHAVE_AQUI
+$ python collector.py --start 710229426 --end 728819142 --path --total 10000 ../dump --api_key SUA_CHAVE_AQUI
 '''
 import os
 import os.path
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         'matchMode': 'CLASSIC',
         'season': ['SEASON2016', 'PRESEASON2017'],
         'region': 'BR',
-        'queueType': ['TEAM_BUILDER_DRAFT_RANKED_5x5',
+        'queueType': ['RANKED_SOLO_5x5', 'TEAM_BUILDER_DRAFT_RANKED_5x5',
                       'TEAM_BUILDER_RANKED_SOLO'],
     }
 

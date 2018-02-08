@@ -70,7 +70,7 @@ def find_match(year=datetime.now().year, month=1, day=1, hour=12, minute=0,
             iter_count += 1
 
     match['matchCreation'] = timestamp_to_datetime(match_timestamp)
-    response = {k: match[k] for k in ['matchId', 'matchCreation', 'matchVersion']}
+    response = {k: match[k] for k in ['matchId', 'matchCreation', 'matchVersion']}  # noqa
     response['iterCount'] = iter_count
     return response
 

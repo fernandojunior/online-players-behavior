@@ -44,6 +44,9 @@ def find(filter):
 
         match = load(DUMP_DIR + matchname)
 
+        if not all([match[k] == v or match[k] in v for k, v in filter.items()]):  # noqa
+            continue
+
         yield match
 
 

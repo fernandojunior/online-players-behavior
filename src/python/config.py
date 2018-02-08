@@ -15,17 +15,21 @@ FIRST_MATCH_ID = {
 # Parse only matches that satisfy the following key values
 MATCH_FILTER = {
     'matchMode': 'CLASSIC',
-    'season': 'SEASON2015',
+    'season': ['SEASON2016', 'PRESEASON2017'],
     'region': 'BR',
-    'queueType': 'RANKED_SOLO_5x5',
+    'queueType': ['RANKED_SOLO_5x5', 'TEAM_BUILDER_DRAFT_RANKED_5x5',
+                  'TEAM_BUILDER_RANKED_SOLO'],
 }
 
 # 58 Statistics of participants to parse
 # More information: https://developer.riotgames.com/api/methods#!/1064
 PARTICIPANT_STATS = [
     'assists', 'champLevel', 'combatPlayerScore', 'deaths', 'doubleKills',
-    'firstBloodAssist', 'firstBloodKill', 'firstInhibitorAssist',
-    'firstInhibitorKill', 'firstTowerAssist', 'firstTowerKill', 'goldEarned',
+    # 'firstBloodAssist', 'firstBloodKill',
+    'firstInhibitorAssist',
+    'firstInhibitorKill',
+    # 'firstTowerAssist', 'firstTowerKill',
+    'goldEarned',
     'goldSpent', 'inhibitorKills', 'item0', 'item1', 'item2', 'item3', 'item4',
     'item5', 'item6', 'killingSprees', 'kills', 'largestCriticalStrike',
     'largestKillingSpree', 'largestMultiKill', 'magicDamageDealt',

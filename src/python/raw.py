@@ -1,5 +1,7 @@
 '''
 Raw  matches from LOL API using RiotWatcher.
+
+Deprecated. Use `collector.py` instead.
 '''
 import os
 import os.path
